@@ -10,6 +10,7 @@ cycles = ["zero_pump_on", "zero_pump_off", "zero_post_cal", "span_pump_on",
           "span_pump_off", "span_post_cal", "equil_pump_on", "equil_pump_off",
           "air_pump_on", "air_pump_off"]
 
+# times to ignore, these are default fillers
 time_ignore = ('0000/00/00 00:00:00', '00/00/0000_00:00:00')
 
 engr_header = {27:["location_code", "system_code",

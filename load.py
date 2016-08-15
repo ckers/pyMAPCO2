@@ -5,7 +5,7 @@ Created on Mon Jul 25 14:30:25 2016
 @author: Colin Dietrich
 """
 
-
+import unicodedata
 import pandas as pd
 
 import config
@@ -37,7 +37,7 @@ class Cleaner(object):
         except:
             return False
     
-    def run(self, data_list, inplace=False):
+    def run(self, data_list): #, inplace=False):
         """
         Parameters
         ----------
@@ -45,29 +45,29 @@ class Cleaner(object):
         
         Returns
         -------
-        lines : list, cleaned data
-        u : list, unicode error indexes
-        b : list, blank lines
-        s : list, whitespace error lines
+        z : list, cleaned data
+        y : list, unicode error indexes
+        x : list, blank lines
         """
         
         a = len(data_list)    
         
-        w = [False] * a
+        z = [""] * a
+        y = [False] * a
         x = [False] * a
         
-        z = [""] * a    
+#        if not inplace:
         
         for n in range(0, a):
     
             line = data_list[n]
-                
+            
             # strip whitespace from start & end
-            _w = self.whitespace(line)
-            if _w is False:
-                w[n] = True
+            _y = self.whitespace(line)
+            if _y is False:
+                y[n] = True
             else:
-                line = _w
+                line = _y
             
             # remove control characters
             _x = self.remove_control_characters(line)
@@ -77,15 +77,15 @@ class Cleaner(object):
                 line = _x
     
             # option for making changes in place to the source list
-            if inplace:
-                data_list[n] = line
-            else:
-                z[n] = line
+#            if inplace:
+#                data_list[n] = line
+#            else:
+            z[n] = line
     
-        if inplace:
-            return w, x
-        else:
-            return z, w, x
+#        if inplace:
+#            return w, x
+#        else:
+        return z, y, x
 
 class Indexer(object):
     def __init__(self, file=None, terminal=False):
@@ -161,18 +161,32 @@ class Indexer(object):
     
 if __name__ == "__main__":
     
+    import parse
+    
     # Iridium file
-#    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\C0004_2012_07_19.txt"
+    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\C0004_2012_07_19.txt"
     
     # Flash file
 #    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\0004 2016_07_23 optode test.txt"
     
     # Terminal log
-    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\mapCO2-7-22-16-final - 2016_07_25.txt"
+#    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\mapCO2-7-22-16-final - 2016_07_25.txt"
     
     indexer = Indexer(file=f, terminal=True)
     df = indexer.df
+    df.reset_index(inplace=True)
     
     d = indexer.file_to_list(f)
     cleaner = Cleaner()
-    w, x = cleaner.run(d, inplace=True)
+    d, w, x = cleaner.run(d) #, inplace=True)
+
+#    def cut(row, data):
+#        header = parse.parse_index(data, row.start, row.end)
+#        print(header)
+#        
+#    df.apply(cut, args=(d))
+    
+    for n in range(0, len(df.start)):
+        s = df.start[n]
+        e = df.end[n]
+        print(parse.parse_index(d, s, e))
