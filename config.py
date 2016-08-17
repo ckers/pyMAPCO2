@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Configuration values
+"""
+Configuration values
 @author: Colin Dietrich
 """
 
 import os
+
+local_data_directory = os.path.normpath("C:\\Users\\dietrich\\data\\rudics")
 
 # Iridium Data Format
 cycles = ["zero_pump_on", "zero_pump_off", "zero_post_cal", "span_pump_on",
