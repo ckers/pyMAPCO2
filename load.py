@@ -164,7 +164,8 @@ if __name__ == "__main__":
     import parse
     
     # Iridium file
-    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\C0004_2012_07_19.txt"
+#    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\C0004_2012_07_19.txt"
+    f = "C:\\Users\\dietrich\\data\\rudics\\0008\\C0008_2015_10_01.txt"
     
     # Flash file
 #    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\0004 2016_07_23 optode test.txt"
@@ -185,8 +186,16 @@ if __name__ == "__main__":
 #        print(header)
 #        
 #    df.apply(cut, args=(d))
+    _ = parse.MAPCO2Header()
+    print("Header>> ", _.data_names)
+    _ = parse.MAPCO2GPS()
+    print("GPS>>    ", _.data_names)
     
     for n in range(0, len(df.start)):
         s = df.start[n]
         e = df.end[n]
-        print(parse.parse_index(d, s, e))
+        a, b = parse.parse_frame(d, s, e, verbose=True)
+        print("Parse Frame | header >>  ", a.data())
+        print("Parse Frame | gps    >>  ", b.data())
+        
+        
