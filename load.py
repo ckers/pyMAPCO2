@@ -13,7 +13,10 @@ import config
 
 class Cleaner(object):
     def __init__(self):
-        pass
+        self.data_type = None
+        self.line_starts = []
+        self.line_len = 10
+        self.limit = 700
 
     def unicode_check(self, line):
         """Try to decode each line to Unicode"""
@@ -50,17 +53,20 @@ class Cleaner(object):
         x : list, blank lines
         """
         
-        a = len(data_list)    
+        a = len(data_list)
         
         z = [""] * a
         y = [False] * a
         x = [False] * a
         
-#        if not inplace:
         
         for n in range(0, a):
     
             line = data_list[n]
+            
+            if n < self.limit:
+                # collate data lines for identification
+                self.line_starts.append(line[0:self.line_len])        
             
             # strip whitespace from start & end
             _y = self.whitespace(line)
@@ -86,6 +92,41 @@ class Cleaner(object):
 #            return w, x
 #        else:
         return z, y, x
+
+    def detect(self, verbose=False):
+        """Detect the kind of data source: flash, iridium or terminal"""
+        
+        # flash data is the only one with "*****" delimiters
+        if "*" * self.line_len in self.line_starts:
+            self.data_type = "flash"
+        # it's not flash so find difference in terminal and iridium
+        # based on the terminal outputting the system number, specifically
+        # look for the space (" ") after the 4 character system number
+        # and use the fact that in terminal, lines are formatted like that
+        # more than half the time
+        else:
+            _c = 0
+            for n in range(0, len(self.line_starts)):
+                _d = self.line_starts[n]
+                if verbose:
+                    print("MAPCO2Engr.detect>> ", _d, "| length:", len(_d))
+                
+                # skip lines shorter than system number + " "
+                if len(_d) >= 5:
+                    # look for the delimiting space
+                    if (_d[4] == " "):
+                        _c += 1
+            # calculate the ratio of spaces to total lines checked
+            ratio = float(_c)/float(len(self.line_starts))
+            if verbose:
+                print("Cleaner.detect>> stats: detections=%s lines=%s ratio=%s"
+                      % (_c, len(self.line_starts), ratio))
+            if ratio > 0.5:
+                self.data_type = "terminal"
+            else:
+                self.data_type = "iridium"
+        if verbose:
+            print("Cleaner.detect>> result:", self.data_type)
 
 class Indexer(object):
     def __init__(self, file=None, terminal=False):
@@ -164,8 +205,8 @@ if __name__ == "__main__":
     import parse
     
     # Iridium file
-#    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\C0004_2012_07_19.txt"
-    f = "C:\\Users\\dietrich\\data\\rudics\\0008\\C0008_2015_10_01.txt"
+    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\C0004_2012_07_19.txt"
+#    f = "C:\\Users\\dietrich\\data\\rudics\\0008\\C0008_2015_10_01.txt"
     
     # Flash file
 #    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\0004 2016_07_23 optode test.txt"
@@ -179,23 +220,24 @@ if __name__ == "__main__":
     
     d = indexer.file_to_list(f)
     cleaner = Cleaner()
-    d, w, x = cleaner.run(d) #, inplace=True)
-
-#    def cut(row, data):
-#        header = parse.parse_index(data, row.start, row.end)
-#        print(header)
-#        
-#    df.apply(cut, args=(d))
+    d, w, x = cleaner.run(d)
+    
+    cleaner.detect(verbose=False)
+    print("Data Type Detected:", cleaner.data_type)
+    
     _ = parse.MAPCO2Header()
     print("Header>> ", _.data_names)
     _ = parse.MAPCO2GPS()
     print("GPS>>    ", _.data_names)
+    _ = parse.MAPCO2Engr()
+    print("ENGR>>   ", _.data_names)
     
     for n in range(0, len(df.start)):
         s = df.start[n]
         e = df.end[n]
-        a, b = parse.parse_frame(d, s, e, verbose=True)
-        print("Parse Frame | header >>  ", a.data())
-        print("Parse Frame | gps    >>  ", b.data())
+        a, b, c = parse.parse_frame(d, s, e, verbose=False)
+#        print("Parse Frame | header >>  ", a.data())
+#        print("Parse Frame | gps    >>  ", b.data())
+#        print("Parse Frame | engr   >>  ", c.data())
         
         

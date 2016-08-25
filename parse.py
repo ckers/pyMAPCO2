@@ -78,19 +78,18 @@ class MAPCO2GPS(object):
                            "valve_time"]
                            
     def data(self):
-        _a = [self.date_time,
-              self.lat_deg,
-              self.lat_min,
-              self.lat_direction,
-              self.lon_deg,
-              self.lon_min,
-              self.lon_direction,
-              self.fix_time,
-              self.quality,
-              self.time_before_check,
-              self.time_after_check,
-              self.valve_time]
-        return _a
+        return [self.date_time,
+                self.lat_deg,
+                self.lat_min,
+                self.lat_direction,
+                self.lon_deg,
+                self.lon_min,
+                self.lon_direction,
+                self.fix_time,
+                self.quality,
+                self.time_before_check,
+                self.time_after_check,
+                self.valve_time]
         
 class MAPCO2Engr(object):
     def __init__(self):
@@ -118,7 +117,25 @@ class MAPCO2Engr(object):
                            "flag", "sst", "sst_std", "ssc", "ssc_std",
                            "sss", "sss_std", "u", "u_std", "v", "v_std",
                            "raw_compass", "raw_vane", "raw_windspeed"]
-                           
+    def data(self):
+        return [self.v_logic,
+                self.v_trans,
+                self.zero_coeff,
+                self.span_coeff,
+                self.flag,
+                self.sst,
+                self.sst_std,
+                self.ssc,
+                self.ssc_std,
+                self.sss,
+                self.sss_std,
+                self.u,
+                self.u_std,
+                self.v,
+                self.v_std,
+                self.raw_compass,
+                self.raw_vane,
+                self.raw_windspeed]
         
 class MAPCO2HeaderLog(object):
     def __init__(self):
@@ -133,13 +150,14 @@ def parse_frame(data, start, end, verbose=False):
 
     h = parse_header(sample[0], verbose=verbose)
     g = parse_gps(sample[1], verbose=verbose)
-    return h, g
+    e = parse_engr(sample[2], verbose=verbose)
+    return h, g, e
 
 
 def parse_header(data, verbose=False):
 
     if verbose:
-        print("parse_header>> ", data)
+        print("parse_header >>  ", data)
     
     h = MAPCO2Header()
 
@@ -178,7 +196,7 @@ def date_time_convert(dt, ft):
 def parse_gps(data, verbose=False):
 
     if verbose:
-        print("parse_gps>> ", data)
+        print("parse_gps    >>  ", data)
     
     g = MAPCO2GPS()
     
@@ -216,12 +234,47 @@ def parse_gps(data, verbose=False):
     g.time_after_check = gps[10] + "_" + gps[11]
     
     try:
-        print(len(gps))
         if len(gps) > 12:
             g.valve_time = gps[13]
     except:
-        print("parse_gps>> Error in valve current: ", gps)
+        g.valve_time = None
+        if verbose:
+            print("parse_gps>> Error in valve current: ", gps)
     return g
     
+def parse_engr(data, verbose=False):
+    
+    if verbose:
+        print("parse_engr   >>  ", data)
+        
+    e = MAPCO2Engr()
+    
+    engr = data.split()
+    
+    e.v_logic = engr[0]
+    e.v_trans = engr[1]
+    e.zero_coeff = engr[2]
+    e.span_coeff = engr[3]
+    e.flag = engr[4]
+    
+    try:
+        e.sst = engr[5]
+        e.sst_std = engr[6]
+        e.ssc = engr[7]
+        e.ssc_std = engr[8]
+        e.sss = engr[9]
+        e.sss_std = engr[10]
+        e.u = engr[11]
+        e.u_std = engr[12]
+        e.v = engr[13]
+        e.v_std = engr[14]
+        e.raw_compass = engr[15]
+        e.raw_vane = engr[16]
+        e.raw_windspeed = engr[17]
+    except:
+        if verbose:
+            print("parse_engr>> ENGR line met data parsing error")
+    
+    return e
     
         
