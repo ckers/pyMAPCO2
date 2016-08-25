@@ -210,19 +210,36 @@ class Iridium(object):
         self.local_data_files.sort()
 
 
-class CallLog(Iridium):
+class CallLog(object):
 
     # TODO: scrap Rudics call logs for connection failures
 
-    def __init__(self, url_source, local_data_directory=None):
+    def __init__(self, url_source="http://eclipse.pmel.noaa.gov/rudics/ALL_RUDICS/",
+                 local_data_directory=None):
+
+        self.data = []
         
-        super().__init__(url_source, local_data_directory)
-        pass
+        # network access file index
+        html = requests.get(url_source)
+
+        # get all the dial logs for the last 2 months
+        soup = BeautifulSoup(html.text, "html.parser")
+        soup_a = soup.find_all("a")
+        for _ in soup_a:
+            
+            text = _.text
+            href = _["href"]
+            if "outlogs" in href:
+                print("|", text, "|", href)
 
 
 if __name__ == "__main__":
-    i = Iridium(local_data_directory="C:\\Users\\dietrich\\data\\rudics\\test")
-    i.unit_files(units=["0006"])
-    print(i.data_names)
-    print(i.data_urls_modtime)
-    i.download_files()
+#    i = Iridium(local_data_directory="C:\\Users\\dietrich\\data\\rudics\\test")
+#    i.unit_files(units=["0006"])
+#    print(i.data_names)
+#    print(i.data_urls_modtime)
+#    i.download_files()
+    
+    c = CallLog(local_data_directory="C:\\Users\\dietrich\\data\\rudics\\call_log_test")
+    
+    
