@@ -92,6 +92,34 @@ class MAPCO2GPS(object):
               self.valve_time]
         return _a
         
+class MAPCO2Engr(object):
+    def __init__(self):
+        self.v_logic = None
+        self.v_trans = None
+        self.zero_coeff = None
+        self.span_coeff = None
+        self.flag = None
+        
+        self.sst = None
+        self.sst_std = None
+        self.ssc = None
+        self.ssc_std = None
+        self.sss = None
+        self.sss_std = None
+        self.u = None
+        self.u_std = None
+        self.v = None
+        self.v_std = None
+        self.raw_compass = None
+        self.raw_vane = None
+        self.raw_windspeed = None
+        
+        self.data_names = ["v_logic", "v_trans", "zero_coeff", "span_coeff",
+                           "flag", "sst", "sst_std", "ssc", "ssc_std",
+                           "sss", "sss_std", "u", "u_std", "v", "v_std",
+                           "raw_compass", "raw_vane", "raw_windspeed"]
+                           
+        
 class MAPCO2HeaderLog(object):
     def __init__(self):
         self.events = []
