@@ -205,11 +205,11 @@ if __name__ == "__main__":
     import parse
     
     # Iridium file
-    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\C0004_2012_07_19.txt"
-#    f = "C:\\Users\\dietrich\\data\\rudics\\0008\\C0008_2015_10_01.txt"
+#    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\C0004_2012_07_19.txt"
+    f = "C:\\Users\\dietrich\\data\\rudics\\0008\\C0008_2015_10_01.txt"
     
     # Flash file
-#    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\0004 2016_07_23 optode test.txt"
+#    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\0004 2016_07_23 optode test - cleaned.txt"
     
     # Terminal log
 #    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\mapCO2-7-22-16-final - 2016_07_25.txt"
@@ -229,15 +229,18 @@ if __name__ == "__main__":
     print("Header>> ", _.data_names)
     _ = parse.MAPCO2GPS()
     print("GPS>>    ", _.data_names)
-    _ = parse.MAPCO2Engr()
+    _ = parse.MAPCO2Engr(data_type=cleaner.data_type)
     print("ENGR>>   ", _.data_names)
     
     for n in range(0, len(df.start)):
         s = df.start[n]
         e = df.end[n]
-        a, b, c = parse.parse_frame(d, s, e, verbose=False)
-#        print("Parse Frame | header >>  ", a.data())
-#        print("Parse Frame | gps    >>  ", b.data())
-#        print("Parse Frame | engr   >>  ", c.data())
-        
+        a, b, c, zpon, zpof, spon, spof = parse.parse_frame(d, s, e, verbose=True, data_type=cleaner.data_type)
+        print("Parse Frame | header >>  ", a.data())
+        print("Parse Frame | gps    >>  ", b.data())
+        print("Parse Frame | engr   >>  ", c.data())
+        print("Parse Frame | zpon   >>  ", zpon.data())
+        print("Parse Frame | zpof   >>  ", zpof.data())
+        print("Parse Frame | spon   >>  ", spon.data())
+        print("Parse Frame | spof   >>  ", spof.data())
         

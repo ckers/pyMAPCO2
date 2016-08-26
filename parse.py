@@ -92,7 +92,10 @@ class MAPCO2GPS(object):
                 self.valve_time]
         
 class MAPCO2Engr(object):
-    def __init__(self):
+    def __init__(self, data_type="iridium"):
+        
+        self.data_type = data_type
+        
         self.v_logic = None
         self.v_trans = None
         self.zero_coeff = None
@@ -117,25 +120,95 @@ class MAPCO2Engr(object):
                            "flag", "sst", "sst_std", "ssc", "ssc_std",
                            "sss", "sss_std", "u", "u_std", "v", "v_std",
                            "raw_compass", "raw_vane", "raw_windspeed"]
+
+        self.update_names()
+
+    def update_names(self):
+        if self.data_type != "iridium":
+            self.data_names = self.data_names[:5]
+        
     def data(self):
-        return [self.v_logic,
-                self.v_trans,
-                self.zero_coeff,
-                self.span_coeff,
-                self.flag,
-                self.sst,
-                self.sst_std,
-                self.ssc,
-                self.ssc_std,
-                self.sss,
-                self.sss_std,
-                self.u,
-                self.u_std,
-                self.v,
-                self.v_std,
-                self.raw_compass,
-                self.raw_vane,
-                self.raw_windspeed]
+        _a = [self.v_logic,
+              self.v_trans,
+              self.zero_coeff,
+              self.span_coeff,
+              self.flag,
+              self.sst,
+              self.sst_std,
+              self.ssc,
+              self.ssc_std,
+              self.sss,
+              self.sss_std,
+              self.u,
+              self.u_std,
+              self.v,
+              self.v_std,
+              self.raw_compass,
+              self.raw_vane,
+              self.raw_windspeed]
+              
+        if self.data_type == "flash":
+            _a = _a[:5]
+        return _a
+        
+class MAPCO2DataFrame(object):
+    def __init__(self):
+        
+        self.minute = None
+        self.licor_temp = None
+        self.licor_temp_std = None
+        self.licor_press = None
+        self.licor_press_std = None
+        self.xCO2 = None
+        self.xCO2_std = None
+        self.O2 = None
+        self.O2_std = None
+        self.RH = None
+        self.RH_std = None
+        self.RH_temp = None
+        self.RH_temp_std = None
+        self.xCO2_raw1 = None
+        self.xCO2_raw1_std = None
+        self.xCO2_raw2 = None
+        self.xCO2_raw2_std = None
+        
+        self.data_names = ["minute",
+            "licor_temp",
+            "licor_temp_std",
+            "licor_press",
+            "licor_press_std",
+            "xCO2",
+            "xCO2_std",
+            "O2",
+            "O2_std",
+            "RH",
+            "RH_std",
+            "RH_temp",
+            "RH_temp_std",
+            "xCO2_raw1",
+            "xCO2_raw1_std",
+            "xCO2_raw2",
+            "xCO2_raw2_std"]        
+        
+    def data(self):
+        _a = [self.minute,
+            self.licor_temp,
+            self.licor_temp_std,
+            self.licor_press,
+            self.licor_press_std,
+            self.xCO2,
+            self.xCO2_std,
+            self.O2,
+            self.O2_std,
+            self.RH,
+            self.RH_std,
+            self.RH_temp,
+            self.RH_temp_std,
+            self.xCO2_raw1,
+            self.xCO2_raw1_std,
+            self.xCO2_raw2,
+            self.xCO2_raw2_std]
+        return _a
         
 class MAPCO2HeaderLog(object):
     def __init__(self):
@@ -143,15 +216,19 @@ class MAPCO2HeaderLog(object):
 
 header_log = MAPCO2HeaderLog()
 
-def parse_frame(data, start, end, verbose=False):
+def parse_frame(data, start, end, verbose=False, data_type="iridium"):
 
     # break the data file into samples
     sample = data[start:end]
 
     h = parse_header(sample[0], verbose=verbose)
     g = parse_gps(sample[1], verbose=verbose)
-    e = parse_engr(sample[2], verbose=verbose)
-    return h, g, e
+    e = parse_engr(sample[2], verbose=verbose, data_type=data_type)
+    zpon = parse_co2(sample[3], verbose=verbose)
+    zpof = parse_co2(sample[4], verbose=verbose)
+    spon = parse_co2(sample[5], verbose=verbose)
+    spof = parse_co2(sample[6], verbose=verbose)
+    return h, g, e, zpon, zpof, spon, spof
 
 
 def parse_header(data, verbose=False):
@@ -242,39 +319,71 @@ def parse_gps(data, verbose=False):
             print("parse_gps>> Error in valve current: ", gps)
     return g
     
-def parse_engr(data, verbose=False):
+def parse_engr(data, verbose=False, data_type="iridium"):
     
     if verbose:
         print("parse_engr   >>  ", data)
         
-    e = MAPCO2Engr()
+    e = MAPCO2Engr(data_type=data_type)
     
     engr = data.split()
     
-    e.v_logic = engr[0]
-    e.v_trans = engr[1]
-    e.zero_coeff = engr[2]
-    e.span_coeff = engr[3]
+    e.v_logic = float(engr[0])
+    e.v_trans = float(engr[1])
+    e.zero_coeff = float(engr[2])
+    e.span_coeff = float(engr[3])
     e.flag = engr[4]
     
     try:
-        e.sst = engr[5]
-        e.sst_std = engr[6]
-        e.ssc = engr[7]
-        e.ssc_std = engr[8]
-        e.sss = engr[9]
-        e.sss_std = engr[10]
-        e.u = engr[11]
-        e.u_std = engr[12]
-        e.v = engr[13]
-        e.v_std = engr[14]
-        e.raw_compass = engr[15]
-        e.raw_vane = engr[16]
-        e.raw_windspeed = engr[17]
+        e.sst = float(engr[5])
+        e.sst_std = float(engr[6])
+        e.ssc = float(engr[7])
+        e.ssc_std = float(engr[8])
+        e.sss = float(engr[9])
+        e.sss_std = float(engr[10])
+        e.u = float(engr[11])
+        e.u_std = float(engr[12])
+        e.v = float(engr[13])
+        e.v_std = float(engr[14])
+        e.raw_compass = float(engr[15])
+        e.raw_vane = float(engr[16])
+        e.raw_windspeed = float(engr[17])
     except:
         if verbose:
             print("parse_engr>> ENGR line met data parsing error")
     
+    e.update_names()    
+    
     return e
     
-        
+def parse_co2(data, verbose=False):
+    
+    if verbose:
+        print("parse_co2    >>  ", data)
+    
+    c = MAPCO2DataFrame()
+    
+    co2 = data.split()
+    
+    co2 = [float(n) for n in co2]
+    
+    c.minute = co2[0]
+    c.licor_temp = co2[1]
+    c.licor_temp_std = co2[2]
+    c.licor_press = co2[3]
+    c.licor_press_std = co2[4]
+    c.xCO2 = co2[5]
+    c.xCO2_std = co2[6]
+    c.O2 = co2[7]
+    c.O2_std = co2[8]
+    c.RH = co2[9]
+    c.RH_std = co2[10]
+    c.RH_temp = co2[11]
+    c.RH_temp_std = co2[12]
+    c.xCO2_raw1 = co2[13]
+    c.xCO2_raw1_std = co2[14]
+    c.xCO2_raw2 = co2[15]
+    c.xCO2_raw2_std = co2[16]
+    
+    return c
+    
