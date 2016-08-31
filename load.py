@@ -235,12 +235,18 @@ if __name__ == "__main__":
     for n in range(0, len(df.start)):
         s = df.start[n]
         e = df.end[n]
-        a, b, c, zpon, zpof, spon, spof = parse.parse_frame(d, s, e, verbose=True, data_type=cleaner.data_type)
+        a, b, c, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof = parse.parse_frame(d, s, e, verbose=True, data_type=cleaner.data_type)
         print("Parse Frame | header >>  ", a.data())
         print("Parse Frame | gps    >>  ", b.data())
         print("Parse Frame | engr   >>  ", c.data())
         print("Parse Frame | zpon   >>  ", zpon.data())
         print("Parse Frame | zpof   >>  ", zpof.data())
+        print("Parse Frame | zpcl   >>  ", zpcl.data())
         print("Parse Frame | spon   >>  ", spon.data())
         print("Parse Frame | spof   >>  ", spof.data())
+        print("Parse Frame | spcl   >>  ", spcl.data())
+        print("Parse Frame | epon   >>  ", epon.data())
+        print("Parse Frame | epof   >>  ", epof.data())
+        print("Parse Frame | apon   >>  ", apon.data())
+        print("Parse Frame | apof   >>  ", apof.data())
         

@@ -226,9 +226,15 @@ def parse_frame(data, start, end, verbose=False, data_type="iridium"):
     e = parse_engr(sample[2], verbose=verbose, data_type=data_type)
     zpon = parse_co2(sample[3], verbose=verbose)
     zpof = parse_co2(sample[4], verbose=verbose)
-    spon = parse_co2(sample[5], verbose=verbose)
-    spof = parse_co2(sample[6], verbose=verbose)
-    return h, g, e, zpon, zpof, spon, spof
+    zpcl = parse_co2(sample[5], verbose=verbose)
+    spon = parse_co2(sample[6], verbose=verbose)
+    spof = parse_co2(sample[7], verbose=verbose)
+    spcl = parse_co2(sample[8], verbose=verbose)
+    epon = parse_co2(sample[9], verbose=verbose)
+    epof = parse_co2(sample[10], verbose=verbose)
+    apon = parse_co2(sample[11], verbose=verbose)
+    apof = parse_co2(sample[12], verbose=verbose)
+    return h, g, e, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof
 
 
 def parse_header(data, verbose=False):
