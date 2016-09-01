@@ -215,8 +215,8 @@ if __name__ == "__main__":
 #    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\mapCO2-7-22-16-final - 2016_07_25.txt"
     
     indexer = Indexer(file=f, terminal=True)
-    df = indexer.df
-    df.reset_index(inplace=True)
+    index_df = indexer.df
+    index_df.reset_index(inplace=True)
     
     d = indexer.file_to_list(f)
     cleaner = Cleaner()
@@ -232,21 +232,27 @@ if __name__ == "__main__":
     _ = parse.MAPCO2Engr(data_type=cleaner.data_type)
     print("ENGR>>   ", _.data_names)
     
-    for n in range(0, len(df.start)):
-        s = df.start[n]
-        e = df.end[n]
-        a, b, c, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof = parse.parse_frame(d, s, e, verbose=True, data_type=cleaner.data_type)
-        print("Parse Frame | header >>  ", a.data())
-        print("Parse Frame | gps    >>  ", b.data())
-        print("Parse Frame | engr   >>  ", c.data())
-        print("Parse Frame | zpon   >>  ", zpon.data())
-        print("Parse Frame | zpof   >>  ", zpof.data())
-        print("Parse Frame | zpcl   >>  ", zpcl.data())
-        print("Parse Frame | spon   >>  ", spon.data())
-        print("Parse Frame | spof   >>  ", spof.data())
-        print("Parse Frame | spcl   >>  ", spcl.data())
-        print("Parse Frame | epon   >>  ", epon.data())
-        print("Parse Frame | epof   >>  ", epof.data())
-        print("Parse Frame | apon   >>  ", apon.data())
-        print("Parse Frame | apof   >>  ", apof.data())
+    for n in range(0, len(index_df.start)):
+        s = index_df.start[n]
+        e = index_df.end[n]
+#        a, b, c, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof = parse.parse_frame(d, s, e, verbose=True, data_type=cleaner.data_type)
+#        print("Parse Frame | header >>  ", a.data())
+#        print("Parse Frame | gps    >>  ", b.data())
+#        print("Parse Frame | engr   >>  ", c.data())
+#        print("Parse Frame | zpon   >>  ", zpon.data())
+#        print("Parse Frame | zpof   >>  ", zpof.data())
+#        print("Parse Frame | zpcl   >>  ", zpcl.data())
+#        print("Parse Frame | spon   >>  ", spon.data())
+#        print("Parse Frame | spof   >>  ", spof.data())
+#        print("Parse Frame | spcl   >>  ", spcl.data())
+#        print("Parse Frame | epon   >>  ", epon.data())
+#        print("Parse Frame | epof   >>  ", epof.data())
+#        print("Parse Frame | apon   >>  ", apon.data())
+#        print("Parse Frame | apof   >>  ", apof.data())
+        
+        h, g, e, df = parse.build_frames(d,s,e,verbose=True, data_type=cleaner.data_type)
+        print(h)
+        print(g)
+        print(e)
+        print(df)
         

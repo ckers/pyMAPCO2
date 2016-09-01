@@ -5,6 +5,7 @@ Created on Thu Jul 28 14:45:54 2016
 @author: Colin Dietrich
 """
 import time
+import pandas as pd
 
 import config
 
@@ -150,8 +151,12 @@ class MAPCO2Engr(object):
         if self.data_type == "flash":
             _a = _a[:5]
         return _a
-        
+
 class MAPCO2DataFrame(object):
+    def __init__(self):
+        pass
+        
+class MAPCO2DataSeries(object):
     def __init__(self):
         
         self.minute = None
@@ -209,6 +214,9 @@ class MAPCO2DataFrame(object):
             self.xCO2_raw2,
             self.xCO2_raw2_std]
         return _a
+
+    def series(self):
+        return pd.Series(data=self.data(), index=self.data_names)
         
 class MAPCO2HeaderLog(object):
     def __init__(self):
@@ -237,13 +245,43 @@ def parse_frame(data, start, end, verbose=False, data_type="iridium"):
     return h, g, e, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof
 
 
-def parse_header(data, verbose=False):
+def build_frames(data, start, end, verbose=False, data_type="iridium"):
+    (h, g, e,
+     zpon, zpof, zpcl,
+     spon, spof, spcl,
+     epon, epof,
+     apon, apof) = parse_frame(data=data, start=start, end=end,
+                               verbose=verbose, data_type=data_type)
+    
+    h_series = pd.Series(data=h.data(), index=h.data_names)
+    g_series = pd.Series(data=g.data(), index=g.data_names)
+    e_series = pd.Series(data=e.data(), index=e.data_names)
+    
+    df = pd.DataFrame(data=[pd.Series(data=zpon.data(), index=zpon.data_names),
+                            pd.Series(data=zpof.data(), index=zpof.data_names),
+                            pd.Series(data=zpcl.data(), index=zpcl.data_names),
+                            pd.Series(data=spon.data(), index=spon.data_names),
+                            pd.Series(data=spof.data(), index=spof.data_names),
+                            pd.Series(data=spcl.data(), index=spcl.data_names),
+                            pd.Series(data=epon.data(), index=epon.data_names),
+                            pd.Series(data=epof.data(), index=epof.data_names),
+                            pd.Series(data=apon.data(), index=apon.data_names),
+                            pd.Series(data=apof.data(), index=apof.data_names),
+                            ],
+                            index=["zpon", "zpof", "zpcl",
+                                   "spon", "spof", "spcl",
+                                   "epon", "epof",
+                                   "apon", "apof"])
+    
+    return h_series, g_series, e_series, df
 
+def parse_header(data, verbose=False):
+    
     if verbose:
         print("parse_header >>  ", data)
     
     h = MAPCO2Header()
-
+    
     # extract header information
     header = data.split()
     
@@ -338,7 +376,7 @@ def parse_engr(data, verbose=False, data_type="iridium"):
     e.v_trans = float(engr[1])
     e.zero_coeff = float(engr[2])
     e.span_coeff = float(engr[3])
-    e.flag = engr[4]
+    e.flag = engr[4]  # needs to remain string for flag bit access
     
     try:
         e.sst = float(engr[5])
@@ -367,7 +405,7 @@ def parse_co2(data, verbose=False):
     if verbose:
         print("parse_co2    >>  ", data)
     
-    c = MAPCO2DataFrame()
+    c = MAPCO2DataSeries()
     
     co2 = data.split()
     
@@ -393,3 +431,7 @@ def parse_co2(data, verbose=False):
     
     return c
     
+def parse_co2_series(data, verbose):
+    c = parse_co2(data=data, verbose=verbose)
+    c_series = pd.Series(data=c.data(), index=c.data_names)
+    return c_series
