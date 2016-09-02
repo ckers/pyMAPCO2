@@ -232,6 +232,8 @@ if __name__ == "__main__":
     _ = parse.MAPCO2Engr(data_type=cleaner.data_type)
     print("ENGR>>   ", _.data_names)
     
+    panel_dict = {}
+    
     for n in range(0, len(index_df.start)):
         s = index_df.start[n]
         e = index_df.end[n]
@@ -251,8 +253,20 @@ if __name__ == "__main__":
 #        print("Parse Frame | apof   >>  ", apof.data())
         
         h, g, e, df = parse.build_frames(d,s,e,verbose=True, data_type=cleaner.data_type)
+        print("="*50)
+        print(h.date_time)
+        panel_dict[h.date_time] = df
+        print("header>>")
+        print("------")
         print(h)
+        print("gps>>")
+        print("------")
         print(g)
+        print("engineering>>")
+        print("------")
         print(e)
+        print("data frame>>")
+        print("------")
         print(df)
         
+    panel = pd.Panel(data=panel_dict)
