@@ -5,6 +5,8 @@ Created on Thu Jul 28 14:45:54 2016
 @author: Colin Dietrich
 """
 import time
+import re
+import numpy
 import pandas as pd
 
 import config
@@ -148,7 +150,7 @@ class MAPCO2Engr(object):
               self.raw_vane,
               self.raw_windspeed]
               
-        if self.data_type == "flash":
+        if (self.data_type == "flash") or (self.data_type == "terminal"):
             _a = _a[:5]
         return _a
 
@@ -218,16 +220,43 @@ class MAPCO2DataSeries(object):
     def series(self):
         return pd.Series(data=self.data(), index=self.data_names)
         
-class MAPCO2HeaderLog(object):
+class MAPCO2ParseLog(object):
     def __init__(self):
         self.events = []
 
-header_log = MAPCO2HeaderLog()
+parse_log = MAPCO2ParseLog()
+current_frame = ""
 
-def parse_frame(data, start, end, verbose=False, data_type="iridium"):
+
+def float_converter(data_line):
+    """accepts a list of strings, attempts to clean and convert all to floats"""
+    line = []
+    for n in range(0, len(data_line)):
+        x = data_line[n]
+        try:
+            y = float(x)
+        except ValueError:
+            try:
+                y = re.findall("\d+\.\d+", x)[0]  # find first float
+            except IndexError:
+                try:
+                    y = re.findall("\d+", x)[0]  # find first int
+                except IndexError:
+                    y = np.nan
+        parse_log.events.append("parse.float_validator>> error converting to float: "
+                         + current_frame)
+        line.append(y)    
+    return line
+                
+#    line = [float(n) for n in data_line]
+    
+
+def parse_iridium_frame(data, start, end, verbose=False, data_type="iridium"):
 
     # break the data file into samples
     sample = data[start:end]
+
+    current_frame = sample[0]
 
     h = parse_header(sample[0], verbose=verbose)
     g = parse_gps(sample[1], verbose=verbose)
@@ -242,21 +271,44 @@ def parse_frame(data, start, end, verbose=False, data_type="iridium"):
     epof = parse_co2(sample[10], verbose=verbose)
     apon = parse_co2(sample[11], verbose=verbose)
     apof = parse_co2(sample[12], verbose=verbose)
+    
     return h, g, e, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof
+
+def parse_flash_frame(data, start, end, verbose=False):
+    # break the data file into samples
+    sample = data[start:end]
+    print(sample)
+    
+
 
 
 def build_frames(data, start, end, verbose=False, data_type="iridium"):
-    (h, g, e,
-     zpon, zpof, zpcl,
-     spon, spof, spcl,
-     epon, epof,
-     apon, apof) = parse_frame(data=data, start=start, end=end,
-                               verbose=verbose, data_type=data_type)
     
+    if (data_type == "iridium") or (data_type == "terminal"):
+    
+        (h, g, e,
+         zpon, zpof, zpcl,
+         spon, spof, spcl,
+         epon, epof,
+         apon, apof) = parse_iridium_frame(data=data,
+                                           start=start, end=end,
+                                           verbose=verbose,
+                                           data_type=data_type)
+        
+    if data_type == "flash":
+        (h, g, e,
+         zpon, zpof, zpcl,
+         spon, spof, spcl,
+         epon, epof,
+         apon, apof) = parse_flash_frame(data=data,
+                                         start=start, end=end,
+                                         verbose=verbose)
+
+    print(e.data)
     h_series = pd.Series(data=h.data(), index=h.data_names)
     g_series = pd.Series(data=g.data(), index=g.data_names)
     e_series = pd.Series(data=e.data(), index=e.data_names)
-    
+        
     df = pd.DataFrame(data=[pd.Series(data=zpon.data(), index=zpon.data_names),
                             pd.Series(data=zpof.data(), index=zpof.data_names),
                             pd.Series(data=zpcl.data(), index=zpcl.data_names),
@@ -332,9 +384,9 @@ def parse_gps(data, verbose=False):
         try:
             g.date_time = _t
         except:
-#            header_log.events.append("%s, %s, %s, Unable to parse %s"
-#                                     % (g.time, g.location,
-#                                        g.system, g))
+            parse_log.events.append("%s, %s, %s, Unable to parse %s"
+                                     % (g.time, g.location,
+                                        g.system, g))
             print("parse_gps>> Error parsing: ", gps)
     
     lat = gps[2].split(".")
@@ -409,25 +461,32 @@ def parse_co2(data, verbose=False):
     
     co2 = data.split()
     
-    co2 = [float(n) for n in co2]
     
-    c.minute = co2[0]
-    c.licor_temp = co2[1]
-    c.licor_temp_std = co2[2]
-    c.licor_press = co2[3]
-    c.licor_press_std = co2[4]
-    c.xCO2 = co2[5]
-    c.xCO2_std = co2[6]
-    c.O2 = co2[7]
-    c.O2_std = co2[8]
-    c.RH = co2[9]
-    c.RH_std = co2[10]
-    c.RH_temp = co2[11]
-    c.RH_temp_std = co2[12]
-    c.xCO2_raw1 = co2[13]
-    c.xCO2_raw1_std = co2[14]
-    c.xCO2_raw2 = co2[15]
-    c.xCO2_raw2_std = co2[16]
+#    co2 = [float(n) for n in co2]
+    print(co2)
+    co2 = float_converter(co2)
+    print(co2)
+
+    try:    
+        c.minute = co2[0]
+        c.licor_temp = co2[1]
+        c.licor_temp_std = co2[2]
+        c.licor_press = co2[3]
+        c.licor_press_std = co2[4]
+        c.xCO2 = co2[5]
+        c.xCO2_std = co2[6]
+        c.O2 = co2[7]
+        c.O2_std = co2[8]
+        c.RH = co2[9]
+        c.RH_std = co2[10]
+        c.RH_temp = co2[11]
+        c.RH_temp_std = co2[12]
+        c.xCO2_raw1 = co2[13]
+        c.xCO2_raw1_std = co2[14]
+        c.xCO2_raw2 = co2[15]
+        c.xCO2_raw2_std = co2[16]
+    except IndexError:
+        pass
     
     return c
     

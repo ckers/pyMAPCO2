@@ -214,7 +214,7 @@ if __name__ == "__main__":
     # Terminal log
 #    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\mapCO2-7-22-16-final - 2016_07_25.txt"
     
-    indexer = Indexer(file=f, terminal=True)
+    indexer = Indexer(file=f, terminal=False)
     index_df = indexer.df
     index_df.reset_index(inplace=True)
     
