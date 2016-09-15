@@ -6,22 +6,22 @@ Created on Thu Jul 28 14:45:54 2016
 """
 import time
 import re
-import numpy
+import numpy as np
 import pandas as pd
 
 import config
 
 # we're shooting for all this data:
-pco2_header =  ("location_code", "system_code",
-                "unit_time","unit_unix_time",
-                "gps_time","lat","lon","firmware","mode",
-                "cycle",
-                "licor_temp","licor_temp_std",
-                "licor_pres","licor_pres_std",
-                "pco2","pco2_std",
-                "o2_percent","o2_std",
-                "rh","rh_std","rh_temp","rh_temp_std",
-                "raw1","raw1_std","raw2","raw2_std")
+pco2_header = ("location_code", "system_code",
+               "unit_time", "unit_unix_time",
+               "gps_time", "lat", "lon", "firmware", "mode",
+               "cycle",
+               "licor_temp", "licor_temp_std",
+               "licor_pres", "licor_pres_std",
+               "pco2", "pco2_std",
+               "o2_percent", "o2_std",
+               "rh", "rh_std", "rh_temp", "rh_temp_std",
+               "raw1", "raw1_std", "raw2", "raw2_std")
 
 
 class MAPCO2Header(object):
@@ -36,7 +36,7 @@ class MAPCO2Header(object):
 
         self.date_time_format = "%Y/%m/%d_%H:%M:%S"
         self.firmware_format = "A.B_%m/%d/%Y"
-        
+
         self.data_names = ["mode",
                            "checksum",
                            "size",
@@ -55,6 +55,7 @@ class MAPCO2Header(object):
               self.firmware]
         return _a
 
+
 class MAPCO2GPS(object):
     def __init__(self):
         self.date_time = None
@@ -71,15 +72,15 @@ class MAPCO2GPS(object):
         self.time_before_check = None
         self.time_after_check = None
         self.valve_time = None
-        
+
         self.date_time_format = "%m/%d/%Y_%H:%M:%S"
-        
+
         self.data_names = ["date_time", "lat_deg", "lat_min", "lat_direction",
-                           "lon_deg", "lon_min", "lon_direction", 
+                           "lon_deg", "lon_min", "lon_direction",
                            "fix_time", "quality",
                            "time_before_check", "time_after_check",
                            "valve_time"]
-                           
+
     def data(self):
         return [self.date_time,
                 self.lat_deg,
@@ -93,18 +94,19 @@ class MAPCO2GPS(object):
                 self.time_before_check,
                 self.time_after_check,
                 self.valve_time]
-        
+
+
 class MAPCO2Engr(object):
     def __init__(self, data_type="iridium"):
-        
+
         self.data_type = data_type
-        
+
         self.v_logic = None
         self.v_trans = None
         self.zero_coeff = None
         self.span_coeff = None
         self.flag = None
-        
+
         self.sst = None
         self.sst_std = None
         self.ssc = None
@@ -118,7 +120,7 @@ class MAPCO2Engr(object):
         self.raw_compass = None
         self.raw_vane = None
         self.raw_windspeed = None
-        
+
         self.data_names = ["v_logic", "v_trans", "zero_coeff", "span_coeff",
                            "flag", "sst", "sst_std", "ssc", "ssc_std",
                            "sss", "sss_std", "u", "u_std", "v", "v_std",
@@ -129,7 +131,7 @@ class MAPCO2Engr(object):
     def update_names(self):
         if self.data_type != "iridium":
             self.data_names = self.data_names[:5]
-        
+
     def data(self):
         _a = [self.v_logic,
               self.v_trans,
@@ -149,18 +151,19 @@ class MAPCO2Engr(object):
               self.raw_compass,
               self.raw_vane,
               self.raw_windspeed]
-              
+
         if (self.data_type == "flash") or (self.data_type == "terminal"):
             _a = _a[:5]
         return _a
 
+
 class MAPCO2DataFrame(object):
     def __init__(self):
         pass
-        
+
+
 class MAPCO2DataSeries(object):
     def __init__(self):
-        
         self.minute = None
         self.licor_temp = None
         self.licor_temp_std = None
@@ -178,51 +181,53 @@ class MAPCO2DataSeries(object):
         self.xCO2_raw1_std = None
         self.xCO2_raw2 = None
         self.xCO2_raw2_std = None
-        
+
         self.data_names = ["minute",
-            "licor_temp",
-            "licor_temp_std",
-            "licor_press",
-            "licor_press_std",
-            "xCO2",
-            "xCO2_std",
-            "O2",
-            "O2_std",
-            "RH",
-            "RH_std",
-            "RH_temp",
-            "RH_temp_std",
-            "xCO2_raw1",
-            "xCO2_raw1_std",
-            "xCO2_raw2",
-            "xCO2_raw2_std"]        
-        
+                           "licor_temp",
+                           "licor_temp_std",
+                           "licor_press",
+                           "licor_press_std",
+                           "xCO2",
+                           "xCO2_std",
+                           "O2",
+                           "O2_std",
+                           "RH",
+                           "RH_std",
+                           "RH_temp",
+                           "RH_temp_std",
+                           "xCO2_raw1",
+                           "xCO2_raw1_std",
+                           "xCO2_raw2",
+                           "xCO2_raw2_std"]
+
     def data(self):
         _a = [self.minute,
-            self.licor_temp,
-            self.licor_temp_std,
-            self.licor_press,
-            self.licor_press_std,
-            self.xCO2,
-            self.xCO2_std,
-            self.O2,
-            self.O2_std,
-            self.RH,
-            self.RH_std,
-            self.RH_temp,
-            self.RH_temp_std,
-            self.xCO2_raw1,
-            self.xCO2_raw1_std,
-            self.xCO2_raw2,
-            self.xCO2_raw2_std]
+              self.licor_temp,
+              self.licor_temp_std,
+              self.licor_press,
+              self.licor_press_std,
+              self.xCO2,
+              self.xCO2_std,
+              self.O2,
+              self.O2_std,
+              self.RH,
+              self.RH_std,
+              self.RH_temp,
+              self.RH_temp_std,
+              self.xCO2_raw1,
+              self.xCO2_raw1_std,
+              self.xCO2_raw2,
+              self.xCO2_raw2_std]
         return _a
 
     def series(self):
         return pd.Series(data=self.data(), index=self.data_names)
-        
+
+
 class MAPCO2ParseLog(object):
     def __init__(self):
         self.events = []
+
 
 parse_log = MAPCO2ParseLog()
 current_frame = ""
@@ -244,15 +249,15 @@ def float_converter(data_line):
                 except IndexError:
                     y = np.nan
         parse_log.events.append("parse.float_validator>> error converting to float: "
-                         + current_frame)
-        line.append(y)    
+                                + current_frame)
+        line.append(y)
     return line
-                
+
+
 #    line = [float(n) for n in data_line]
-    
+
 
 def parse_iridium_frame(data, start, end, verbose=False, data_type="iridium"):
-
     # break the data file into samples
     sample = data[start:end]
 
@@ -261,31 +266,28 @@ def parse_iridium_frame(data, start, end, verbose=False, data_type="iridium"):
     h = parse_header(sample[0], verbose=verbose)
     g = parse_gps(sample[1], verbose=verbose)
     e = parse_engr(sample[2], verbose=verbose, data_type=data_type)
-    zpon = parse_co2(sample[3], verbose=verbose)
-    zpof = parse_co2(sample[4], verbose=verbose)
-    zpcl = parse_co2(sample[5], verbose=verbose)
-    spon = parse_co2(sample[6], verbose=verbose)
-    spof = parse_co2(sample[7], verbose=verbose)
-    spcl = parse_co2(sample[8], verbose=verbose)
-    epon = parse_co2(sample[9], verbose=verbose)
-    epof = parse_co2(sample[10], verbose=verbose)
-    apon = parse_co2(sample[11], verbose=verbose)
-    apof = parse_co2(sample[12], verbose=verbose)
-    
+    zpon = parse_co2_line(sample[3], verbose=verbose)
+    zpof = parse_co2_line(sample[4], verbose=verbose)
+    zpcl = parse_co2_line(sample[5], verbose=verbose)
+    spon = parse_co2_line(sample[6], verbose=verbose)
+    spof = parse_co2_line(sample[7], verbose=verbose)
+    spcl = parse_co2_line(sample[8], verbose=verbose)
+    epon = parse_co2_line(sample[9], verbose=verbose)
+    epof = parse_co2_line(sample[10], verbose=verbose)
+    apon = parse_co2_line(sample[11], verbose=verbose)
+    apof = parse_co2_line(sample[12], verbose=verbose)
+
     return h, g, e, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof
+
 
 def parse_flash_frame(data, start, end, verbose=False):
     # break the data file into samples
     sample = data[start:end]
     print(sample)
-    
-
 
 
 def build_frames(data, start, end, verbose=False, data_type="iridium"):
-    
     if (data_type == "iridium") or (data_type == "terminal"):
-    
         (h, g, e,
          zpon, zpof, zpcl,
          spon, spof, spcl,
@@ -294,7 +296,7 @@ def build_frames(data, start, end, verbose=False, data_type="iridium"):
                                            start=start, end=end,
                                            verbose=verbose,
                                            data_type=data_type)
-        
+
     if data_type == "flash":
         (h, g, e,
          zpon, zpof, zpcl,
@@ -308,7 +310,7 @@ def build_frames(data, start, end, verbose=False, data_type="iridium"):
     h_series = pd.Series(data=h.data(), index=h.data_names)
     g_series = pd.Series(data=g.data(), index=g.data_names)
     e_series = pd.Series(data=e.data(), index=e.data_names)
-        
+
     df = pd.DataFrame(data=[pd.Series(data=zpon.data(), index=zpon.data_names),
                             pd.Series(data=zpof.data(), index=zpof.data_names),
                             pd.Series(data=zpcl.data(), index=zpcl.data_names),
@@ -320,38 +322,39 @@ def build_frames(data, start, end, verbose=False, data_type="iridium"):
                             pd.Series(data=apon.data(), index=apon.data_names),
                             pd.Series(data=apof.data(), index=apof.data_names),
                             ],
-                            index=["zpon", "zpof", "zpcl",
-                                   "spon", "spof", "spcl",
-                                   "epon", "epof",
-                                   "apon", "apof"])
-    
+                      index=["zpon", "zpof", "zpcl",
+                             "spon", "spof", "spcl",
+                             "epon", "epof",
+                             "apon", "apof"])
+
     return h_series, g_series, e_series, df
 
+
 def parse_header(data, verbose=False):
-    
     if verbose:
         print("parse_header >>  ", data)
-    
+
     h = MAPCO2Header()
-    
+
     # extract header information
     header = data.split()
-    
+
     h.mode = header[0]
     h.checksum = header[1]
     h.size = header[2]
     h.date_time = header[3] + "_" + header[4]
-#    unit_unix_time = time.mktime(time.strptime(unit_time, "%Y/%m/%d_%H:%M:%S"))
+    #    unit_unix_time = time.mktime(time.strptime(unit_time, "%Y/%m/%d_%H:%M:%S"))
     h.location = header[5]
     h.system = header[6]
-    
+
     # older versions of the firmware don't include the version number
     try:
         h.firmware = header[7] + "_" + header[8]
     except:
         h.firmware = False
-    
+
     return h
+
 
 def date_time_convert(dt, ft):
     """Convert date_time value to unix time
@@ -365,18 +368,18 @@ def date_time_convert(dt, ft):
     t : unix time in seconds
     """
     return time.mktime(time.strptime(dt, ft))
-    
-def parse_gps(data, verbose=False):
 
+
+def parse_gps(data, verbose=False):
     if verbose:
         print("parse_gps    >>  ", data)
-    
+
     g = MAPCO2GPS()
-    
+
     # extract location information
     gps = data.split()
     _t = gps[0] + "_" + gps[1]
-    
+
     # if no fix, fill with zero
     if _t in config.time_ignore:
         g.date_time = "NaT"
@@ -385,27 +388,27 @@ def parse_gps(data, verbose=False):
             g.date_time = _t
         except:
             parse_log.events.append("%s, %s, %s, Unable to parse %s"
-                                     % (g.time, g.location,
-                                        g.system, g))
+                                    % (g.time, g.location,
+                                       g.system, g))
             print("parse_gps>> Error parsing: ", gps)
-    
+
     lat = gps[2].split(".")
-    
+
     g.lat_deg = lat[0][:-2]
     g.lat_min = lat[0][-2:] + "." + lat[1]
     g.lat_direction = gps[3]
-    
-    lon = gps[4].split(".")        
-    
+
+    lon = gps[4].split(".")
+
     g.lon_deg = lon[0][:-2]
     g.lon_min = lon[0][-2:] + "." + lon[1]
     g.lon_direction = gps[5]
-    
+
     g.fix_time = gps[6]
     g.quality = gps[7]
     g.time_before_check = gps[8] + "_" + gps[9]
     g.time_after_check = gps[10] + "_" + gps[11]
-    
+
     try:
         if len(gps) > 12:
             g.valve_time = gps[13]
@@ -414,22 +417,22 @@ def parse_gps(data, verbose=False):
         if verbose:
             print("parse_gps>> Error in valve current: ", gps)
     return g
-    
+
+
 def parse_engr(data, verbose=False, data_type="iridium"):
-    
     if verbose:
         print("parse_engr   >>  ", data)
-        
+
     e = MAPCO2Engr(data_type=data_type)
-    
+
     engr = data.split()
-    
+
     e.v_logic = float(engr[0])
     e.v_trans = float(engr[1])
     e.zero_coeff = float(engr[2])
     e.span_coeff = float(engr[3])
     e.flag = engr[4]  # needs to remain string for flag bit access
-    
+
     try:
         e.sst = float(engr[5])
         e.sst_std = float(engr[6])
@@ -447,27 +450,26 @@ def parse_engr(data, verbose=False, data_type="iridium"):
     except:
         if verbose:
             print("parse_engr>> ENGR line met data parsing error")
-    
-    e.update_names()    
-    
+
+    e.update_names()
+
     return e
-    
-def parse_co2(data, verbose=False):
-    
+
+
+def parse_co2_line(data, verbose=False):
     if verbose:
         print("parse_co2    >>  ", data)
-    
+
     c = MAPCO2DataSeries()
-    
+
     co2 = data.split()
-    
-    
-#    co2 = [float(n) for n in co2]
+
+    #    co2 = [float(n) for n in co2]
     print(co2)
     co2 = float_converter(co2)
     print(co2)
 
-    try:    
+    try:
         c.minute = co2[0]
         c.licor_temp = co2[1]
         c.licor_temp_std = co2[2]
@@ -487,10 +489,11 @@ def parse_co2(data, verbose=False):
         c.xCO2_raw2_std = co2[16]
     except IndexError:
         pass
-    
+
     return c
-    
+
+
 def parse_co2_series(data, verbose):
-    c = parse_co2(data=data, verbose=verbose)
+    c = parse_co2_line(data=data, verbose=verbose)
     c_series = pd.Series(data=c.data(), index=c.data_names)
     return c_series
