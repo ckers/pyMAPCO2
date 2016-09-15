@@ -5,13 +5,13 @@ from load import Cleaner, Indexer
 
 # Iridium file
 #    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\C0004_2012_07_19.txt"
-f = "C:\\Users\\dietrich\\data\\rudics\\0008\\C0008_2015_10_01.txt"
+# f = "C:\\Users\\dietrich\\data\\rudics\\0008\\C0008_2015_10_01.txt"
 
 # Flash file
-#    f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\0004 2016_07_23 optode test - cleaned.txt"
+f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\0004 2016_07_23 optode test - cleaned.txt"
 
 # Terminal log
-f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\mapCO2-7-22-16-final - 2016_07_25.txt"
+# f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\mapCO2-7-22-16-final - 2016_07_25.txt"
 
 indexer = Indexer(file=f, terminal=False)
 index_df = indexer.df

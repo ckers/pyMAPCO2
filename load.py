@@ -18,23 +18,30 @@ class Cleaner(object):
         self.line_len = 10
         self.limit = 700
 
-    def unicode_check(self, line):
-        """Try to decode each line to Unicode"""
+    @staticmethod
+    def unicode_check(line):
+        """Try to decode each line to Unicode
+        :param line:
+        """
         try:
             line.decode("utf-8")
             return True
         except UnicodeDecodeError:
             return False
 
-    def whitespace(self, line):
+    @staticmethod
+    def whitespace(line):
         """Try to remove whitespace from line"""
         try:
             return line.rstrip()
         except:
             return False
 
-    def remove_control_characters(self, s):
-        """Use category identification to remove control characters"""
+    @staticmethod
+    def remove_control_characters(s):
+        """Use category identification to remove control characters
+        :param s:
+        """
         try:
             return "".join(ch for ch in s if unicodedata.category(ch)[0] != "C")
         except:
@@ -93,7 +100,15 @@ class Cleaner(object):
         return z, y, x
 
     def detect(self, verbose=False):
-        """Detect the kind of data source: flash, iridium or terminal"""
+        """Detect the kind of data source: flash, iridium or terminal
+        Parameters
+        ----------
+        verbose : bool,
+
+        Returns
+        -------
+        None : sets self.datatype
+        """
 
         # flash data is the only one with "*****" delimiters
         if "*" * self.line_len in self.line_starts:
@@ -113,7 +128,7 @@ class Cleaner(object):
                 # skip lines shorter than system number + " "
                 if len(_d) >= 5:
                     # look for the delimiting space
-                    if (_d[4] == " "):
+                    if _d[4] == " ":
                         _c += 1
             # calculate the ratio of spaces to total lines checked
             ratio = float(_c) / float(len(self.line_starts))
@@ -130,6 +145,8 @@ class Cleaner(object):
 
 class Indexer(object):
     def __init__(self, file=None, terminal=False):
+        """Find index locations in a text file that delimit data samples"""
+
         self.terminal = terminal
         self.terminal_lines = 50
         self.status = ""
@@ -142,11 +159,12 @@ class Indexer(object):
             except:
                 self.status = "Auto import failed"
 
-    def file_to_list(self, file):
+    @staticmethod
+    def file_to_list(file):
         """Convert string/file data to list, no cleaning
         Parameters
         ----------
-        file : filepath to file to open
+        file : str, filepath to file to open
     
         Returns
         -------
@@ -158,8 +176,13 @@ class Indexer(object):
             data.append(_line)
         return data
 
-    def index_data(self, data):
-        """Find indexes of interest in a list of data"""
+    @staticmethod
+    def index_data(data):
+        """Find indexes of interest in a list of data
+        Parameters
+        ----------
+        data : list,
+        """
 
         # get line number of data frame start
         c = 0
@@ -170,8 +193,18 @@ class Indexer(object):
             c += 1
         return i
 
-    def get_times(self, data, indexes):
-        """Find times in list of data"""
+    @staticmethod
+    def get_times(data, indexes):
+        """Find times in list of data
+        Parameters
+        ----------
+        data : list,
+        indexes : array-like,
+
+        Returns
+        -------
+        t : list,
+        """
         t = []
         for _i in indexes:
             header = data[_i].strip().split()
@@ -180,21 +213,36 @@ class Indexer(object):
         return t
 
     def run(self, file):
+        """
+        Parameters
+        ----------
+        file : str,
+
+        Returns
+        -------
+
+        """
         # load text to list
         d = self.file_to_list(file)
+
         # index list values to frames of data
         i = self.index_data(d)
         i_end = i[1:] + [len(d)]
+
         # times for each frame of data
         t = self.get_times(d, i)
+
         # convert to pandas
         self.df = pd.DataFrame({"time_str": t, "start": i, "end": i_end})
-        # make DateTime values    
+
+        # make DateTime values
         self.df["time"] = pd.to_datetime(self.df.time_str, format="%Y/%m/%d_%H:%M:%S")
-        # drop dups and sort chronologically    
+
+        # drop dups and sort chronologically
         self.df.drop_duplicates(subset="time_str", inplace=True)
         self.df.sort_values(by="time")  # inplace
         self.df = self.df[["time", "time_str", "start", "end"]]
 
+        # add enough lines to capture entire printed dataframe
         if self.terminal:
             self.df["end"] = self.df["start"] + self.terminal_lines

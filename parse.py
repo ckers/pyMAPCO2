@@ -4,6 +4,7 @@ Parse MAPCO2 data
 Created on Thu Jul 28 14:45:54 2016
 @author: Colin Dietrich
 """
+
 import time
 import re
 import numpy as np
@@ -279,11 +280,19 @@ def parse_iridium_frame(data, start, end, verbose=False, data_type="iridium"):
 
     return h, g, e, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof
 
+def clean_flash_line(line):
+    
+
 
 def parse_flash_frame(data, start, end, verbose=False):
     # break the data file into samples
     sample = data[start:end]
+    c = load.Cleaner()    
+    z, y, x = 
+    
+    
     print(sample)
+    return h, g, e, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof
 
 
 def build_frames(data, start, end, verbose=False, data_type="iridium"):
