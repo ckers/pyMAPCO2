@@ -235,7 +235,16 @@ current_frame = ""
 
 
 def float_converter(data_line):
-    """accepts a list of strings, attempts to clean and convert all to floats"""
+    """Clean and convert all data to floats.  Attempts to find directly,
+    regexp find float, regexp find int in that order.
+
+    Parameters
+    ----------
+    data_line : list, str format of data
+
+    Returns
+    -------
+    list of floats"""
     line = []
     for n in range(0, len(data_line)):
         x = data_line[n]
@@ -253,9 +262,6 @@ def float_converter(data_line):
                                 + current_frame)
         line.append(y)
     return line
-
-
-#    line = [float(n) for n in data_line]
 
 
 def parse_iridium_frame(data, start, end, verbose=False, data_type="iridium"):
@@ -281,18 +287,77 @@ def parse_iridium_frame(data, start, end, verbose=False, data_type="iridium"):
     return h, g, e, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof
 
 def clean_flash_line(line):
-    
+    """Clean a line of flash data
 
+    Parameters
+    ----------
+    line : str
+
+    Returns
+    -------
+
+    """
+    pass
+
+def index_flash_frame(data, verbose=False):
+    """Find delimiters between cycles
+    Parameters
+    ----------
+    data : list, str of each line from flash file in this frame
+    
+    Returns
+    -------
+    list, index numbers of headers for each data frame
+    """
+    indexes = []
+    minutes = []
+    for n in range(0, len(data)):
+        if verbose: print(n)
+        if data[n][0:5] == "*****":
+            indexes.append(n)
+            minutes.append(data[n][-2:])
+    return indexes, minutes
+
+
+def find_flash_cycle_sections(sample, verbose=False):
+    indexes = []
+    names = []
+    for n in range(0, len(sample)):
+        if verbose: print(n, sample[n][0:2])
+        if sample[n][0:2] in ("Li", "O2", "RH", "Rh"):
+            indexes.append(n)
+            names.append(sample[n])
+            print("YES", n, sample[n])
+    indexes.append(len(sample))
+    return indexes, names
 
 def parse_flash_frame(data, start, end, verbose=False):
     # break the data file into samples
     sample = data[start:end]
-    c = load.Cleaner()    
-    z, y, x = 
+#    print("sample>>")
+#    print(sample)
+    i, m = index_flash_frame(sample)
+    print("i>>", i)
+    print("m>>", m)
+    i_end = i[1:] + [len(sample)]
+    cycle = sample[i[0]:i_end[0]]
+    si, sn = find_flash_cycle_sections(cycle, verbose=True)
+    print("si>> ", si)
+    si_end = si[1:]
+    si = si[:-1]
+    print("si>> ", si)
+    print("si_end>>", si_end)
+    print("sample[0:35]>>", sample[0:35])
+    li = cycle[si[0]:si_end[1]]
+    o2 = cycle[si[1]:si_end[1]]
+    rh = cycle[si[2]:si_end[2]]
+    rht = cycle[si[3]:si_end[3]]
+    print("li>>", li)
+    print("o2>>", o2)
+    print("rh>>", rh)
+    print("rht>>", rht)
     
-    
-    print(sample)
-    return h, g, e, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof
+#    return h, g, e, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof
 
 
 def build_frames(data, start, end, verbose=False, data_type="iridium"):
@@ -307,36 +372,37 @@ def build_frames(data, start, end, verbose=False, data_type="iridium"):
                                            data_type=data_type)
 
     if data_type == "flash":
-        (h, g, e,
-         zpon, zpof, zpcl,
-         spon, spof, spcl,
-         epon, epof,
-         apon, apof) = parse_flash_frame(data=data,
-                                         start=start, end=end,
-                                         verbose=verbose)
-
-    print(e.data)
-    h_series = pd.Series(data=h.data(), index=h.data_names)
-    g_series = pd.Series(data=g.data(), index=g.data_names)
-    e_series = pd.Series(data=e.data(), index=e.data_names)
-
-    df = pd.DataFrame(data=[pd.Series(data=zpon.data(), index=zpon.data_names),
-                            pd.Series(data=zpof.data(), index=zpof.data_names),
-                            pd.Series(data=zpcl.data(), index=zpcl.data_names),
-                            pd.Series(data=spon.data(), index=spon.data_names),
-                            pd.Series(data=spof.data(), index=spof.data_names),
-                            pd.Series(data=spcl.data(), index=spcl.data_names),
-                            pd.Series(data=epon.data(), index=epon.data_names),
-                            pd.Series(data=epof.data(), index=epof.data_names),
-                            pd.Series(data=apon.data(), index=apon.data_names),
-                            pd.Series(data=apof.data(), index=apof.data_names),
-                            ],
-                      index=["zpon", "zpof", "zpcl",
-                             "spon", "spof", "spcl",
-                             "epon", "epof",
-                             "apon", "apof"])
-
-    return h_series, g_series, e_series, df
+        parse_flash_frame(data=data, start=start, end=end, verbose=verbose)
+#        (h, g, e,
+#         zpon, zpof, zpcl,
+#         spon, spof, spcl,
+#         epon, epof,
+#         apon, apof) = parse_flash_frame(data=data,
+#                                         start=start, end=end,
+#                                         verbose=verbose)
+#
+#    print(e.data)
+#    h_series = pd.Series(data=h.data(), index=h.data_names)
+#    g_series = pd.Series(data=g.data(), index=g.data_names)
+#    e_series = pd.Series(data=e.data(), index=e.data_names)
+#
+#    df = pd.DataFrame(data=[pd.Series(data=zpon.data(), index=zpon.data_names),
+#                            pd.Series(data=zpof.data(), index=zpof.data_names),
+#                            pd.Series(data=zpcl.data(), index=zpcl.data_names),
+#                            pd.Series(data=spon.data(), index=spon.data_names),
+#                            pd.Series(data=spof.data(), index=spof.data_names),
+#                            pd.Series(data=spcl.data(), index=spcl.data_names),
+#                            pd.Series(data=epon.data(), index=epon.data_names),
+#                            pd.Series(data=epof.data(), index=epof.data_names),
+#                            pd.Series(data=apon.data(), index=apon.data_names),
+#                            pd.Series(data=apof.data(), index=apof.data_names),
+#                            ],
+#                      index=["zpon", "zpof", "zpcl",
+#                             "spon", "spof", "spcl",
+#                             "epon", "epof",
+#                             "apon", "apof"])
+#
+#    return h_series, g_series, e_series, df
 
 
 def parse_header(data, verbose=False):
