@@ -25,15 +25,34 @@ pco2_header = ("location_code", "system_code",
                "raw1", "raw1_std", "raw2", "raw2_std")
 
 
-class MAPCO2Header(object):
+class MAPCO2Base(object):
+
     def __init__(self):
-        self.mode = None
-        self.checksum = None
-        self.size = None
-        self.date_time = None
-        self.location = None
-        self.system = None
-        self.firmware = None
+        pass
+    
+    def series(self):
+        """Single dimension data"""
+        return pd.Series(data=self.data(), index=self.data_names)
+
+    def dataframe(self, date_time):
+        """Multi dimension timeseries data"""
+        self.df = pd.DataFrame(data=self.data(),
+#                               index=date_time,
+                               columns=self.data_names)
+
+
+class MAPCO2Header(MAPCO2Base):
+    def __init__(self):
+        
+        self.df = None
+        
+        self.mode = []
+        self.checksum = []
+        self.size = []
+        self.date_time = []
+        self.location = []
+        self.system = []
+        self.firmware = []
 
         self.date_time_format = "%Y/%m/%d_%H:%M:%S"
         self.firmware_format = "A.B_%m/%d/%Y"
@@ -57,27 +76,32 @@ class MAPCO2Header(object):
         return _a
 
 
-class MAPCO2GPS(object):
+class MAPCO2GPS(MAPCO2Base):
+    
     def __init__(self):
-        self.date_time = None
-        self.lat_deg = None
-        self.lat_min = None
-        self.lat_direction = None
-        self.lat = None
-        self.lon_deg = None
-        self.lon_min = None
-        self.lon_direction = None
-        self.lon = None
-        self.fix_time = None  # seconds to find a fix
-        self.quality = None  # quality factor, lower is better
-        self.time_before_check = None
-        self.time_after_check = None
-        self.valve_time = None
+        
+        self.df = None
+        
+        self.date_time = []
+        self.lat_deg = []
+        self.lat_min = []
+        self.lat_direction = []
+        self.lat = []
+        self.lon_deg = []
+        self.lon_min = []
+        self.lon_direction = []
+        self.lon = []
+        self.fix_time = []  # seconds to find a fix
+        self.quality = []  # quality factor, lower is better
+        self.time_before_check = []
+        self.time_after_check = []
+        self.valve_time = []
 
         self.date_time_format = "%m/%d/%Y_%H:%M:%S"
 
-        self.data_names = ["date_time", "lat_deg", "lat_min", "lat_direction",
-                           "lon_deg", "lon_min", "lon_direction",
+        self.data_names = ["date_time",
+                           "lat_deg", "lat_min", "lat_direction", "lat_ddeg",
+                           "lon_deg", "lon_min", "lon_direction", "lon_ddeg",
                            "fix_time", "quality",
                            "time_before_check", "time_after_check",
                            "valve_time"]
@@ -97,30 +121,32 @@ class MAPCO2GPS(object):
                 self.valve_time]
 
 
-class MAPCO2Engr(object):
+class MAPCO2Engr(MAPCO2Base):
     def __init__(self, data_type="iridium"):
+
+        self.df = None
 
         self.data_type = data_type
 
-        self.v_logic = None
-        self.v_trans = None
-        self.zero_coeff = None
-        self.span_coeff = None
-        self.flag = None
+        self.v_logic = []
+        self.v_trans = []
+        self.zero_coeff = []
+        self.span_coeff = []
+        self.flag = []
 
-        self.sst = None
-        self.sst_std = None
-        self.ssc = None
-        self.ssc_std = None
-        self.sss = None
-        self.sss_std = None
-        self.u = None
-        self.u_std = None
-        self.v = None
-        self.v_std = None
-        self.raw_compass = None
-        self.raw_vane = None
-        self.raw_windspeed = None
+        self.sst = []
+        self.sst_std = []
+        self.ssc = []
+        self.ssc_std = []
+        self.sss = []
+        self.sss_std = []
+        self.u = []
+        self.u_std = []
+        self.v = []
+        self.v_std = []
+        self.raw_compass = []
+        self.raw_vane = []
+        self.raw_windspeed = []
 
         self.data_names = ["v_logic", "v_trans", "zero_coeff", "span_coeff",
                            "flag", "sst", "sst_std", "ssc", "ssc_std",
@@ -158,30 +184,117 @@ class MAPCO2Engr(object):
         return _a
 
 
-class MAPCO2DataFrame(object):
-    def __init__(self):
-        pass
+class MAPCO2DataFinal(MAPCO2Base):
 
-
-class MAPCO2DataSeries(object):
     def __init__(self):
-        self.minute = None
-        self.licor_temp = None
-        self.licor_temp_std = None
-        self.licor_press = None
-        self.licor_press_std = None
-        self.xCO2 = None
-        self.xCO2_std = None
-        self.O2 = None
-        self.O2_std = None
-        self.RH = None
-        self.RH_std = None
-        self.RH_temp = None
-        self.RH_temp_std = None
-        self.xCO2_raw1 = None
-        self.xCO2_raw1_std = None
-        self.xCO2_raw2 = None
-        self.xCO2_raw2_std = None
+        
+        self.dp = []
+        self.df = None
+        
+        self.date_time = []
+        self.lat = []
+        self.lon = []
+
+        self.licor_press_atm = []
+        self.licor_temp_c = []
+        self.O2_percent = []
+        self.sst = []
+        self.sss = []
+        
+        self.xCO2_air_qf = []
+        self.xCO2_air_wet = []
+        self.xCO2_air_dry = []
+        self.xCO2_air_H2O = []
+        self.fCO2_air_sat = []
+        
+        self.xCO2_sw_qf = []
+        self.xCO2_sw_wet = []
+        self.xCO2_sw_dry = []
+        self.xCO2_sw_H2O = []
+        self.fCO2_sw_sat = []
+
+        self.dfCO2 = []
+
+        self.data_names = ["deployment",
+                           "date_time",
+                           "lat_ddeg",
+                           "lon_ddeg",
+
+                           "licor_press",                           
+                           "licor_temp",
+                           "O2",
+                           "sst",
+                           "sss",
+                           
+                           "xCO2_air_qf",
+                           "xCO2_air_wet",
+                           "xCO2_air_dry",
+                           "xCO2_air_H2O",
+                           "fCO2_air_sat",
+                                
+                           "xCO2_sw_qf",
+                           "xCO2_sw_wet",
+                           "xCO2_sw_dry",
+                           "xCO2_sw_H2O",
+                           "fCO2_sw_sat",
+                        
+                           "dfCO2",]
+        
+    def data(self):
+        _a = [self.dp,
+              self.date_time,
+              self.lat,
+              self.lon,
+            
+              self.licor_press_atm,
+              self.licor_temp_c,
+              self.O2_percent,
+              self.sst,
+              self.sss,
+            
+              self.xCO2_air_qf,
+              self.xCO2_air_wet,
+              self.xCO2_air_dry,
+              self.xCO2_air_H2O,
+              self.fCO2_air_sat,
+            
+              self.xCO2_sw_qf,
+              self.xCO2_sw_wet,
+              self.xCO2_sw_dry,
+              self.xCO2_sw_H2O,
+              self.fCO2_sw_sat,
+            
+              self.dfCO2]
+        return _a
+        
+#    def dataframe(self, date_time):
+#        self.df = pd.DataFrame(data=self.data(),
+#                               index=self.date_time,
+#                               columns=self.data_names)
+        
+        
+class MAPCO2Data(MAPCO2Base):
+    def __init__(self):
+        
+        self.df = None
+        
+        self.minute = []
+        self.licor_temp = []
+        self.licor_temp_std = []
+        self.licor_press = []
+        self.licor_press_std = []
+        self.xCO2 = []
+        self.xCO2_std = []
+        self.O2 = []
+        self.O2_std = []
+        self.RH = []
+        self.RH_std = []
+        self.RH_temp = []
+        self.RH_temp_std = []
+        self.xCO2_raw1 = []
+        self.xCO2_raw1_std = []
+        self.xCO2_raw2 = []
+        self.xCO2_raw2_std = []
 
         self.data_names = ["minute",
                            "licor_temp",
@@ -220,10 +333,25 @@ class MAPCO2DataSeries(object):
               self.xCO2_raw2,
               self.xCO2_raw2_std]
         return _a
+        
 
-    def series(self):
-        return pd.Series(data=self.data(), index=self.data_names)
-
+class CO2Data(object):
+    
+    def __init__(self):
+        self.date_time = []
+        self.header = MAPCO2Header()
+        self.gps = MAPCO2GPS()
+        self.engr = MAPCO2Engr()
+        self.data = MAPCO2Data()
+        self.final = MAPCO2DataFinal()
+        
+    def dataframe(self):
+        self.header.dataframe(self.date_time)
+        self.gps.dataframe(self.date_time)
+        self.engr.dataframe(self.date_time)
+        self.data.dataframe(self.date_time)
+        self.final.dataframe(self.date_time)
+        
 
 class MAPCO2ParseLog(object):
     def __init__(self):
@@ -488,7 +616,7 @@ def parse_gps(data, verbose=False):
         if len(gps) > 12:
             g.valve_time = gps[13]
     except:
-        g.valve_time = None
+        g.valve_time = []
         if verbose:
             print("parse_gps>> Error in valve current: ", gps)
     return g
@@ -535,7 +663,7 @@ def parse_co2_line(data, verbose=False):
     if verbose:
         print("parse_co2    >>  ", data)
 
-    c = MAPCO2DataSeries()
+    c = MAPCO2Data()
 
     co2 = data.split()
 
