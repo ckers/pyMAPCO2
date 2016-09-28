@@ -34,9 +34,12 @@ print("ENGR>>   ", _.data_names)
 panel_dict = {}
 
 # testing flash cycle parsing
-parse.build_frames(d, index_df.start[0],
+df = parse.build_frames(d, index_df.start[0],
                       index_df.end[0],
                       verbose=True, data_type=cleaner.data_type)
+
+# one cycle summary for now...
+print(df.mean())
 
 #for n in range(0, len(index_df.start)):
 #    s = index_df.start[n]

@@ -167,19 +167,8 @@ def plot_annual(co2, mbl, gtd=[]):
         co2p = co2.pivot("day", "year")
         mblp = mbl.pivot('day', 'year')
         
-        c = 'black'  # Licor Pressure
-        lp = co2p['Licor_Atm_Pressure']
-        g = 0
-        for n in lp.columns:
-            
-            p7, = par5.plot(lp.index, lp[n],
-                            color=c,
-                            marker=mpl_markers_obvious[g], markersize=ms,
-                            markerfacecolor='None', markeredgecolor=c,
-                            alpha=0.4,
-                            label='Licor Pressure ' + str(n))
-            g += 1
-            
+
+        
         c = 'blue'  # Dry Seawater CO2
         sw = co2p['xCO2_SW_dry']
         g = 0
@@ -190,23 +179,57 @@ def plot_annual(co2, mbl, gtd=[]):
                             linestyle='-',
                             marker=mpl_markers_obvious[g], markersize=co2ms,
                             markerfacecolor='None', markeredgecolor=c,
-                            label='Seawater dry xCO2 ' + str(n))
+                            label='_nolegend_')
             g += 1
-            
+        
+        p1, = host.plot([], [],
+                color=c,
+                linestyle='None',
+                marker='s', markersize=co2ms,
+                markerfacecolor=c, markeredgecolor=c,
+                label='Seawater dry xCO2')
+        
         c = 'cyan'  # DRY air CO2
         air = co2p['xCO2_Air_dry']
         g = 0
         for n in air.columns:
+#            print(n)
+#            print('_a' in str(n))
+            if '_a' in str(n):
+                c = '#00CCCC'
             p2, = par1.plot(air.index, air[n],
                             color=c,
                             linestyle='-',
                             marker=mpl_markers_obvious[g], markersize=co2ms,
                             markerfacecolor='None', markeredgecolor=c,
-                            label='Air dry xCO2 ' + str(n))
-            g += 1
-        
+                            label='_nolegend_')
 
-        
+            g += 1
+        p2, = par1.plot([], [],
+                        color=c,
+                        linestyle='None',
+                        marker='s', markersize=co2ms,
+                        markerfacecolor=c, markeredgecolor=c,
+                        label='Air dry xCO2')
+
+        c = 'black'  # Licor Pressure
+        lp = co2p['Licor_Atm_Pressure']
+        g = 0
+        for n in lp.columns:
+            
+            p7, = par5.plot(lp.index, lp[n],
+                            color=c,
+                            marker=mpl_markers_obvious[g], markersize=ms,
+                            markerfacecolor='None', markeredgecolor=c,
+                            alpha=0.4, label='_nolegend_') #,
+#                            label='Licor Pressure ' + str(n))
+            g += 1
+        p7, = par5.plot([], [],
+                            color=c,
+                            linestyle='None',
+                            marker='s', markersize=ms,
+                            markerfacecolor=c, markeredgecolor=c,
+                            alpha=0.4, label='Licor Pressure')
         
         c = 'green'  # O2 percentage
         o2 = co2p['Percent_O2']
@@ -216,8 +239,16 @@ def plot_annual(co2, mbl, gtd=[]):
                             color=c,                        
                             marker=mpl_markers_obvious[g], markersize=ms,
                             markerfacecolor='None', markeredgecolor=c,
-                            label='Oxygen Percent ' + str(n))
+                            label='_nolegend_')
+
             g += 1
+
+        p3, = par2.plot([], [],
+                        color=c,
+                        linestyle='None',
+                        marker='s', markersize=ms,
+                        markerfacecolor=c, markeredgecolor=c,
+                        label='Oxygen Percent')
 
         c = 'red'  # SSS
         sss = co2p['SSS']
@@ -227,8 +258,15 @@ def plot_annual(co2, mbl, gtd=[]):
                             color=c,                        
                             marker=mpl_markers_obvious[g], markersize=ms,
                             markerfacecolor='None', markeredgecolor=c,
-                            label='SSS ' + str(n))
+                            label='_nolegend_')
             g += 1
+            
+        p4, = par3.plot([], [],
+                color=c,
+                linestyle='None',                       
+                marker='s', markersize=ms,
+                markerfacecolor=c, markeredgecolor=c,
+                label='SSS')
 
         c = 'orange'  # SST
         sst = co2p['SST']
@@ -238,19 +276,48 @@ def plot_annual(co2, mbl, gtd=[]):
                             color=c,                        
                             marker=mpl_markers_obvious[g], markersize=ms,
                             markerfacecolor='None', markeredgecolor=c,
-                            label='SST ' + str(n))
+                            label='_nolegend_')
             g += 1
         
+        p5, = par4.plot(sst.index, sst[n],
+                        color=c,
+                        linestyle='None',
+                        marker='s', markersize=ms,
+                        markerfacecolor=c, markeredgecolor=c,
+                        label='SST')        
+        
         c = 'purple'  # Licor Temp
-        litemp = co2p['Licor_Atm_Pressure']
+        litemp = co2p['Licor_Temp']
         g = 0
         for n in litemp.columns:
             p6, = par4.plot(litemp.index, litemp[n],
                             color=c,                        
                             marker=mpl_markers_obvious[g], markersize=ms,
                             markerfacecolor='None', markeredgecolor=c,
-                            label='Licor Temp ' + str(n))
+                            label='_nolegend_') #,
             g += 1
+
+        p6, = par4.plot([], [],
+                        color=c,
+                        linestyle='None',
+                        marker='s', markersize=ms,
+                        markerfacecolor=c, markeredgecolor=c,
+                        label='Licor Temp')
+
+        # labels
+        c = "black"
+        g = 0
+        for n in lp.columns:
+            
+            p8, = par5.plot([], [],
+                            color=c,
+                            linestyle='None',
+                            marker=mpl_markers_obvious[g], markersize=ms,
+                            markerfacecolor='None', markeredgecolor=c,
+                            alpha=1.0,
+                            label=str(n))
+            g += 1
+
 
         # CO2 seawater
         y1,y2 = host.get_ylim()
@@ -280,7 +347,7 @@ def plot_annual(co2, mbl, gtd=[]):
         y1,y2 = par5.get_ylim()
         y_data = np.concatenate([co2.Licor_Atm_Pressure, gtd])
         limits = (ylim_finder(y_data, data_type="atm_press"))
-        par5.set_ylim(limits[0], limits[1])
+#        par5.set_ylim(limits[0], limits[1])
         
         if mbl is not None:
             c = 'black'  # MBL Air CO2
@@ -291,8 +358,7 @@ def plot_annual(co2, mbl, gtd=[]):
                          color=c,
                          linestyle='-',
                          marker=mpl_markers_obvious[g], markersize=5,
-                         markerfacecolor='None', markeredgecolor=c,
-                         label='MBL CO2 ' + str(n))
+                         markerfacecolor='None', markeredgecolor=c, label='_nolegend_')
                 g += 1        
         
         
@@ -468,7 +534,9 @@ def plot_combined(date_time,
 
         # CO2 air
         y1,y2 = par1.get_ylim()
-        par1.set_ylim((ylim_finder(xCO2_air_dry, data_type="xco2_air")[0],y2))
+        limits = ylim_finder(xCO2_air_dry, data_type="xco2_air")
+        
+        par1.set_ylim((limits[0],limits[1]))
 
         # O2 limit
         y1,y2 = par2.get_ylim()

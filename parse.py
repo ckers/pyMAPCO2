@@ -27,9 +27,6 @@ pco2_header = ("location_code", "system_code",
 
 class MAPCO2Base(object):
 
-    def __init__(self):
-        pass
-    
     def series(self):
         """Single dimension data"""
         return pd.Series(data=self.data(), index=self.data_names)
@@ -182,6 +179,55 @@ class MAPCO2Engr(MAPCO2Base):
         if (self.data_type == "flash") or (self.data_type == "terminal"):
             _a = _a[:5]
         return _a
+
+
+
+class AuxData(object):
+
+    def __init__(self, raw_data):
+
+        self.raw = raw_data
+        self.aux_type = ""
+        self.number = None
+        self.data = []
+        self.status = ""
+
+    def extract(self):
+        """Extract float data from four char string data, i.e.
+        "2345" to 23.45
+        Units: O2 = percent, RH = percent, RH Temp = deg C
+        """
+        self.header()
+        self.data = [float(n)/100.0 for n in " ".join(self.raw[1:]).split(" ")]
+
+    def header(self):
+        """Extract header information from aux section,
+        sensor data type and number of samples"""
+        self.aux_type = ' '.join(self.raw[0].split()[:-2])
+        self.number = int(self.raw[0].split()[-1])
+
+
+class LIData(AuxData):
+
+    def extract(self):
+        """Extract string list of """
+        self.header()
+        self.data = '  '.join(self.raw[1:]).split('  ')
+
+    def convert(self):
+        """Convert list of string lines to nested list of strings,
+         then to Pandas DataFrame, then convert from str(int (f x 100))
+         to float with 2 decimals.
+         """
+        self.data = [n.split(' ') for n in self.data]
+        self.data = pd.DataFrame(self.data,
+                                 columns=["co2_ppm", "temp_c",
+                                          "press_kpa", "raw1", "raw2"])
+        self.data.co2_ppm = self.data.co2_ppm.astype(float) / 100.0
+        self.data.temp_c = self.data.temp_c.astype(float) / 100.0
+        self.data.press_kpa = self.data.press_kpa.astype(float) / 100.0
+        self.data.raw1 = self.data.raw1.astype(int)
+        self.data.raw2 = self.data.raw2.astype(int)
 
 
 class MAPCO2DataFinal(MAPCO2Base):
@@ -414,6 +460,7 @@ def parse_iridium_frame(data, start, end, verbose=False, data_type="iridium"):
 
     return h, g, e, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof
 
+
 def clean_flash_line(line):
     """Clean a line of flash data
 
@@ -427,6 +474,34 @@ def clean_flash_line(line):
     """
     pass
 
+
+def flash_cycle_id(line):
+    """Identify what sort of data is in a flash data cycle header
+    row that starts with '*****...'
+    """
+    line = line.split(' ')
+    print(line)
+    if line[1] == 'Met':
+        return 0, 'met'
+    minute = int(line[-1])
+    cycle = line[1] + '_' + line[-2]
+    print(cycle)
+    names = {'Zero_on': 'zpon',
+             'Zero_off': 'zpof',
+             'Zero_cal': 'zcal',
+             'Span_on': 'spon',
+             'Span_off': 'spof',
+             'Span_cal': 'scal',
+             'Equil_on': 'epon',
+             'Equil_off': 'epof',
+             'Air_on': 'apon',
+             'Air_off': 'apof'}
+
+    cycle = names[cycle]
+    print(cycle)
+    return minute, cycle
+
+
 def index_flash_frame(data, verbose=False):
     """Find delimiters between cycles
     Parameters
@@ -439,54 +514,92 @@ def index_flash_frame(data, verbose=False):
     """
     indexes = []
     minutes = []
+    cycles = []
+    # m = False
     for n in range(0, len(data)):
-        if verbose: print(n)
+        if verbose:
+            print(n)
         if data[n][0:5] == "*****":
+            m, c = flash_cycle_id(data[n])
             indexes.append(n)
-            minutes.append(data[n][-2:])
-    return indexes, minutes
+            minutes.append(m)
+            cycles.append(c)
+    return indexes, minutes, cycles
 
 
 def find_flash_cycle_sections(sample, verbose=False):
     indexes = []
     names = []
     for n in range(0, len(sample)):
-        if verbose: print(n, sample[n][0:2])
-        if sample[n][0:2] in ("Li", "O2", "RH", "Rh"):
+        if verbose:
+            print(n, sample[n][0:2])
+        if sample[n][0:2] in ("Li", "O2", "RH", "Rh", "Met"):
             indexes.append(n)
             names.append(sample[n])
-            print("YES", n, sample[n])
+            # print("YES", n, sample[n])
     indexes.append(len(sample))
     return indexes, names
+
 
 def parse_flash_frame(data, start, end, verbose=False):
     # break the data file into samples
     sample = data[start:end]
 #    print("sample>>")
 #    print(sample)
-    i, m = index_flash_frame(sample)
-    print("i>>", i)
-    print("m>>", m)
+    i, m, c = index_flash_frame(sample, verbose=False)
+    print("frame line, i>>", i)
+    print("frame min,  m>>", m)
+    print("frame cycles, c>>", c)
+
+    n = 0
+
+    print("cycle id>>", c[n])
     i_end = i[1:] + [len(sample)]
-    cycle = sample[i[0]:i_end[0]]
-    si, sn = find_flash_cycle_sections(cycle, verbose=True)
-    print("si>> ", si)
+    cycle = sample[i[n]:i_end[n]]
+    si, sn = find_flash_cycle_sections(cycle, verbose=False)
+    # print("si>> ", si)
     si_end = si[1:]
     si = si[:-1]
-    print("si>> ", si)
-    print("si_end>>", si_end)
-    print("sample[0:35]>>", sample[0:35])
-    li = cycle[si[0]:si_end[1]]
+    # print("si>> ", si)
+    # print("si_end>>", si_end)
+    # print("sample[0:35]>>", sample[0:35])
+    li = cycle[si[0]:si_end[0]]
+
     o2 = cycle[si[1]:si_end[1]]
     rh = cycle[si[2]:si_end[2]]
     rht = cycle[si[3]:si_end[3]]
-    print("li>>", li)
-    print("o2>>", o2)
-    print("rh>>", rh)
-    print("rht>>", rht)
-    
+
+    # print("li>>", li, len(li[1:]))
+    # print("o2>>", o2, len(o2[1:]))
+    # print("rh>>", rh, len(rh[1:]))
+    # print("rht>>", rht, len(rht[1:]))
+
+    liA = LIData(raw_data=li)
+    liA.extract()
+    liA.convert()
+    # print("liA>>", liA.data, liA.number, liA.aux_type)
+
+    o2A = AuxData(raw_data=o2)
+    o2A.extract()
+    # print("o2A>>", o2A.data, o2A.number, o2A.aux_type)
+    rhA = AuxData(raw_data=rh)
+    rhA.extract()
+    # print("rhA>>", rhA.data, rhA.number, rhA.aux_type)
+    rhtA = AuxData(raw_data=rht)
+    rhtA.extract()
+    # print("rhtA>>", rhtA.data, rhtA.number, rhtA.aux_type)
+
 #    return h, g, e, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof
 
+    liA.data["O2_percent"] = o2A.data
+    # print("liA>>", liA.data)
+    liA.data["RH_percent"] = rhA.data
+    # print("liA>>", liA.data)
+    liA.data["RH_temp_c"] = rhtA.data
+    liA.data["cycle"] = c[n]
+
+    print("liA>>", liA.data)
+    return liA.data
 
 def build_frames(data, start, end, verbose=False, data_type="iridium"):
     if (data_type == "iridium") or (data_type == "terminal"):
@@ -500,7 +613,9 @@ def build_frames(data, start, end, verbose=False, data_type="iridium"):
                                            data_type=data_type)
 
     if data_type == "flash":
-        parse_flash_frame(data=data, start=start, end=end, verbose=verbose)
+        df = parse_flash_frame(data=data, start=start, end=end, verbose=verbose)
+        return df
+
 #        (h, g, e,
 #         zpon, zpof, zpcl,
 #         spon, spof, spcl,
@@ -668,9 +783,9 @@ def parse_co2_line(data, verbose=False):
     co2 = data.split()
 
     #    co2 = [float(n) for n in co2]
-    print(co2)
+    # print(co2)
     co2 = float_converter(co2)
-    print(co2)
+    # print(co2)
 
     try:
         c.minute = co2[0]
