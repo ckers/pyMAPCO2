@@ -546,16 +546,44 @@ def parse_flash_frame(data, start, end, verbose=False):
     sample = data[start:end]
 #    print("sample>>")
 #    print(sample)
+    h = sample[0]
+    g = sample[1]
+    e = sample[2]
+    print("frame header>>", h)
+    print("frame gps>>", g)
+    print("frame engineering>>", e)
+
+    h = parse_header(h, verbose=verbose)
+    g = parse_gps(g, verbose=verbose)
+    e = parse_engr(e, verbose=verbose)
+    if verbose:
+        print("frame header>>", h.data())
+        print("frame gps>>", g.data())
+        print("frame engineering>>", e.data())
+
+    data = parse_all_flash_cycles(sample, verbose=verbose)
+    return data
+
+
+def parse_all_flash_cycles(sample, verbose=False):
+
     i, m, c = index_flash_frame(sample, verbose=False)
-    print("frame line, i>>", i)
-    print("frame min,  m>>", m)
-    print("frame cycles, c>>", c)
+    if verbose:
+        print("frame delimiters, i>>", i)
+        print("frame min,  m>>", m)
+        print("frame cycles, c>>", c)
 
     n = 0
 
     print("cycle id>>", c[n])
     i_end = i[1:] + [len(sample)]
     cycle = sample[i[n]:i_end[n]]
+    container = parse_single_flash_cycle(cycle, verbose=verbose)
+    container.data["cycle"] = c[n]
+    return container.data
+
+def parse_single_flash_cycle(cycle, verbose=False):
+
     si, sn = find_flash_cycle_sections(cycle, verbose=False)
     # print("si>> ", si)
     si_end = si[1:]
@@ -596,10 +624,9 @@ def parse_flash_frame(data, start, end, verbose=False):
     liA.data["RH_percent"] = rhA.data
     # print("liA>>", liA.data)
     liA.data["RH_temp_c"] = rhtA.data
-    liA.data["cycle"] = c[n]
 
     print("liA>>", liA.data)
-    return liA.data
+    return liA
 
 def build_frames(data, start, end, verbose=False, data_type="iridium"):
     if (data_type == "iridium") or (data_type == "terminal"):

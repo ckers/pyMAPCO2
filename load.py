@@ -228,6 +228,7 @@ class Indexer(object):
         # index list values to frames of data
         i = self.index_data(d)
         i_end = i[1:] + [len(d)]
+        i_end = [n - 1 for n in i_end]
 
         # times for each frame of data
         t = self.get_times(d, i)
