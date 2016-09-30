@@ -83,9 +83,15 @@ def ylim_finder(data, margin=0.1, data_type=None):
         return d_min, d_max
         
         
-def plot_annual(co2, mbl, gtd=[]):
+def plot_annual(co2, mbl, markers='.', lines='-', gtd=[]):
     
 #        fig_title = ('Combined MAPCO2 Data')
+        
+        if markers == False:
+            markers = 'None'
+        
+        if lines == False:
+            lines = 'None'
         
         mbl = mbl[(mbl.datetime <= co2.datetime.max()) & (mbl.datetime >= co2.datetime.min())]
         
@@ -176,7 +182,7 @@ def plot_annual(co2, mbl, gtd=[]):
             
             p1, = host.plot(sw.index, sw[n],
                             color=c,
-                            linestyle='-',
+                            linestyle=lines,
                             marker=mpl_markers_obvious[g], markersize=co2ms,
                             markerfacecolor='None', markeredgecolor=c,
                             label='_nolegend_')
@@ -184,7 +190,7 @@ def plot_annual(co2, mbl, gtd=[]):
         
         p1, = host.plot([], [],
                 color=c,
-                linestyle='None',
+                linestyle=lines,
                 marker='s', markersize=co2ms,
                 markerfacecolor=c, markeredgecolor=c,
                 label='Seawater dry xCO2')
@@ -199,7 +205,7 @@ def plot_annual(co2, mbl, gtd=[]):
                 c = '#00CCCC'
             p2, = par1.plot(air.index, air[n],
                             color=c,
-                            linestyle='-',
+                            linestyle=lines,
                             marker=mpl_markers_obvious[g], markersize=co2ms,
                             markerfacecolor='None', markeredgecolor=c,
                             label='_nolegend_')
@@ -207,7 +213,7 @@ def plot_annual(co2, mbl, gtd=[]):
             g += 1
         p2, = par1.plot([], [],
                         color=c,
-                        linestyle='None',
+                        linestyle=lines,
                         marker='s', markersize=co2ms,
                         markerfacecolor=c, markeredgecolor=c,
                         label='Air dry xCO2')
@@ -219,6 +225,7 @@ def plot_annual(co2, mbl, gtd=[]):
             
             p7, = par5.plot(lp.index, lp[n],
                             color=c,
+                            linestyle=lines,
                             marker=mpl_markers_obvious[g], markersize=ms,
                             markerfacecolor='None', markeredgecolor=c,
                             alpha=0.4, label='_nolegend_') #,
@@ -226,7 +233,7 @@ def plot_annual(co2, mbl, gtd=[]):
             g += 1
         p7, = par5.plot([], [],
                             color=c,
-                            linestyle='None',
+                            linestyle=lines,
                             marker='s', markersize=ms,
                             markerfacecolor=c, markeredgecolor=c,
                             alpha=0.4, label='Licor Pressure')
@@ -236,7 +243,8 @@ def plot_annual(co2, mbl, gtd=[]):
         g = 0
         for n in o2.columns:
             p3, = par2.plot(o2.index, o2[n],
-                            color=c,                        
+                            color=c,
+                            linestyle=lines,
                             marker=mpl_markers_obvious[g], markersize=ms,
                             markerfacecolor='None', markeredgecolor=c,
                             label='_nolegend_')
@@ -245,7 +253,7 @@ def plot_annual(co2, mbl, gtd=[]):
 
         p3, = par2.plot([], [],
                         color=c,
-                        linestyle='None',
+                        linestyle=lines,
                         marker='s', markersize=ms,
                         markerfacecolor=c, markeredgecolor=c,
                         label='Oxygen Percent')
@@ -255,7 +263,8 @@ def plot_annual(co2, mbl, gtd=[]):
         g = 0
         for n in sss.columns:
             p4, = par3.plot(sss.index, sss[n],
-                            color=c,                        
+                            color=c,
+                            linestyle=lines,
                             marker=mpl_markers_obvious[g], markersize=ms,
                             markerfacecolor='None', markeredgecolor=c,
                             label='_nolegend_')
@@ -263,7 +272,7 @@ def plot_annual(co2, mbl, gtd=[]):
             
         p4, = par3.plot([], [],
                 color=c,
-                linestyle='None',                       
+                linestyle=lines,                       
                 marker='s', markersize=ms,
                 markerfacecolor=c, markeredgecolor=c,
                 label='SSS')
@@ -273,7 +282,8 @@ def plot_annual(co2, mbl, gtd=[]):
         g = 0
         for n in sst.columns:
             p5, = par4.plot(sst.index, sst[n],
-                            color=c,                        
+                            color=c,
+                            linestyle=lines,
                             marker=mpl_markers_obvious[g], markersize=ms,
                             markerfacecolor='None', markeredgecolor=c,
                             label='_nolegend_')
@@ -281,7 +291,7 @@ def plot_annual(co2, mbl, gtd=[]):
         
         p5, = par4.plot(sst.index, sst[n],
                         color=c,
-                        linestyle='None',
+                        linestyle=lines,
                         marker='s', markersize=ms,
                         markerfacecolor=c, markeredgecolor=c,
                         label='SST')        
@@ -291,7 +301,8 @@ def plot_annual(co2, mbl, gtd=[]):
         g = 0
         for n in litemp.columns:
             p6, = par4.plot(litemp.index, litemp[n],
-                            color=c,                        
+                            color=c,
+                            linestyle=lines,
                             marker=mpl_markers_obvious[g], markersize=ms,
                             markerfacecolor='None', markeredgecolor=c,
                             label='_nolegend_') #,
@@ -299,7 +310,7 @@ def plot_annual(co2, mbl, gtd=[]):
 
         p6, = par4.plot([], [],
                         color=c,
-                        linestyle='None',
+                        linestyle=lines,
                         marker='s', markersize=ms,
                         markerfacecolor=c, markeredgecolor=c,
                         label='Licor Temp')
@@ -311,7 +322,7 @@ def plot_annual(co2, mbl, gtd=[]):
             
             p8, = par5.plot([], [],
                             color=c,
-                            linestyle='None',
+                            linestyle=lines,
                             marker=mpl_markers_obvious[g], markersize=ms,
                             markerfacecolor='None', markeredgecolor=c,
                             alpha=1.0,
@@ -387,18 +398,40 @@ def plot_annual(co2, mbl, gtd=[]):
     
     
     
-def plot_combined(date_time,
-                  xCO2_air_dry, xCO2_sw_dry,
-                  o2_percent,
-                  sss, sst,
-                  licor_temp, licor_press,
-                  gtd=[],
-                  mbl=None,
-                  overlay=False):
+def plot_combined(co2, mbl, markers='.', lines='-', gtd=[]):
+
+
+#                  date_time,
+#                  xCO2_air_dry, xCO2_sw_dry,
+#                  o2_percent,
+#                  sss, sst,
+#                  licor_temp, licor_press,
+#                  gtd=[],
+#                  mbl=None,
+#                  overlay=False):
+#        
+#        date_time=df3.datetime,
+#                          xCO2_air_dry=df3.xCO2_Air_dry,
+#                          xCO2_sw_dry=df3.xCO2_SW_dry,
+#                          o2_percent=df3.Percent_O2,
+#                          sss=df3.SSS,
+#                          sst=df3.SST,
+#                          licor_temp=df3.Licor_Temp,
+#                          licor_press=df3.Licor_Atm_Pressure,
+#                          mbl=mbl)
+        
+        
         
 #        fig_title = ('Combined MAPCO2 Data')
         
-        mbl = mbl[(mbl.datetime <= date_time.max()) & (mbl.datetime >= date_time.min())]
+        if markers == False:
+            markers = 'None'
+        
+        if lines == False:
+            lines = 'None'
+            
+        
+        mbl = mbl[(mbl.datetime <= co2.datetime.max()) & (mbl.datetime >= co2.datetime.min())]
         
         host = host_subplot(111, axes_class=AA.Axes)
         plt.subplots_adjust(right=0.75)
@@ -451,11 +484,7 @@ def plot_combined(date_time,
         
         host.set_navigate(True)        
         
-        par1.set_navigate(True)        
-        par2.set_navigate(True)        
-        par3.set_navigate(True)        
-        par4.set_navigate(True)        
-        par5.set_navigate(True)        
+       
 
 #        par1.set_ylabel('Pressure (kPa)')  # GTD data
 #        par4.set_ylabel('Pressure Diff (kPa)')
@@ -467,26 +496,29 @@ def plot_combined(date_time,
         ms = 10
 
         c = 'black'  # Licor Pressure
-        p7, = par5.plot(date_time, licor_press,
-                        color=c,                        
-                        marker='None', markersize=ms,
+        p7, = par5.plot(co2.datetime, co2.Licor_Atm_Pressure,
+                        color=c,
+                        linestyle=lines,
+                        marker=markers, markersize=ms,
                         markerfacecolor='None', markeredgecolor=c,
                         alpha=0.4,
                         label='Licor Pressure')
         
         c = 'blue'  # Dry Seawater CO2
-        p1, = host.plot(date_time, xCO2_sw_dry,
+        co2_sw = co2[co2.xCO2_SW_QF != 4]
+        p1, = host.plot(co2_sw.datetime, co2_sw.xCO2_SW_dry,
                  color=c,
-                 linestyle='-',
-                 marker='.', markersize=5,
+                 linestyle=lines,
+                 marker=markers, markersize=5,
                  markerfacecolor='None', markeredgecolor=c,
                  label='Seawater dry xCO2',)
     
         c = 'cyan'  # DRY air CO2
-        p2, = par1.plot(date_time, xCO2_air_dry,
+        co2_air = co2[co2.xCO2_Air_QF != 4]
+        p2, = par1.plot(co2_air.datetime, co2_air.xCO2_Air_dry,
                  color=c,
-                 linestyle='-',
-                 marker='.', markersize=5,
+                 linestyle=lines,
+                 marker=markers, markersize=5,
                  markerfacecolor='None', markeredgecolor=c,
                  label='Air dry xCO2')
         
@@ -494,68 +526,72 @@ def plot_combined(date_time,
             c = 'black'  # MBL Air CO2
             p8, = par1.plot(mbl.datetime, mbl.xCO2,
                      color=c,
-                     linestyle='-',
-                     marker='.', markersize=5,
+                     linestyle=lines,
+                     marker=markers, markersize=5,
                      markerfacecolor='None', markeredgecolor=c,
                      label='MBL CO2')
         
         
         c = 'green'  # O2 percentage
-        p3, = par2.plot(date_time, o2_percent,
-                        color=c,                        
-                        marker='None', markersize=ms,
+        p3, = par2.plot(co2.datetime, co2.Percent_O2,
+                        color=c,
+                        linestyle=lines,
+                        marker=markers, markersize=ms,
                         markerfacecolor='None', markeredgecolor=c,
                         label='Oxygen Percent')
 
         c = 'red'  # SSS
-        p4, = par3.plot(date_time, sss,
-                        color=c,                        
-                        marker='None', markersize=ms,
+        p4, = par3.plot(co2.datetime, co2.SSS,
+                        color=c,
+                        linestyle=lines,
+                        marker=markers, markersize=ms,
                         markerfacecolor='None', markeredgecolor=c,
                         label='SSS')
 
         c = 'orange'  # SST
-        p5, = par4.plot(date_time, sst,
-                        color=c,                        
-                        marker='None', markersize=ms,
+        p5, = par4.plot(co2.datetime, co2.SST,
+                        color=c,
+                        linestyle=lines,
+                        marker=markers, markersize=ms,
                         markerfacecolor='None', markeredgecolor=c,
                         label='SST')
         
         c = 'purple'  # Licor Temp
-        p6, = par4.plot(date_time, licor_temp,
-                        color=c,                        
-                        marker='None', markersize=ms,
+        p6, = par4.plot(co2.datetime, co2.Licor_Temp,
+                        color=c,
+                        linestyle=lines,
+                        marker=markers, markersize=ms,
                         markerfacecolor='None', markeredgecolor=c,
                         label='Licor Temp')
 
         # CO2 seawater
         y1,y2 = host.get_ylim()
-        host.set_ylim((ylim_finder(xCO2_sw_dry, data_type="xco2_sw")[0],y2))
+        host.set_ylim((ylim_finder(co2.xCO2_SW_dry, data_type="xco2_sw")[0],y2))
 
         # CO2 air
         y1,y2 = par1.get_ylim()
-        limits = ylim_finder(xCO2_air_dry, data_type="xco2_air")
+        limits = ylim_finder(co2.xCO2_Air_dry, data_type="xco2_air")
         
         par1.set_ylim((limits[0],limits[1]))
 
         # O2 limit
         y1,y2 = par2.get_ylim()
-        par2.set_ylim((ylim_finder(o2_percent, data_type="o2_percent")[0],y2))
+        par2.set_ylim((ylim_finder(co2.Percent_O2, data_type="o2_percent")[0],y2))
 
         # SSS
         y1,y2 = par3.get_ylim()
-        limits = (ylim_finder(sss, data_type="sss"))
+        limits = (ylim_finder(co2.SSS, data_type="sss"))
         par3.set_ylim(limits[0],limits[1])
         
         # SST / Licor Temperature
         y1,y2 = par4.get_ylim()
-        y_data = np.concatenate([sst, licor_temp])
+        y_data = np.concatenate([co2.SST, co2.Licor_Temp])
         limits = (ylim_finder(y_data, data_type="temp"))
         par4.set_ylim(limits[0], limits[1])
 
         # Licor Pressure / GTD Pressure
         y1,y2 = par5.get_ylim()
-        y_data = np.concatenate([licor_press, gtd])
+        y_data = np.concatenate([co2.Licor_Atm_Pressure, gtd])
         limits = (ylim_finder(y_data, data_type="atm_press"))
         par5.set_ylim(limits[0], limits[1])
         
@@ -566,12 +602,11 @@ def plot_combined(date_time,
         par4.axis["right"].label.set_color(p5.get_color())
         par5.axis["right"].label.set_color(p7.get_color())
     
-    
-#        par1 = host.twiny()
-#        par2 = host.twiny()
-#        par3 = host.twiny()
-#        par4 = host.twiny()
-#        par5 = host.twiny()      
+        par1.set_navigate(True)        
+        par2.set_navigate(True)        
+        par3.set_navigate(True)        
+        par4.set_navigate(True)        
+        par5.set_navigate(True)     
     
         host.legend(loc=2)
         
