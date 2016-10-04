@@ -34,7 +34,7 @@ class MAPCO2Base(object):
     def dataframe(self, date_time):
         """Multi dimension timeseries data"""
         self.df = pd.DataFrame(data=self.data(),
-#                               index=date_time,
+                               #  index=date_time,
                                columns=self.data_names)
 
 
@@ -181,7 +181,6 @@ class MAPCO2Engr(MAPCO2Base):
         return _a
 
 
-
 class AuxData(object):
 
     def __init__(self, raw_data):
@@ -205,6 +204,17 @@ class AuxData(object):
         sensor data type and number of samples"""
         self.aux_type = ' '.join(self.raw[0].split()[:-2])
         self.number = int(self.raw[0].split()[-1])
+
+
+class MetData(AuxData):
+    """Hold auxilary and meterological data"""
+
+    def extract(self):
+        print("MetData.extract>> raw:", self.raw)
+        pass
+
+    def convert(self):
+        self.data = pd.DataFrame(data=None)
 
 
 class LIData(AuxData):
@@ -515,7 +525,7 @@ def index_flash_frame(data, verbose=False):
     indexes = []
     minutes = []
     cycles = []
-    # m = False
+
     for n in range(0, len(data)):
         if verbose:
             print(n)
@@ -527,7 +537,8 @@ def index_flash_frame(data, verbose=False):
     return indexes, minutes, cycles
 
 
-def find_flash_cycle_sections(sample, verbose=False):
+def find_cycle_sections(sample, verbose=False):
+    """Find index and name of a section within one cycle of a frame of data"""
     indexes = []
     names = []
     for n in range(0, len(sample)):
@@ -536,63 +547,63 @@ def find_flash_cycle_sections(sample, verbose=False):
         if sample[n][0:2] in ("Li", "O2", "RH", "Rh", "Met"):
             indexes.append(n)
             names.append(sample[n])
-            # print("YES", n, sample[n])
     indexes.append(len(sample))
     return indexes, names
 
 
-def parse_flash_frame(data, start, end, verbose=False):
-    # break the data file into samples
-    sample = data[start:end]
-#    print("sample>>")
-#    print(sample)
-    h = sample[0]
-    g = sample[1]
-    e = sample[2]
-    print("frame header>>", h)
-    print("frame gps>>", g)
-    print("frame engineering>>", e)
 
-    h = parse_header(h, verbose=verbose)
-    g = parse_gps(g, verbose=verbose)
-    e = parse_engr(e, verbose=verbose)
-    if verbose:
-        print("frame header>>", h.data())
-        print("frame gps>>", g.data())
-        print("frame engineering>>", e.data())
-
-    data = parse_all_flash_cycles(sample, verbose=verbose)
-    return data
 
 
 def parse_all_flash_cycles(sample, verbose=False):
-
+    """Parse an entire file of flash MAPCO2 data which contains
+    frames of data
+        cycle measurements within the frame
+            sections of different data within the cycle
+        auxiliary data
+    """
     i, m, c = index_flash_frame(sample, verbose=False)
     if verbose:
         print("frame delimiters, i>>", i)
         print("frame min,  m>>", m)
         print("frame cycles, c>>", c)
+        print("frame info lengths>> ", len(i), len(m), len(c))
 
-    n = 0
+    for n in range(0, len(c)):
 
-    print("cycle id>>", c[n])
-    i_end = i[1:] + [len(sample)]
-    cycle = sample[i[n]:i_end[n]]
-    container = parse_single_flash_cycle(cycle, verbose=verbose)
-    container.data["cycle"] = c[n]
+        print("cycle id>>", c[n])
+
+        i_end = i[1:] + [len(sample)]
+        cycle = sample[i[n]:i_end[n]]
+
+        if c[n] == 'met':
+            container = single_flash_met(cycle)
+        else:
+            container = single_flash_cycle(cycle, verbose=verbose)
+        container.data["cycle"] = c[n]
     return container.data
 
-def parse_single_flash_cycle(cycle, verbose=False):
 
-    si, sn = find_flash_cycle_sections(cycle, verbose=False)
-    # print("si>> ", si)
+def single_flash_met(data, verbose=False):
+    md = MetData(data)
+    md.extract()
+    md.convert()
+    return md
+
+
+def single_flash_cycle(cycle, verbose=False):
+
+    si, sn = find_cycle_sections(cycle, verbose=False)
+    if verbose:
+        print("si>> ", si)
+
     si_end = si[1:]
     si = si[:-1]
-    # print("si>> ", si)
-    # print("si_end>>", si_end)
-    # print("sample[0:35]>>", sample[0:35])
-    li = cycle[si[0]:si_end[0]]
+    if verbose:
+        print("si (new)>> ", si)
+        print("si_end>>", si_end)
+        print("sample[0:2]>>", cycle[0:2])
 
+    li = cycle[si[0]:si_end[0]]
     o2 = cycle[si[1]:si_end[1]]
     rh = cycle[si[2]:si_end[2]]
     rht = cycle[si[3]:si_end[3]]
@@ -610,23 +621,58 @@ def parse_single_flash_cycle(cycle, verbose=False):
     o2A = AuxData(raw_data=o2)
     o2A.extract()
     # print("o2A>>", o2A.data, o2A.number, o2A.aux_type)
+
     rhA = AuxData(raw_data=rh)
     rhA.extract()
     # print("rhA>>", rhA.data, rhA.number, rhA.aux_type)
+
     rhtA = AuxData(raw_data=rht)
     rhtA.extract()
     # print("rhtA>>", rhtA.data, rhtA.number, rhtA.aux_type)
 
-#    return h, g, e, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof
-
     liA.data["O2_percent"] = o2A.data
-    # print("liA>>", liA.data)
     liA.data["RH_percent"] = rhA.data
-    # print("liA>>", liA.data)
     liA.data["RH_temp_c"] = rhtA.data
 
-    print("liA>>", liA.data)
     return liA
+
+
+def parse_flash(data, start, end, verbose=False):
+    """Parse a complete frame of MAPCO2 and auxiliary data for one
+    location/datetime
+    Parameters
+    ----------
+    data :
+    start : int, start index in file of flash data
+    end : int, end index in file of flash data
+    verbose : bool
+    """
+
+    # break the data file into samples
+    sample = data[start:end]
+
+    ## TODO: create dataframe of h, g, e data
+    ## currently only loads first lines...
+    h = sample[0]
+    g = sample[1]
+    e = sample[2]
+    print("frame header>>", h)
+    print("frame gps>>", g)
+    print("frame engineering>>", e)
+
+    h = parse_header(h, verbose=verbose)
+    g = parse_gps(g, verbose=verbose)
+    e = parse_engr(e, verbose=verbose)
+    if verbose:
+        print("frame header>>", h.data())
+        print("frame gps>>", g.data())
+        print("frame engineering>>", e.data())
+
+    ## end
+
+    co2, aux = parse_all_flash_cycles(sample, verbose=verbose)
+    return h, g, e, co2, aux
+
 
 def build_frames(data, start, end, verbose=False, data_type="iridium"):
     if (data_type == "iridium") or (data_type == "terminal"):
@@ -640,7 +686,7 @@ def build_frames(data, start, end, verbose=False, data_type="iridium"):
                                            data_type=data_type)
 
     if data_type == "flash":
-        df = parse_flash_frame(data=data, start=start, end=end, verbose=verbose)
+        df = parse_flash(data=data, start=start, end=end, verbose=verbose)
         return df
 
 #        (h, g, e,

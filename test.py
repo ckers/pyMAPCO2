@@ -41,6 +41,12 @@ df = parse.build_frames(d, index_df.start[0],
 # one cycle summary for now...
 print(df.mean())
 
+
+formats = ['split', 'records', 'index', 'columns', 'values']
+
+# for f in formats:
+#     print(f, len(df.to_json(orient=f)))
+    
 #for n in range(0, len(index_df.start)):
 #    s = index_df.start[n]
 #    e = index_df.end[n]
