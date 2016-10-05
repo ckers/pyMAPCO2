@@ -37,9 +37,9 @@ print("ENGR>>   ", parse.MAPCO2Engr(data_type=cleaner.data_type).data_names)
 # panel_dict = {}
 
 # testing flash cycle parsing
-h, g, e, co2, aux = parse.chooser(z,
-                                  indexer.df.start,
-                                  indexer.df.end,
+h, g, e, co2, aux = parse.chooser(data=z,
+                                  start=indexer.df.start,
+                                  end=indexer.df.end,
                                   verbose=True,
                                   data_type=cleaner.data_type)
 

@@ -26,7 +26,6 @@ pco2_header = ("location_code", "system_code",
 
 
 class MAPCO2Base(object):
-
     def series(self):
         """Single dimension data"""
         return pd.Series(data=self.data(), index=self.data_names)
@@ -40,9 +39,8 @@ class MAPCO2Base(object):
 
 class MAPCO2Header(MAPCO2Base):
     def __init__(self):
-        
         self.df = None
-        
+
         self.mode = []
         self.checksum = []
         self.size = []
@@ -62,6 +60,7 @@ class MAPCO2Header(MAPCO2Base):
                            "system",
                            "firmware"]
 
+    @property
     def data(self):
         _a = [self.mode,
               self.checksum,
@@ -74,11 +73,9 @@ class MAPCO2Header(MAPCO2Base):
 
 
 class MAPCO2GPS(MAPCO2Base):
-    
     def __init__(self):
-        
         self.df = None
-        
+
         self.date_time = []
         self.lat_deg = []
         self.lat_min = []
@@ -97,12 +94,13 @@ class MAPCO2GPS(MAPCO2Base):
         self.date_time_format = "%m/%d/%Y_%H:%M:%S"
 
         self.data_names = ["date_time",
-                           "lat_deg", "lat_min", "lat_direction", "lat_ddeg",
-                           "lon_deg", "lon_min", "lon_direction", "lon_ddeg",
+                           "lat_deg", "lat_min", "lat_direction",
+                           "lon_deg", "lon_min", "lon_direction",
                            "fix_time", "quality",
                            "time_before_check", "time_after_check",
                            "valve_time"]
 
+    @property
     def data(self):
         return [self.date_time,
                 self.lat_deg,
@@ -156,6 +154,7 @@ class MAPCO2Engr(MAPCO2Base):
         if self.data_type != "iridium":
             self.data_names = self.data_names[:5]
 
+    @property
     def data(self):
         _a = [self.v_logic,
               self.v_trans,
@@ -182,9 +181,7 @@ class MAPCO2Engr(MAPCO2Base):
 
 
 class AuxData(object):
-
     def __init__(self, raw_data):
-
         self.raw = raw_data
         self.aux_type = ""
         self.number = None
@@ -197,7 +194,7 @@ class AuxData(object):
         Units: O2 = percent, RH = percent, RH Temp = deg C
         """
         self.header()
-        self.data = [float(n)/100.0 for n in " ".join(self.raw[1:]).split(" ")]
+        self.data = [float(n) / 100.0 for n in " ".join(self.raw[1:]).split(" ")]
 
     def header(self):
         """Extract header information from aux section,
@@ -218,7 +215,6 @@ class MetData(AuxData):
 
 
 class LIData(AuxData):
-
     def extract(self):
         """Extract string list of """
         self.header()
@@ -241,12 +237,10 @@ class LIData(AuxData):
 
 
 class MAPCO2DataFinal(MAPCO2Base):
-
     def __init__(self):
-        
         self.dp = []
         self.df = None
-        
+
         self.date_time = []
         self.lat = []
         self.lon = []
@@ -256,13 +250,13 @@ class MAPCO2DataFinal(MAPCO2Base):
         self.O2_percent = []
         self.sst = []
         self.sss = []
-        
+
         self.xCO2_air_qf = []
         self.xCO2_air_wet = []
         self.xCO2_air_dry = []
         self.xCO2_air_H2O = []
         self.fCO2_air_sat = []
-        
+
         self.xCO2_sw_qf = []
         self.xCO2_sw_wet = []
         self.xCO2_sw_dry = []
@@ -276,64 +270,65 @@ class MAPCO2DataFinal(MAPCO2Base):
                            "lat_ddeg",
                            "lon_ddeg",
 
-                           "licor_press",                           
+                           "licor_press",
                            "licor_temp",
                            "O2",
                            "sst",
                            "sss",
-                           
+
                            "xCO2_air_qf",
                            "xCO2_air_wet",
                            "xCO2_air_dry",
                            "xCO2_air_H2O",
                            "fCO2_air_sat",
-                                
+
                            "xCO2_sw_qf",
                            "xCO2_sw_wet",
                            "xCO2_sw_dry",
                            "xCO2_sw_H2O",
                            "fCO2_sw_sat",
-                        
-                           "dfCO2",]
-        
+
+                           "dfCO2", ]
+
+    @property
     def data(self):
         _a = [self.dp,
               self.date_time,
               self.lat,
               self.lon,
-            
+
               self.licor_press_atm,
               self.licor_temp_c,
               self.O2_percent,
               self.sst,
               self.sss,
-            
+
               self.xCO2_air_qf,
               self.xCO2_air_wet,
               self.xCO2_air_dry,
               self.xCO2_air_H2O,
               self.fCO2_air_sat,
-            
+
               self.xCO2_sw_qf,
               self.xCO2_sw_wet,
               self.xCO2_sw_dry,
               self.xCO2_sw_H2O,
               self.fCO2_sw_sat,
-            
+
               self.dfCO2]
         return _a
-        
-#    def dataframe(self, date_time):
+
+
+# def dataframe(self, date_time):
 #        self.df = pd.DataFrame(data=self.data(),
 #                               index=self.date_time,
 #                               columns=self.data_names)
-        
-        
+
+
 class MAPCO2Data(MAPCO2Base):
     def __init__(self):
-        
         self.df = None
-        
+
         self.minute = []
         self.licor_temp = []
         self.licor_temp_std = []
@@ -370,6 +365,7 @@ class MAPCO2Data(MAPCO2Base):
                            "xCO2_raw2",
                            "xCO2_raw2_std"]
 
+    @property
     def data(self):
         _a = [self.minute,
               self.licor_temp,
@@ -389,10 +385,9 @@ class MAPCO2Data(MAPCO2Base):
               self.xCO2_raw2,
               self.xCO2_raw2_std]
         return _a
-        
+
 
 class CO2Data(object):
-    
     def __init__(self):
         self.date_time = []
         self.header = MAPCO2Header()
@@ -400,14 +395,14 @@ class CO2Data(object):
         self.engr = MAPCO2Engr()
         self.data = MAPCO2Data()
         self.final = MAPCO2DataFinal()
-        
+
     def dataframe(self):
         self.header.dataframe(self.date_time)
         self.gps.dataframe(self.date_time)
         self.engr.dataframe(self.date_time)
         self.data.dataframe(self.date_time)
         self.final.dataframe(self.date_time)
-        
+
 
 class MAPCO2ParseLog(object):
     def __init__(self):
@@ -417,20 +412,20 @@ class MAPCO2ParseLog(object):
 parse_log = MAPCO2ParseLog()
 current_frame = ""
 
+
 # ================================================================
 
 
 def chooser(data, start, end, verbose=False, data_type="iridium"):
-
     if (data_type == "iridium") or (data_type == "terminal"):
         (h, g, e,
          zpon, zpof, zpcl,
          spon, spof, spcl,
          epon, epof,
          apon, apof) = parse_iridium(data=data,
-                                           start=start, end=end,
-                                           verbose=verbose,
-                                           data_type=data_type)
+                                     start=start, end=end,
+                                     verbose=verbose,
+                                     data_type=data_type)
 
     # df, df, df, dict of dfs
     if data_type == "flash":
@@ -439,27 +434,88 @@ def chooser(data, start, end, verbose=False, data_type="iridium"):
 
 
 def flash(data, start, end, verbose=False):
-    """Parse a complete frame of MAPCO2 and auxiliary data for one
-    location/datetime
+    """Parse a list of lines from a flash MAPCO2 data file which contains
+    frames of data
+        cycle measurements within the frame
+            sections/samples of different data within the cycle
+        auxiliary data
+
     Parameters
     ----------
-    data :
-    start : int, start index in file of flash data
-    end : int, end index in file of flash data
+    data : list,
+    start : list,
+    end : list,
     verbose : bool
     """
 
-    # for n in range(0, len(start)):
-    #     start = start[n]
-    #     end = end[n]
-
-
-    start = start[0]
-    end = end[0]
+    # start = start[0]
+    # end = end[0]
 
     # break the data file into samples
-    sample = data[start:end]
+    frame = data[start[0]:end[0]]
 
+    # first frame of data to initialize DataFrames and Panel
+    h_0, g_0, e_0, co2_0, aux_0 = flash_compile(sample=frame, verbose=verbose)
+
+    print('h>>', g_0.date_time, h_0.system, h_0.date_time)
+    print('h>>', h_0.data)
+
+    if g_0.date_time == 'NaT':
+        dt = h_0.date_time
+    else:
+        dt = g_0.date_time
+
+    common_key = dt + '_' + h_0.system
+    print('h common_key>>', common_key)
+
+    h = pd.DataFrame(data=[h_0.data], columns=h_0.data_names)
+    g = pd.DataFrame(data=[g_0.data], columns=g_0.data_names)
+    e = pd.DataFrame(data=[e_0.data], columns=e_0.data_names)
+    h['common_key'] = common_key
+    g['common_key'] = common_key
+    e['common_key'] = common_key
+
+    print(h.head())
+    print(g.head())
+    print(e.head())
+
+    co2 = pd.Panel({common_key: co2_0})
+    # co2 = co20
+    # aux = pd.DataFrame(data=[aux.data], columns=aux.data_names)
+    aux = [aux_0]
+
+    for n in range(1, len(start)):
+        # break the data file into samples
+        frame = data[start[n]:end[n]]
+        h_n, g_n, e_n, co2_n, aux_n = flash_compile(sample=frame, verbose=verbose)
+        print('co2_n df>>', co2_n.head())
+        print('h>>', g_n.date_time, h_n.system, h_n.date_time)
+        print('h>>', h_n.data)
+
+        if g_n.date_time == 'NaT':
+            dt = h_n.date_time
+        else:
+            dt = g_n.date_time
+
+        common_key = dt + '_' + h_n.system
+        print('h common_key>>', common_key)
+
+        h_n_df = pd.DataFrame(data=[h_n.data], columns=h_n.data_names)
+        g_n_df = pd.DataFrame(data=[g_n.data], columns=g_n.data_names)
+        e_n_df = pd.DataFrame(data=[e_n.data], columns=e_n.data_names)
+        h_n_df['common_key'] = common_key
+        g_n_df['common_key'] = common_key
+        e_n_df['common_key'] = common_key
+
+        h = pd.concat([h, h_n_df])
+        g = pd.concat([g, g_n_df])
+        e = pd.concat([e, e_n_df])
+
+        co2[common_key] = co2_n
+
+        aux.append(aux_n)
+
+    return h, g, e, co2, aux
     # ## TODO: create dataframe of h, g, e data
     # ## currently only loads first lines...
     # h = sample[0]
@@ -482,13 +538,11 @@ def flash(data, start, end, verbose=False):
     #
     # ## end
     #
-    # co2, aux = cycles_aux(sample, verbose=verbose)
-    h, g, e, co2, aux = flash_compile(sample=sample, verbose=verbose)
-    return h, g, e, co2, aux
+    # co2, aux = flash_frame_parse(sample, verbose=verbose)
+    # h, g, e, co2, aux = flash_compile(sample=sample, verbose=verbose)
 
 
 def flash_compile(sample, verbose=False):
-
     h = sample[0]
     g = sample[1]
     e = sample[2]
@@ -503,13 +557,13 @@ def flash_compile(sample, verbose=False):
     e = parse_engr(e, verbose=verbose)
 
     if verbose:
-        print("frame header>>", h.data())
-        print("frame gps>>", g.data())
-        print("frame engineering>>", e.data())
+        print("frame header>>", h.data)
+        print("frame gps>>", g.data)
+        print("frame engineering>>", e.data)
 
     print("parse.parse_flash>>ID INFO:", h.date_time + '_' + h.system)
 
-    co2, aux = cycles_aux(sample, verbose=verbose)
+    co2, aux = flash_co2_aux(sample, verbose=verbose)
 
     return h, g, e, co2, aux
 
@@ -560,8 +614,8 @@ def flash_cycle_id(line):
     """
     line = line.split(' ')
     print(line)
-    if line[1] == 'Met':
-        return 0, 'met'
+    if line[1] in ['Met', 'SBE16']:
+        return 0, line[1]
     minute = int(line[-1])
     cycle = line[1] + '_' + line[-2]
     print(cycle)
@@ -581,7 +635,7 @@ def flash_cycle_id(line):
     return minute, cycle
 
 
-def index_flash_sample(data, verbose=False):
+def flash_index_frame(data, verbose=False):
     """Find delimiters between cycles
     Parameters
     ----------
@@ -607,24 +661,32 @@ def index_flash_sample(data, verbose=False):
     return indexes, minutes, cycles
 
 
-def cycles_aux(sample, verbose=False):
-    """Parse an entire file of flash MAPCO2 data which contains
-    frames of data
-        cycle measurements within the frame
-            sections of different data within the cycle
-        auxiliary data
+def flash_co2_aux(sample, verbose=False):
+    """Parse a complete frame of MAPCO2 cyles and auxiliary data for one
+    location/datetime
+
     Parameters
     ----------
-    sample : list,
+    sample : list, lines of data
     verbose : bool
+
+    Returns
+    -------
+    co2_container.data : pd.DataFrame, all licor, o2 and rh data
+    met_container.data : pd.DataFrame, all aux sensor data, sbe16 etc
     """
-    i, m, c = index_flash_sample(sample, verbose=False)
+
+    i, m, c = flash_index_frame(sample, verbose=False)
     if verbose:
         print("frame delimiters, i>>", i)
         print("frame min,  m>>", m)
         print("frame cycles, c>>", c)
         print("frame info lengths>> ", len(i), len(m), len(c))
 
+    co2_container = None
+    met_container = None
+
+    # TODO: this doesn't append, it overwrites the co2_container df
     for n in range(0, len(c)):
 
         print("cycle id>>", c[n])
@@ -632,41 +694,44 @@ def cycles_aux(sample, verbose=False):
         i_end = i[1:] + [len(sample)]
         cycle = sample[i[n]:i_end[n]]
 
-        if c[n] == 'met':
-            container = single_flash_met(cycle)
+        if c[n].lower() in ['met', 'sbe16']:
+            met_container = flash_single_met(cycle)
         else:
-            container = single_flash_cycle(cycle, verbose=verbose)
-        container.data["cycle"] = c[n]
-    return container.data, None
+            co2_container = flash_single_cycle(cycle, verbose=verbose)
+            if co2_container is None:
+                co2_container = LIData(raw_data=[])
+            co2_container.data["cycle"] = c[n]
+
+    return co2_container.data, met_container.data
 
 
-def single_flash_met(data, verbose=False):
+def flash_single_met(data, verbose=False):
     md = MetData(data)
     md.extract()
     md.convert()
     return md
 
 
-def find_cycle_sections(sample, verbose=False):
+def flash_find_sections(cycle, verbose=False):
     """Find index and name of a section within one cycle of a frame of data
     Parameters
     ----------
-    sample : list, lines of data for one data frame, i.e. spon, spoff, spcal, etc.
+    cycle : list, lines of data for one data frame, i.e. spon, spoff, spcal, etc.
     verbose : bool
     """
     indexes = []
     names = []
-    for n in range(0, len(sample)):
+    for n in range(0, len(cycle)):
         if verbose:
-            print(n, sample[n][0:2])
-        if sample[n][0:2] in ("Li", "O2", "RH", "Rh", "Met"):
+            print(n, cycle[n][0:2])
+        if cycle[n][0:2] in ("Li", "O2", "RH", "Rh", "Met", "SBE16"):
             indexes.append(n)
-            names.append(sample[n])
-    indexes.append(len(sample))
+            names.append(cycle[n])
+    indexes.append(len(cycle))
     return indexes, names
 
 
-def single_flash_cycle(cycle, verbose=False):
+def flash_single_cycle(cycle, verbose=False):
     """Find specific types of data within one cycle of data
     Parameters
     ----------
@@ -675,44 +740,45 @@ def single_flash_cycle(cycle, verbose=False):
 
     """
 
-    si, sn = find_cycle_sections(cycle, verbose=False)
+    indexes, names = flash_find_sections(cycle, verbose=False)
+
     if verbose:
-        print("si>> ", si)
+        print("indexes>> ", indexes)
 
-    si_end = si[1:]
-    si = si[:-1]
+    indexes_end = indexes[1:]
+    indexes = indexes[:-1]
+
+    if len(indexes_end) == 0:
+            return None
+
     if verbose:
-        print("si (new)>> ", si)
-        print("si_end>>", si_end)
-        print("sample[0:2]>>", cycle[0:2])
+        print("indexes (new)>> ", indexes)
+        print("indexes_end>>", indexes_end)
+        print("cycle[0:2]>>", cycle[0:2])
 
-    li = cycle[si[0]:si_end[0]]
-    o2 = cycle[si[1]:si_end[1]]
-    rh = cycle[si[2]:si_end[2]]
-    rht = cycle[si[3]:si_end[3]]
+    cycle_li = cycle[indexes[0]:indexes_end[0]]
+    cycle_o2 = cycle[indexes[1]:indexes_end[1]]
+    cycle_rh = cycle[indexes[2]:indexes_end[2]]
+    cycle_rht = cycle[indexes[3]:indexes_end[3]]
 
-    liA = LIData(raw_data=li)
-    liA.extract()
-    liA.convert()
-    # print("liA>>", liA.data, liA.number, liA.aux_type)
+    cycle_out = LIData(raw_data=cycle_li)
+    cycle_out.extract()
+    cycle_out.convert()
 
-    o2A = AuxData(raw_data=o2)
-    o2A.extract()
-    # print("o2A>>", o2A.data, o2A.number, o2A.aux_type)
+    o2 = AuxData(raw_data=cycle_o2)
+    o2.extract()
 
-    rhA = AuxData(raw_data=rh)
-    rhA.extract()
-    # print("rhA>>", rhA.data, rhA.number, rhA.aux_type)
+    rh = AuxData(raw_data=cycle_rh)
+    rh.extract()
 
-    rhtA = AuxData(raw_data=rht)
-    rhtA.extract()
-    # print("rhtA>>", rhtA.data, rhtA.number, rhtA.aux_type)
+    rht = AuxData(raw_data=cycle_rht)
+    rht.extract()
 
-    liA.data["O2_percent"] = o2A.data
-    liA.data["RH_percent"] = rhA.data
-    liA.data["RH_temp_c"] = rhtA.data
+    cycle_out.data["O2_percent"] = o2.data
+    cycle_out.data["RH_percent"] = rh.data
+    cycle_out.data["RH_temp_c"] = rht.data
 
-    return liA
+    return cycle_out
 
 
 #        (h, g, e,
