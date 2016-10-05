@@ -13,33 +13,38 @@ f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\0004 2016_07_23 optode test -
 # Terminal log
 # f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\mapCO2-7-22-16-final - 2016_07_25.txt"
 
+# get indices of data frame separators
 indexer = Indexer(file=f, terminal=False)
-index_df = indexer.df
-index_df.reset_index(inplace=True)
+indexer.df.reset_index(inplace=True)
 
-d = indexer.file_to_list(f)
+# clean the data
+# z : list, cleaned data
+# y : list, unicode error indexes
+# x : list, blank lines
 cleaner = Cleaner()
-d, w, x = cleaner.run(d)
+z, y, x = cleaner.run(indexer.file_to_list(f))
 
+# identify what kind of data was passed to the process
 cleaner.detect(verbose=False)
 print("Data Type Detected:", cleaner.data_type)
 
-_ = parse.MAPCO2Header()
-print("Header>> ", _.data_names)
-_ = parse.MAPCO2GPS()
-print("GPS>>    ", _.data_names)
-_ = parse.MAPCO2Engr(data_type=cleaner.data_type)
-print("ENGR>>   ", _.data_names)
+# header descriptions
+print("Header>> ", parse.MAPCO2Header().data_names)
+print("GPS>>    ", parse.MAPCO2GPS().data_names)
+print("ENGR>>   ", parse.MAPCO2Engr(data_type=cleaner.data_type).data_names)
 
-panel_dict = {}
+# start a dictionary to put dataframes into for panel conversion
+# panel_dict = {}
 
 # testing flash cycle parsing
-df = parse.build_frames(d, index_df.start[0],
-                      index_df.end[0],
-                      verbose=True, data_type=cleaner.data_type)
+h, g, e, co2, aux = parse.chooser(z,
+                                  indexer.df.start,
+                                  indexer.df.end,
+                                  verbose=True,
+                                  data_type=cleaner.data_type)
 
 # one cycle summary for now...
-print(df.mean())
+#print(df.mean())
 
 
 formats = ['split', 'records', 'index', 'columns', 'values']

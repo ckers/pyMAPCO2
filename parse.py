@@ -417,38 +417,104 @@ class MAPCO2ParseLog(object):
 parse_log = MAPCO2ParseLog()
 current_frame = ""
 
+# ================================================================
 
-def float_converter(data_line):
-    """Clean and convert all data to floats.  Attempts to find directly,
-    regexp find float, regexp find int in that order.
 
+def chooser(data, start, end, verbose=False, data_type="iridium"):
+
+    if (data_type == "iridium") or (data_type == "terminal"):
+        (h, g, e,
+         zpon, zpof, zpcl,
+         spon, spof, spcl,
+         epon, epof,
+         apon, apof) = parse_iridium(data=data,
+                                           start=start, end=end,
+                                           verbose=verbose,
+                                           data_type=data_type)
+
+    # df, df, df, dict of dfs
+    if data_type == "flash":
+        h, g, e, co2, aux = flash(data=data, start=start, end=end, verbose=verbose)
+        return h, g, e, co2, aux
+
+
+def flash(data, start, end, verbose=False):
+    """Parse a complete frame of MAPCO2 and auxiliary data for one
+    location/datetime
     Parameters
     ----------
-    data_line : list, str format of data
+    data :
+    start : int, start index in file of flash data
+    end : int, end index in file of flash data
+    verbose : bool
+    """
 
-    Returns
-    -------
-    list of floats"""
-    line = []
-    for n in range(0, len(data_line)):
-        x = data_line[n]
-        try:
-            y = float(x)
-        except ValueError:
-            try:
-                y = re.findall("\d+\.\d+", x)[0]  # find first float
-            except IndexError:
-                try:
-                    y = re.findall("\d+", x)[0]  # find first int
-                except IndexError:
-                    y = np.nan
-        parse_log.events.append("parse.float_validator>> error converting to float: "
-                                + current_frame)
-        line.append(y)
-    return line
+    # for n in range(0, len(start)):
+    #     start = start[n]
+    #     end = end[n]
 
 
-def parse_iridium_frame(data, start, end, verbose=False, data_type="iridium"):
+    start = start[0]
+    end = end[0]
+
+    # break the data file into samples
+    sample = data[start:end]
+
+    # ## TODO: create dataframe of h, g, e data
+    # ## currently only loads first lines...
+    # h = sample[0]
+    # g = sample[1]
+    # e = sample[2]
+    #
+    # print("frame header>>", h)
+    # print("frame gps>>", g)
+    # print("frame engineering>>", e)
+    #
+    # h = parse_header(h, verbose=verbose)
+    # g = parse_gps(g, verbose=verbose)
+    # e = parse_engr(e, verbose=verbose)
+    # if verbose:
+    #     print("frame header>>", h.data())
+    #     print("frame gps>>", g.data())
+    #     print("frame engineering>>", e.data())
+    #
+    # print("parse.parse_flash>>ID INFO:", h.date_time + '_' + h.system)
+    #
+    # ## end
+    #
+    # co2, aux = cycles_aux(sample, verbose=verbose)
+    h, g, e, co2, aux = flash_compile(sample=sample, verbose=verbose)
+    return h, g, e, co2, aux
+
+
+def flash_compile(sample, verbose=False):
+
+    h = sample[0]
+    g = sample[1]
+    e = sample[2]
+
+    if verbose:
+        print("frame header>>", h)
+        print("frame gps>>", g)
+        print("frame engineering>>", e)
+
+    h = parse_header(h, verbose=verbose)
+    g = parse_gps(g, verbose=verbose)
+    e = parse_engr(e, verbose=verbose)
+
+    if verbose:
+        print("frame header>>", h.data())
+        print("frame gps>>", g.data())
+        print("frame engineering>>", e.data())
+
+    print("parse.parse_flash>>ID INFO:", h.date_time + '_' + h.system)
+
+    co2, aux = cycles_aux(sample, verbose=verbose)
+
+    return h, g, e, co2, aux
+
+
+def parse_iridium(data, start, end, verbose=False, data_type="iridium"):
     # break the data file into samples
     sample = data[start:end]
 
@@ -488,6 +554,9 @@ def clean_flash_line(line):
 def flash_cycle_id(line):
     """Identify what sort of data is in a flash data cycle header
     row that starts with '*****...'
+    Parameters
+    ----------
+    line : str, delimiter line of flash data
     """
     line = line.split(' ')
     print(line)
@@ -512,16 +581,17 @@ def flash_cycle_id(line):
     return minute, cycle
 
 
-def index_flash_frame(data, verbose=False):
+def index_flash_sample(data, verbose=False):
     """Find delimiters between cycles
     Parameters
     ----------
-    data : list, str of each line from flash file in this frame
-    
+    sample : list, str of each line from flash file in this frame
+    verbose : bool
     Returns
     -------
     list, index numbers of headers for each data frame
     """
+
     indexes = []
     minutes = []
     cycles = []
@@ -537,31 +607,18 @@ def index_flash_frame(data, verbose=False):
     return indexes, minutes, cycles
 
 
-def find_cycle_sections(sample, verbose=False):
-    """Find index and name of a section within one cycle of a frame of data"""
-    indexes = []
-    names = []
-    for n in range(0, len(sample)):
-        if verbose:
-            print(n, sample[n][0:2])
-        if sample[n][0:2] in ("Li", "O2", "RH", "Rh", "Met"):
-            indexes.append(n)
-            names.append(sample[n])
-    indexes.append(len(sample))
-    return indexes, names
-
-
-
-
-
-def parse_all_flash_cycles(sample, verbose=False):
+def cycles_aux(sample, verbose=False):
     """Parse an entire file of flash MAPCO2 data which contains
     frames of data
         cycle measurements within the frame
             sections of different data within the cycle
         auxiliary data
+    Parameters
+    ----------
+    sample : list,
+    verbose : bool
     """
-    i, m, c = index_flash_frame(sample, verbose=False)
+    i, m, c = index_flash_sample(sample, verbose=False)
     if verbose:
         print("frame delimiters, i>>", i)
         print("frame min,  m>>", m)
@@ -580,7 +637,7 @@ def parse_all_flash_cycles(sample, verbose=False):
         else:
             container = single_flash_cycle(cycle, verbose=verbose)
         container.data["cycle"] = c[n]
-    return container.data
+    return container.data, None
 
 
 def single_flash_met(data, verbose=False):
@@ -590,7 +647,33 @@ def single_flash_met(data, verbose=False):
     return md
 
 
+def find_cycle_sections(sample, verbose=False):
+    """Find index and name of a section within one cycle of a frame of data
+    Parameters
+    ----------
+    sample : list, lines of data for one data frame, i.e. spon, spoff, spcal, etc.
+    verbose : bool
+    """
+    indexes = []
+    names = []
+    for n in range(0, len(sample)):
+        if verbose:
+            print(n, sample[n][0:2])
+        if sample[n][0:2] in ("Li", "O2", "RH", "Rh", "Met"):
+            indexes.append(n)
+            names.append(sample[n])
+    indexes.append(len(sample))
+    return indexes, names
+
+
 def single_flash_cycle(cycle, verbose=False):
+    """Find specific types of data within one cycle of data
+    Parameters
+    ----------
+    cycle :
+    verbose : bool
+
+    """
 
     si, sn = find_cycle_sections(cycle, verbose=False)
     if verbose:
@@ -607,11 +690,6 @@ def single_flash_cycle(cycle, verbose=False):
     o2 = cycle[si[1]:si_end[1]]
     rh = cycle[si[2]:si_end[2]]
     rht = cycle[si[3]:si_end[3]]
-
-    # print("li>>", li, len(li[1:]))
-    # print("o2>>", o2, len(o2[1:]))
-    # print("rh>>", rh, len(rh[1:]))
-    # print("rht>>", rht, len(rht[1:]))
 
     liA = LIData(raw_data=li)
     liA.extract()
@@ -636,58 +714,6 @@ def single_flash_cycle(cycle, verbose=False):
 
     return liA
 
-
-def parse_flash(data, start, end, verbose=False):
-    """Parse a complete frame of MAPCO2 and auxiliary data for one
-    location/datetime
-    Parameters
-    ----------
-    data :
-    start : int, start index in file of flash data
-    end : int, end index in file of flash data
-    verbose : bool
-    """
-
-    # break the data file into samples
-    sample = data[start:end]
-
-    ## TODO: create dataframe of h, g, e data
-    ## currently only loads first lines...
-    h = sample[0]
-    g = sample[1]
-    e = sample[2]
-    print("frame header>>", h)
-    print("frame gps>>", g)
-    print("frame engineering>>", e)
-
-    h = parse_header(h, verbose=verbose)
-    g = parse_gps(g, verbose=verbose)
-    e = parse_engr(e, verbose=verbose)
-    if verbose:
-        print("frame header>>", h.data())
-        print("frame gps>>", g.data())
-        print("frame engineering>>", e.data())
-
-    ## end
-
-    co2, aux = parse_all_flash_cycles(sample, verbose=verbose)
-    return h, g, e, co2, aux
-
-
-def build_frames(data, start, end, verbose=False, data_type="iridium"):
-    if (data_type == "iridium") or (data_type == "terminal"):
-        (h, g, e,
-         zpon, zpof, zpcl,
-         spon, spof, spcl,
-         epon, epof,
-         apon, apof) = parse_iridium_frame(data=data,
-                                           start=start, end=end,
-                                           verbose=verbose,
-                                           data_type=data_type)
-
-    if data_type == "flash":
-        df = parse_flash(data=data, start=start, end=end, verbose=verbose)
-        return df
 
 #        (h, g, e,
 #         zpon, zpof, zpcl,
@@ -888,3 +914,33 @@ def parse_co2_series(data, verbose):
     c = parse_co2_line(data=data, verbose=verbose)
     c_series = pd.Series(data=c.data(), index=c.data_names)
     return c_series
+
+
+def float_converter(data_line):
+    """Clean and convert all data to floats.  Attempts to find directly,
+    regexp find float, regexp find int in that order.
+
+    Parameters
+    ----------
+    data_line : list, str format of data
+
+    Returns
+    -------
+    list of floats"""
+    line = []
+    for n in range(0, len(data_line)):
+        x = data_line[n]
+        try:
+            y = float(x)
+        except ValueError:
+            try:
+                y = re.findall("\d+\.\d+", x)[0]  # find first float
+            except IndexError:
+                try:
+                    y = re.findall("\d+", x)[0]  # find first int
+                except IndexError:
+                    y = np.nan
+        parse_log.events.append("parse.float_validator>> error converting to float: "
+                                + current_frame)
+        line.append(y)
+    return line
