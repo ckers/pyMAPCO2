@@ -677,32 +677,41 @@ def flash_co2_aux(sample, verbose=False):
     """
 
     i, m, c = flash_index_frame(sample, verbose=False)
+    i_end = i[1:] + [len(sample)]
+
     if verbose:
         print("frame delimiters, i>>", i)
         print("frame min,  m>>", m)
         print("frame cycles, c>>", c)
         print("frame info lengths>> ", len(i), len(m), len(c))
 
-    co2_container = None
-    met_container = None
+    def co2_cycle(data, cycle_name):
+        print("cycle id>>", cycle_name)
+        container = flash_single_cycle(data)
+        container.data["cycle"] = cycle_name
+        return container
+
+    cycle_0 = sample[i[0]:i_end[0]]
+    co2_container_0 = co2_cycle(data=cycle_0, cycle_name=c[0])
+    co2_df = co2_container_0.data
 
     # TODO: this doesn't append, it overwrites the co2_container df
-    for n in range(0, len(c)):
+    for n in range(1, len(c)):
 
         print("cycle id>>", c[n])
-
-        i_end = i[1:] + [len(sample)]
         cycle = sample[i[n]:i_end[n]]
 
         if c[n].lower() in ['met', 'sbe16']:
-            met_container = flash_single_met(cycle)
+            met_container = flash_single_met(cycle, verbose=verbose)
         else:
-            co2_container = flash_single_cycle(cycle, verbose=verbose)
-            if co2_container is None:
-                co2_container = LIData(raw_data=[])
-            co2_container.data["cycle"] = c[n]
+            co2_df_n = co2_cycle(data=cycle, cycle_name=c[n])
+            co2_df = pd.concat([co2_df, co2_df_n.data])
+            # co2_container = flash_single_cycle(cycle, verbose=verbose)
+            # if co2_container is None:
+            #     co2_container = LIData(raw_data=[])
+            # co2_container.data["cycle"] = c[n]
 
-    return co2_container.data, met_container.data
+    return co2_df, met_container.data
 
 
 def flash_single_met(data, verbose=False):
