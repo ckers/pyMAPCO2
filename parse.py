@@ -25,16 +25,28 @@ pco2_header = ("location_code", "system_code",
                "raw1", "raw1_std", "raw2", "raw2_std")
 
 
+class MAPCO2ParseLog(object):
+    def __init__(self):
+        self.events = []
+
+
+global_log = MAPCO2ParseLog()
+global_key = ''
+
 class MAPCO2Base(object):
+
+    def __init__(self):
+        self.data = None
+        self.data_names = None
+        self.df = None
+
     def series(self):
         """Single dimension data"""
         return pd.Series(data=self.data(), index=self.data_names)
 
-    def dataframe(self, date_time):
+    def dataframe(self):
         """Multi dimension timeseries data"""
-        self.df = pd.DataFrame(data=self.data(),
-                               #  index=date_time,
-                               columns=self.data_names)
+        self.df = pd.DataFrame(data=self.data(), columns=self.data_names)
 
 
 class MAPCO2Header(MAPCO2Base):
@@ -181,11 +193,12 @@ class MAPCO2Engr(MAPCO2Base):
 
 
 class AuxData(object):
-    def __init__(self, raw_data):
+    def __init__(self, raw_data, log):
         self.raw = raw_data
+        self.log = log
         self.aux_type = ""
         self.number = None
-        self.data = []
+        self.data = pd.DataFrame(data=None)
         self.status = ""
 
     def extract(self):
@@ -226,14 +239,20 @@ class LIData(AuxData):
          to float with 2 decimals.
          """
         self.data = [n.split(' ') for n in self.data]
-        self.data = pd.DataFrame(self.data,
-                                 columns=["co2_ppm", "temp_c",
-                                          "press_kpa", "raw1", "raw2"])
-        self.data.co2_ppm = self.data.co2_ppm.astype(float) / 100.0
-        self.data.temp_c = self.data.temp_c.astype(float) / 100.0
-        self.data.press_kpa = self.data.press_kpa.astype(float) / 100.0
-        self.data.raw1 = self.data.raw1.astype(int)
-        self.data.raw2 = self.data.raw2.astype(int)
+        # print(self.data)
+
+        if self.data[0][0] == '':
+            self.data = pd.DataFrame(data=None)
+            self.log.append()
+        else:
+            self.data = pd.DataFrame(self.data,
+                                     columns=["co2_ppm", "temp_c",
+                                              "press_kpa", "raw1", "raw2"])
+            self.data.co2_ppm = self.data.co2_ppm.astype(float) / 100.0
+            self.data.temp_c = self.data.temp_c.astype(float) / 100.0
+            self.data.press_kpa = self.data.press_kpa.astype(float) / 100.0
+            self.data.raw1 = self.data.raw1.astype(int)
+            self.data.raw2 = self.data.raw2.astype(int)
 
 
 class MAPCO2DataFinal(MAPCO2Base):
@@ -403,16 +422,6 @@ class CO2Data(object):
         self.data.dataframe(self.date_time)
         self.final.dataframe(self.date_time)
 
-
-class MAPCO2ParseLog(object):
-    def __init__(self):
-        self.events = []
-
-
-parse_log = MAPCO2ParseLog()
-current_frame = ""
-
-
 # ================================================================
 
 
@@ -448,6 +457,9 @@ def flash(data, start, end, verbose=False):
     verbose : bool
     """
 
+    global global_key
+    global global_log
+
     # start = start[0]
     # end = end[0]
 
@@ -467,6 +479,9 @@ def flash(data, start, end, verbose=False):
 
     common_key = dt + '_' + h_0.system
     print('h common_key>>', common_key)
+
+    # for error logging
+    global_key = common_key
 
     h = pd.DataFrame(data=[h_0.data], columns=h_0.data_names)
     g = pd.DataFrame(data=[g_0.data], columns=g_0.data_names)
@@ -488,9 +503,9 @@ def flash(data, start, end, verbose=False):
         # break the data file into samples
         frame = data[start[n]:end[n]]
         h_n, g_n, e_n, co2_n, aux_n = flash_compile(sample=frame, verbose=verbose)
-        print('co2_n df>>', co2_n.head())
+        # print('co2_n df>>', co2_n.head())
         print('h>>', g_n.date_time, h_n.system, h_n.date_time)
-        print('h>>', h_n.data)
+        # print('h>>', h_n.data)
 
         if g_n.date_time == 'NaT':
             dt = h_n.date_time
@@ -500,46 +515,32 @@ def flash(data, start, end, verbose=False):
         common_key = dt + '_' + h_n.system
         print('h common_key>>', common_key)
 
-        h_n_df = pd.DataFrame(data=[h_n.data], columns=h_n.data_names)
-        g_n_df = pd.DataFrame(data=[g_n.data], columns=g_n.data_names)
-        e_n_df = pd.DataFrame(data=[e_n.data], columns=e_n.data_names)
-        h_n_df['common_key'] = common_key
-        g_n_df['common_key'] = common_key
-        e_n_df['common_key'] = common_key
+        # for error logging
+        global_key = common_key
 
-        h = pd.concat([h, h_n_df])
-        g = pd.concat([g, g_n_df])
-        e = pd.concat([e, e_n_df])
+        try:
+            h_n_df = pd.DataFrame(data=[h_n.data], columns=h_n.data_names)
+            g_n_df = pd.DataFrame(data=[g_n.data], columns=g_n.data_names)
+            e_n_df = pd.DataFrame(data=[e_n.data], columns=e_n.data_names)
+            h_n_df['common_key'] = common_key
+            g_n_df['common_key'] = common_key
+            e_n_df['common_key'] = common_key
 
-        co2[common_key] = co2_n
-
+            h = pd.concat([h, h_n_df])
+            g = pd.concat([g, g_n_df])
+            e = pd.concat([e, e_n_df])
+        except:
+            global_log.events.append('Error parsing aux data at:', common_key)
+            print('Error parsing aux data at:', common_key)
+        try:
+            co2[common_key] = co2_n
+        except ValueError:
+            # print('parse.flash>> co2', co2.ix[-1])
+            global_log.events.append('Error parsing co2 data at:', common_key)
+            print('Error parsing co2 data at:', common_key)
         aux.append(aux_n)
 
     return h, g, e, co2, aux
-    # ## TODO: create dataframe of h, g, e data
-    # ## currently only loads first lines...
-    # h = sample[0]
-    # g = sample[1]
-    # e = sample[2]
-    #
-    # print("frame header>>", h)
-    # print("frame gps>>", g)
-    # print("frame engineering>>", e)
-    #
-    # h = parse_header(h, verbose=verbose)
-    # g = parse_gps(g, verbose=verbose)
-    # e = parse_engr(e, verbose=verbose)
-    # if verbose:
-    #     print("frame header>>", h.data())
-    #     print("frame gps>>", g.data())
-    #     print("frame engineering>>", e.data())
-    #
-    # print("parse.parse_flash>>ID INFO:", h.date_time + '_' + h.system)
-    #
-    # ## end
-    #
-    # co2, aux = flash_frame_parse(sample, verbose=verbose)
-    # h, g, e, co2, aux = flash_compile(sample=sample, verbose=verbose)
 
 
 def flash_compile(sample, verbose=False):
@@ -613,12 +614,12 @@ def flash_cycle_id(line):
     line : str, delimiter line of flash data
     """
     line = line.split(' ')
-    print(line)
+
     if line[1] in ['Met', 'SBE16']:
         return 0, line[1]
     minute = int(line[-1])
     cycle = line[1] + '_' + line[-2]
-    print(cycle)
+
     names = {'Zero_on': 'zpon',
              'Zero_off': 'zpof',
              'Zero_cal': 'zcal',
@@ -631,7 +632,7 @@ def flash_cycle_id(line):
              'Air_off': 'apof'}
 
     cycle = names[cycle]
-    print(cycle)
+
     return minute, cycle
 
 
@@ -685,37 +686,41 @@ def flash_co2_aux(sample, verbose=False):
         print("frame cycles, c>>", c)
         print("frame info lengths>> ", len(i), len(m), len(c))
 
-    def co2_cycle(data, cycle_name):
-        print("cycle id>>", cycle_name)
-        container = flash_single_cycle(data)
-        container.data["cycle"] = cycle_name
-        return container
+    # def co2_cycle(data, cycle_name):
+    #     container = flash_single_cycle(data)
+    #     container.data["cycle"] = cycle_name
+    #     return container
 
     cycle_0 = sample[i[0]:i_end[0]]
-    co2_container_0 = co2_cycle(data=cycle_0, cycle_name=c[0])
+    # co2_container_0 = co2_cycle(data=cycle_0, cycle_name=c[0])
+    co2_container_0 = flash_single_cycle(cycle_0)
+
+    co2_container_0.data["cycle"] = c[0]
+
     co2_df = co2_container_0.data
 
-    # TODO: this doesn't append, it overwrites the co2_container df
     for n in range(1, len(c)):
 
-        print("cycle id>>", c[n])
         cycle = sample[i[n]:i_end[n]]
 
         if c[n].lower() in ['met', 'sbe16']:
             met_container = flash_single_met(cycle, verbose=verbose)
         else:
-            co2_df_n = co2_cycle(data=cycle, cycle_name=c[n])
+            # co2_df_n = co2_cycle(data=cycle, cycle_name=c[n])
+            co2_df_n = flash_single_cycle(cycle)
+            if co2_df_n is None:
+                continue
+            co2_df_n.data["cycle"] = c[n]
             co2_df = pd.concat([co2_df, co2_df_n.data])
-            # co2_container = flash_single_cycle(cycle, verbose=verbose)
-            # if co2_container is None:
-            #     co2_container = LIData(raw_data=[])
-            # co2_container.data["cycle"] = c[n]
 
     return co2_df, met_container.data
 
 
 def flash_single_met(data, verbose=False):
-    md = MetData(data)
+    """Parse met data from the flash frame"""
+    if verbose:
+        pass
+    md = MetData(data, log=global_log)
     md.extract()
     md.convert()
     return md
@@ -748,6 +753,7 @@ def flash_single_cycle(cycle, verbose=False):
     verbose : bool
 
     """
+    global parse_log
 
     indexes, names = flash_find_sections(cycle, verbose=False)
 
@@ -770,56 +776,32 @@ def flash_single_cycle(cycle, verbose=False):
     cycle_rh = cycle[indexes[2]:indexes_end[2]]
     cycle_rht = cycle[indexes[3]:indexes_end[3]]
 
-    cycle_out = LIData(raw_data=cycle_li)
-    cycle_out.extract()
-    cycle_out.convert()
+    cycle_out = LIData(raw_data=cycle_li, log=global_log)
+    cycle_out.header()
+    if cycle_out.number > 1:
+        # return pd.DataFrame(data=None)
+        cycle_out.extract()
+        cycle_out.convert()
 
-    o2 = AuxData(raw_data=cycle_o2)
-    o2.extract()
+    o2 = AuxData(raw_data=cycle_o2, log=global_log)
+    o2.header()
+    if o2.number > 1 & len(cycle_out.data) > 0:
+        o2.extract()
+        cycle_out.data["O2_percent"] = o2.data
 
-    rh = AuxData(raw_data=cycle_rh)
-    rh.extract()
+    rh = AuxData(raw_data=cycle_rh, log=global_log)
+    rh.header()
+    if rh.number > 1 & len(cycle_out.data) > 0:
+        rh.extract()
+        cycle_out.data["RH_percent"] = rh.data
 
-    rht = AuxData(raw_data=cycle_rht)
-    rht.extract()
-
-    cycle_out.data["O2_percent"] = o2.data
-    cycle_out.data["RH_percent"] = rh.data
-    cycle_out.data["RH_temp_c"] = rht.data
+    rht = AuxData(raw_data=cycle_rht, log=global_log)
+    rht.header()
+    if rht.number > 1 & len(cycle_out.data) > 0:
+        rht.extract()
+        cycle_out.data["RH_temp_c"] = rht.data
 
     return cycle_out
-
-
-#        (h, g, e,
-#         zpon, zpof, zpcl,
-#         spon, spof, spcl,
-#         epon, epof,
-#         apon, apof) = parse_flash_frame(data=data,
-#                                         start=start, end=end,
-#                                         verbose=verbose)
-#
-#    print(e.data)
-#    h_series = pd.Series(data=h.data(), index=h.data_names)
-#    g_series = pd.Series(data=g.data(), index=g.data_names)
-#    e_series = pd.Series(data=e.data(), index=e.data_names)
-#
-#    df = pd.DataFrame(data=[pd.Series(data=zpon.data(), index=zpon.data_names),
-#                            pd.Series(data=zpof.data(), index=zpof.data_names),
-#                            pd.Series(data=zpcl.data(), index=zpcl.data_names),
-#                            pd.Series(data=spon.data(), index=spon.data_names),
-#                            pd.Series(data=spof.data(), index=spof.data_names),
-#                            pd.Series(data=spcl.data(), index=spcl.data_names),
-#                            pd.Series(data=epon.data(), index=epon.data_names),
-#                            pd.Series(data=epof.data(), index=epof.data_names),
-#                            pd.Series(data=apon.data(), index=apon.data_names),
-#                            pd.Series(data=apof.data(), index=apof.data_names),
-#                            ],
-#                      index=["zpon", "zpof", "zpcl",
-#                             "spon", "spof", "spcl",
-#                             "epon", "epof",
-#                             "apon", "apof"])
-#
-#    return h_series, g_series, e_series, df
 
 
 def parse_header(data, verbose=False):

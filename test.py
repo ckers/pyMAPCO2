@@ -8,7 +8,10 @@ from load import Cleaner, Indexer
 # f = "C:\\Users\\dietrich\\data\\rudics\\0008\\C0008_2015_10_01.txt"
 
 # Flash file
-f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\0004 2016_07_23 optode test - cleaned.txt"
+# f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\0004 2016_07_23 optode test - cleaned.txt"
+
+f = 'C:\\Users\\dietrich\\data\\01 QC\\TAO_170W0N\\TAO_170W0N_dp07_2012\\source\\mapco2_0170w_0032_dp07_20120516_2c.txt'
+#f = 'flash_bad_data_test.txt'
 
 # Terminal log
 # f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\mapCO2-7-22-16-final - 2016_07_25.txt"
@@ -33,9 +36,6 @@ print("Header>> ", parse.MAPCO2Header().data_names)
 print("GPS>>    ", parse.MAPCO2GPS().data_names)
 print("ENGR>>   ", parse.MAPCO2Engr(data_type=cleaner.data_type).data_names)
 
-# start a dictionary to put dataframes into for panel conversion
-# panel_dict = {}
-
 # testing flash cycle parsing
 h, g, e, co2, aux = parse.chooser(data=z,
                                   start=indexer.df.start,
@@ -44,48 +44,10 @@ h, g, e, co2, aux = parse.chooser(data=z,
                                   data_type=cleaner.data_type)
 
 # one cycle summary for now...
-#print(df.mean())
+# print(df.mean())
 
-
+# experiment with json output
 formats = ['split', 'records', 'index', 'columns', 'values']
 
 # for f in formats:
 #     print(f, len(df.to_json(orient=f)))
-    
-#for n in range(0, len(index_df.start)):
-#    s = index_df.start[n]
-#    e = index_df.end[n]
-#    #        (a, b, c, zpon, zpof, zpcl, spon, spof, spcl, epon, epof, apon, apof) = parse.parse_frame(d, s, e,
-#    #            verbose=True, data_type=cleaner.data_type)
-#    #        print("Parse Frame | header >>  ", a.data())
-#    #        print("Parse Frame | gps    >>  ", b.data())
-#    #        print("Parse Frame | engr   >>  ", c.data())
-#    #        print("Parse Frame | zpon   >>  ", zpon.data())
-#    #        print("Parse Frame | zpof   >>  ", zpof.data())
-#    #        print("Parse Frame | zpcl   >>  ", zpcl.data())
-#    #        print("Parse Frame | spon   >>  ", spon.data())
-#    #        print("Parse Frame | spof   >>  ", spof.data())
-#    #        print("Parse Frame | spcl   >>  ", spcl.data())
-#    #        print("Parse Frame | epon   >>  ", epon.data())
-#    #        print("Parse Frame | epof   >>  ", epof.data())
-#    #        print("Parse Frame | apon   >>  ", apon.data())
-#    #        print("Parse Frame | apof   >>  ", apof.data())
-#    parse.build_frames(d, s, e, verbose=True, data_type=cleaner.data_type)
-#    h, g, e, df = parse.build_frames(d, s, e, verbose=True, data_type=cleaner.data_type)
-#    print("=" * 50)
-#    print(h.date_time)
-#    panel_dict[h.date_time] = df
-#    print("header>>")
-#    print("------")
-#    print(h)
-#    print("gps>>")
-#    print("------")
-#    print(g)
-#    print("engineering>>")
-#    print("------")
-#    print(e)
-#    print("data frame>>")
-#    print("------")
-#    print(df)
-#
-#panel = pd.Panel(data=panel_dict)
