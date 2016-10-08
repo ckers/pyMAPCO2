@@ -33,6 +33,7 @@ class MAPCO2ParseLog(object):
 global_log = MAPCO2ParseLog()
 global_key = ''
 
+
 class MAPCO2Base(object):
 
     def __init__(self):
@@ -50,16 +51,18 @@ class MAPCO2Base(object):
 
 
 class MAPCO2Header(MAPCO2Base):
-    def __init__(self):
-        self.df = None
 
-        self.mode = []
-        self.checksum = []
-        self.size = []
-        self.date_time = []
-        self.location = []
-        self.system = []
-        self.firmware = []
+    def __init__(self):
+        self.line = None
+        self.df = None
+        self.mode = None
+        self.checksum = None
+        self.size = None
+        self.date_time = None
+        self.location = None
+        self.system = None
+        self.firmware = None
+        self.timestamp = None
 
         self.date_time_format = "%Y/%m/%d_%H:%M:%S"
         self.firmware_format = "A.B_%m/%d/%Y"
@@ -70,7 +73,30 @@ class MAPCO2Header(MAPCO2Base):
                            "date_time",
                            "location",
                            "system",
-                           "firmware"]
+                           "firmware",
+                           "timestamp"]
+
+    def parse(self, line, verbose=False):
+        """Parse one line of MAPCO2 data that contains the header information"""
+        if verbose:
+            print("MAPCO2Header.parse >>  ", line)
+
+        # extract header information
+        header = line.split()
+
+        self.mode = header[0]
+        self.checksum = header[1]
+        self.size = header[2]
+        self.date_time = header[3] + "_" + header[4]
+        self.timestamp = pd.Timestamp(header[3] + " " + header[4])
+        self.location = header[5]
+        self.system = header[6]
+
+        # older versions of the firmware don't include the version number
+        try:
+            self.firmware = header[7] + "_" + header[8]
+        except:
+            self.firmware = False
 
     @property
     def data(self):
@@ -80,7 +106,8 @@ class MAPCO2Header(MAPCO2Base):
               self.date_time,
               self.location,
               self.system,
-              self.firmware]
+              self.firmware,
+              self.timestamp]
         return _a
 
 
@@ -102,6 +129,7 @@ class MAPCO2GPS(MAPCO2Base):
         self.time_before_check = []
         self.time_after_check = []
         self.valve_time = []
+        self.timestamp = None
 
         self.date_time_format = "%m/%d/%Y_%H:%M:%S"
 
@@ -110,7 +138,50 @@ class MAPCO2GPS(MAPCO2Base):
                            "lon_deg", "lon_min", "lon_direction",
                            "fix_time", "quality",
                            "time_before_check", "time_after_check",
-                           "valve_time"]
+                           "valve_time", "timestamp"]
+
+    def parse(self, line, verbose=False):
+
+        # extract location information
+        gps = line.split()
+        _t = gps[0] + "_" + gps[1]
+
+        # if no fix, fill with zero
+        if _t in config.time_ignore:
+            self.date_time = "NaT"
+        else:
+            try:
+                self.date_time = _t
+            except:
+                parse_log.events.append("%s, %s, %s, Unable to parse %s"
+                                        % (self.time, self.location,
+                                           self.system, self))
+                print("parse_gps>> Error parsing: ", gps)
+
+        lat = gps[2].split(".")
+
+        self.lat_deg = lat[0][:-2]
+        self.lat_min = lat[0][-2:] + "." + lat[1]
+        self.lat_direction = gps[3]
+
+        lon = gps[4].split(".")
+
+        self.lon_deg = lon[0][:-2]
+        self.lon_min = lon[0][-2:] + "." + lon[1]
+        self.lon_direction = gps[5]
+
+        self.fix_time = gps[6]
+        self.quality = gps[7]
+        self.time_before_check = gps[8] + "_" + gps[9]
+        self.time_after_check = gps[10] + "_" + gps[11]
+
+        try:
+            if len(gps) > 12:
+                self.valve_time = gps[13]
+        except:
+            self.valve_time = []
+            if verbose:
+                print("parse_gps>> Error in valve current: ", gps)
 
     @property
     def data(self):
@@ -125,7 +196,8 @@ class MAPCO2GPS(MAPCO2Base):
                 self.quality,
                 self.time_before_check,
                 self.time_after_check,
-                self.valve_time]
+                self.valve_time,
+                self.timestamp]
 
 
 class MAPCO2Engr(MAPCO2Base):
@@ -135,36 +207,149 @@ class MAPCO2Engr(MAPCO2Base):
 
         self.data_type = data_type
 
-        self.v_logic = []
-        self.v_trans = []
-        self.zero_coeff = []
-        self.span_coeff = []
-        self.flag = []
+        self.v_logic = None
+        self.v_trans = None
+        self.zero_coeff = None
+        self.span_coeff = None
+        self.flag = None
+        self.span_flag = 0
+        self.zero_flag = 0
 
-        self.sst = []
-        self.sst_std = []
-        self.ssc = []
-        self.ssc_std = []
-        self.sss = []
-        self.sss_std = []
-        self.u = []
-        self.u_std = []
-        self.v = []
-        self.v_std = []
-        self.raw_compass = []
-        self.raw_vane = []
-        self.raw_windspeed = []
+        self.sst = None
+        self.sst_std = None
+        self.ssc = None
+        self.ssc_std = None
+        self.sss = None
+        self.sss_std = None
+        self.u = None
+        self.u_std = None
+        self.v = None
+        self.v_std = None
+        self.raw_compass = None
+        self.raw_vane = None
+        self.raw_windspeed = None
+
+        self.timestamp = None
+
+        self.f_span_5 = None
+        self.f_span_4 = None
+        self.f_span_3 = None
+        self.f_span_2 = None
+        self.f_span_1 = None
+        self.f_zero_5 = None
+        self.f_zero_4 = None
+        self.f_zero_3 = None
+        self.f_zero_2 = None
+        self.f_zero_1 = None
 
         self.data_names = ["v_logic", "v_trans", "zero_coeff", "span_coeff",
                            "flag", "sst", "sst_std", "ssc", "ssc_std",
                            "sss", "sss_std", "u", "u_std", "v", "v_std",
-                           "raw_compass", "raw_vane", "raw_windspeed"]
+                           "raw_compass", "raw_vane", "raw_windspeed",
+                           "span_flag", "zero_flag", "timestamp",
+                           'f_span_5',
+                           'f_span_4',
+                           'f_span_3',
+                           'f_span_2',
+                           'f_span_1',
+                           'f_zero_5',
+                           'f_zero_4',
+                           'f_zero_3',
+                           'f_zero_2',
+                           'f_zero_1',
+                           'span_flag',
+                           'zero_flag']
+
+        self.flag_names = ['', '', '',
+                           'f_span_5',
+                           'f_span_4',
+                           'f_span_3',
+                           'f_span_2',
+                           'f_span_1',
+                           '', '', '',
+                           'f_zero_5',
+                           'f_zero_4',
+                           'f_zero_3',
+                           'f_zero_2',
+                           'f_zero_1']
+
+        self.flag_name_def = ['', '', '',
+                              'no span cal coefficient',
+                              'no zero cal coefficient',
+                              'licor error',
+                              'licor nak',
+                              'licor timeout',
+                              '', '', '',
+                              'no span cal coefficient',
+                              'no zero cal coefficient',
+                              'licor error',
+                              'licor nak',
+                              'licor timeout']
 
         self.update_names()
 
     def update_names(self):
         if self.data_type != "iridium":
-            self.data_names = self.data_names[:5]
+            self.data_names = self.data_names[:5] + self.data_names[-12:]
+
+    def decode_flag(self):
+        """Convert 4 character flag into 16 item list of binary values
+        for all flag states"""
+        flag = self.flag
+        s = flag[0:2]
+        z = flag[2:4]
+
+        if s.lower() == 'ff':
+            self.span_flag = 1
+            flag = '00' + flag[-2:]
+
+        if z.lower() == 'ff':
+            self.zero_flag = 1
+            flag = flag[:2] + '00'
+
+        fl = [int(n) for n in bin(int(flag, 16))[2:].zfill(16)]
+
+        self.f_span_5 = fl[3]
+        self.f_span_4 = fl[4]
+        self.f_span_3 = fl[5]
+        self.f_span_2 = fl[6]
+        self.f_span_1 = fl[7]
+        self.f_zero_5 = fl[11]
+        self.f_zero_4 = fl[12]
+        self.f_zero_3 = fl[13]
+        self.f_zero_2 = fl[14]
+        self.f_zero_1 = fl[15]
+
+    def parse(self, line, verbose=False):
+
+        if verbose:
+            print("parse_engr   >>  ", line)
+
+        engr = line.split()
+
+        self.v_logic = float(engr[0])
+        self.v_trans = float(engr[1])
+        self.zero_coeff = float(engr[2])
+        self.span_coeff = float(engr[3])
+        self.flag = engr[4]  # needs to remain string for flag bit access
+
+        try:
+            self.sst = float(engr[5])
+            self.sst_std = float(engr[6])
+            self.ssc = float(engr[7])
+            self.ssc_std = float(engr[8])
+            self.sss = float(engr[9])
+            self.sss_std = float(engr[10])
+            self.u = float(engr[11])
+            self.u_std = float(engr[12])
+            self.v = float(engr[13])
+            self.v_std = float(engr[14])
+            self.raw_compass = float(engr[15])
+            self.raw_vane = float(engr[16])
+            self.raw_windspeed = float(engr[17])
+        except:
+            if verbose:
+                print("parse_engr>> ENGR line met data parsing error")
 
     @property
     def data(self):
@@ -185,10 +370,25 @@ class MAPCO2Engr(MAPCO2Base):
               self.v_std,
               self.raw_compass,
               self.raw_vane,
-              self.raw_windspeed]
+              self.raw_windspeed,
+              self.span_flag,
+              self.zero_flag,
+              self.timestamp,
+              self.f_span_5,
+              self.f_span_4,
+              self.f_span_3,
+              self.f_span_2,
+              self.f_span_1,
+              self.f_zero_5,
+              self.f_zero_4,
+              self.f_zero_3,
+              self.f_zero_2,
+              self.f_zero_1,
+              self.span_flag,
+              self.zero_flag]
 
         if (self.data_type == "flash") or (self.data_type == "terminal"):
-            _a = _a[:5]
+            _a = _a[:5] + _a[-12:]
         return _a
 
 
@@ -494,15 +694,18 @@ def flash(data, start, end, verbose=False):
     print(g.head())
     print(e.head())
 
-    co2 = pd.Panel({common_key: co2_0})
-    # co2 = co20
+    # co2 = pd.Panel({common_key: co2_0})
+
+    co2 = co2_0
+    co2['common_key'] = common_key
+
     # aux = pd.DataFrame(data=[aux.data], columns=aux.data_names)
     aux = [aux_0]
 
     for n in range(1, len(start)):
         # break the data file into samples
         frame = data[start[n]:end[n]]
-        h_n, g_n, e_n, co2_n, aux_n = flash_compile(sample=frame, verbose=verbose)
+        h_n, g_n, e_n, co2_n_df, aux_n = flash_compile(sample=frame, verbose=verbose)
         # print('co2_n df>>', co2_n.head())
         print('h>>', g_n.date_time, h_n.system, h_n.date_time)
         # print('h>>', h_n.data)
@@ -533,7 +736,9 @@ def flash(data, start, end, verbose=False):
             global_log.events.append('Error parsing aux data at:', common_key)
             print('Error parsing aux data at:', common_key)
         try:
-            co2[common_key] = co2_n
+            # co2[common_key] = co2_n
+            co2_n_df['common_key'] = common_key
+            co2 = pd.concat([co2, co2_n_df])
         except ValueError:
             # print('parse.flash>> co2', co2.ix[-1])
             global_log.events.append('Error parsing co2 data at:', common_key)
@@ -555,7 +760,10 @@ def flash_compile(sample, verbose=False):
 
     h = parse_header(h, verbose=verbose)
     g = parse_gps(g, verbose=verbose)
-    e = parse_engr(e, verbose=verbose)
+    g.timestamp = h.timestamp
+    e = parse_engr(e, verbose=verbose, data_type='flash')
+    e.decode_flag()
+    e.timestamp = h.timestamp
 
     if verbose:
         print("frame header>>", h.data)
@@ -565,6 +773,7 @@ def flash_compile(sample, verbose=False):
     print("parse.parse_flash>>ID INFO:", h.date_time + '_' + h.system)
 
     co2, aux = flash_co2_aux(sample, verbose=verbose)
+    co2["timestamp"] = h.timestamp
 
     return h, g, e, co2, aux
 
@@ -713,6 +922,8 @@ def flash_co2_aux(sample, verbose=False):
             co2_df_n.data["cycle"] = c[n]
             co2_df = pd.concat([co2_df, co2_df_n.data])
 
+    co2_df['n'] = co2_df.index
+
     return co2_df, met_container.data
 
 
@@ -804,39 +1015,13 @@ def flash_single_cycle(cycle, verbose=False):
     return cycle_out
 
 
-def parse_header(data, verbose=False):
-    if verbose:
-        print("parse_header >>  ", data)
-
-    h = MAPCO2Header()
-
-    # extract header information
-    header = data.split()
-
-    h.mode = header[0]
-    h.checksum = header[1]
-    h.size = header[2]
-    h.date_time = header[3] + "_" + header[4]
-    #    unit_unix_time = time.mktime(time.strptime(unit_time, "%Y/%m/%d_%H:%M:%S"))
-    h.location = header[5]
-    h.system = header[6]
-
-    # older versions of the firmware don't include the version number
-    try:
-        h.firmware = header[7] + "_" + header[8]
-    except:
-        h.firmware = False
-
-    return h
-
-
 def date_time_convert(dt, ft):
     """Convert date_time value to unix time
     Parameters
     ----------
     dt : date_time string
     ft : format of date_time string
-    
+
     Returns
     -------
     t : unix time in seconds
@@ -844,88 +1029,30 @@ def date_time_convert(dt, ft):
     return time.mktime(time.strptime(dt, ft))
 
 
-def parse_gps(data, verbose=False):
+def parse_header(line, verbose=False):
     if verbose:
-        print("parse_gps    >>  ", data)
+        print("parse_header >>  ", line)
+
+    h = MAPCO2Header()
+    h.parse(line=line)
+
+    return h
+
+
+def parse_gps(line, verbose=False):
 
     g = MAPCO2GPS()
+    g.parse(line=line, verbose=verbose)
 
-    # extract location information
-    gps = data.split()
-    _t = gps[0] + "_" + gps[1]
-
-    # if no fix, fill with zero
-    if _t in config.time_ignore:
-        g.date_time = "NaT"
-    else:
-        try:
-            g.date_time = _t
-        except:
-            parse_log.events.append("%s, %s, %s, Unable to parse %s"
-                                    % (g.time, g.location,
-                                       g.system, g))
-            print("parse_gps>> Error parsing: ", gps)
-
-    lat = gps[2].split(".")
-
-    g.lat_deg = lat[0][:-2]
-    g.lat_min = lat[0][-2:] + "." + lat[1]
-    g.lat_direction = gps[3]
-
-    lon = gps[4].split(".")
-
-    g.lon_deg = lon[0][:-2]
-    g.lon_min = lon[0][-2:] + "." + lon[1]
-    g.lon_direction = gps[5]
-
-    g.fix_time = gps[6]
-    g.quality = gps[7]
-    g.time_before_check = gps[8] + "_" + gps[9]
-    g.time_after_check = gps[10] + "_" + gps[11]
-
-    try:
-        if len(gps) > 12:
-            g.valve_time = gps[13]
-    except:
-        g.valve_time = []
-        if verbose:
-            print("parse_gps>> Error in valve current: ", gps)
     return g
 
 
-def parse_engr(data, verbose=False, data_type="iridium"):
-    if verbose:
-        print("parse_engr   >>  ", data)
+def parse_engr(line, verbose=False, data_type="iridium"):
 
     e = MAPCO2Engr(data_type=data_type)
-
-    engr = data.split()
-
-    e.v_logic = float(engr[0])
-    e.v_trans = float(engr[1])
-    e.zero_coeff = float(engr[2])
-    e.span_coeff = float(engr[3])
-    e.flag = engr[4]  # needs to remain string for flag bit access
-
-    try:
-        e.sst = float(engr[5])
-        e.sst_std = float(engr[6])
-        e.ssc = float(engr[7])
-        e.ssc_std = float(engr[8])
-        e.sss = float(engr[9])
-        e.sss_std = float(engr[10])
-        e.u = float(engr[11])
-        e.u_std = float(engr[12])
-        e.v = float(engr[13])
-        e.v_std = float(engr[14])
-        e.raw_compass = float(engr[15])
-        e.raw_vane = float(engr[16])
-        e.raw_windspeed = float(engr[17])
-    except:
-        if verbose:
-            print("parse_engr>> ENGR line met data parsing error")
-
+    e.parse(line=line, verbose=verbose)
     e.update_names()
+    e.decode_flag()
 
     return e
 
