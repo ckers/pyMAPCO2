@@ -10,9 +10,9 @@ from load import Cleaner, Indexer
 # Flash file
 # f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\0004 2016_07_23 optode test - cleaned.txt"
 
-f = 'C:\\Users\\dietrich\\data\\01 QC\\TAO_170W0N\\TAO_170W0N_dp07_2012\\source\\mapco2_0170w_0032_dp07_20120516_2c.txt'
+#f = 'C:\\Users\\dietrich\\data\\01 QC\\TAO_170W0N\\TAO_170W0N_dp07_2012\\source\\mapco2_0170w_0032_dp07_20120516_2c.txt'
 #f = 'flash_bad_data_test.txt'
-#f = 'mapco2_0170w_0032_dp07_20120516_2c_short.txt'
+f = 'mapco2_0170w_0032_dp07_20120516_2c_short.txt'
 
 # Terminal log
 # f = "C:\\Users\\dietrich\\data\\misc\\pco2_optode\\mapCO2-7-22-16-final - 2016_07_25.txt"

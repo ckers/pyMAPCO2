@@ -1030,6 +1030,16 @@ def date_time_convert(dt, ft):
 
 
 def parse_header(line, verbose=False):
+    """Parse the header line of the mapco2 data frame
+    Parameters
+    ----------
+    line : str, line of space delimited values
+    verbose : bool, output print information
+    Returns
+    -------
+    h : class, instance of data class MAPCO2Header with data set
+    """
+
     if verbose:
         print("parse_header >>  ", line)
 
@@ -1040,7 +1050,16 @@ def parse_header(line, verbose=False):
 
 
 def parse_gps(line, verbose=False):
+    """Parse the gps header line of the mapco2 data frame
+    Parameters
+    ----------
+    line : str, line of space delimited values
+    verbose : bool, output print information
+    Returns
+    -------
+    g : class, instance of data class MAPCO2GPS with data set
 
+    """
     g = MAPCO2GPS()
     g.parse(line=line, verbose=verbose)
 
@@ -1048,6 +1067,16 @@ def parse_gps(line, verbose=False):
 
 
 def parse_engr(line, verbose=False, data_type="iridium"):
+    """Parse the engineering header line of a mapco2 data frame
+    Parameters
+    ----------
+    line : str, line of space delimited values
+    verbose : bool, output print information
+    data_type : str, 'iridium', 'flash' or 'terminal'
+    Returns
+    -------
+    e : class, instance of data class MAPCO2Engr with data set
+    """
 
     e = MAPCO2Engr(data_type=data_type)
     e.parse(line=line, verbose=verbose)
@@ -1057,13 +1086,22 @@ def parse_engr(line, verbose=False, data_type="iridium"):
     return e
 
 
-def parse_co2_line(data, verbose=False):
+def parse_co2_line(line, verbose=False):
+    """Parse the co2 data line of a mapco2 data frame
+    Parameters
+    ----------
+    line : str, line of space delimited values
+    verbose : bool, output print information
+    Returns
+    -------
+    c : class, instance of data class MAPCO2Data with data set
+    """
     if verbose:
-        print("parse_co2    >>  ", data)
+        print("parse_co2    >>  ", line)
 
     c = MAPCO2Data()
 
-    co2 = data.split()
+    co2 = line.split()
 
     #    co2 = [float(n) for n in co2]
     # print(co2)
@@ -1095,6 +1133,15 @@ def parse_co2_line(data, verbose=False):
 
 
 def parse_co2_series(data, verbose):
+    """Convert line of co2 data into a pandas series
+    Parameters
+    ----------
+    data : str, one line of licor data
+    verbose : bool, output print information
+    Returns
+    -------
+    c_series : Series, pandas series object
+    """
     c = parse_co2_line(data=data, verbose=verbose)
     c_series = pd.Series(data=c.data(), index=c.data_names)
     return c_series
