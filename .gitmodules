@@ -1,0 +1,3 @@
+[submodule "gserial"]
+	path = gserial
+	url = https://github.com/crdietrich/gserial.git
