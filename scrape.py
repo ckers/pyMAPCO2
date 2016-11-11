@@ -16,14 +16,15 @@ import config
 
 class Iridium(object):
     
-    def __init__(self, url_source="http://eclipse.pmel.noaa.gov/rudics/pco2/",
-                 local_data_directory=config.local_data_directory):
+    def __init__(self, form):
         
-        # default location of pCO2 Rudics data
-        self.url_source = url_source
-        
-        # local location to save downloaded data, either from kwarg or config
-        self.local_data_directory = local_data_directory
+        # location of pCO2 Rudics data
+        if form == 'ma':
+            self.url_source = config.mapco2_rudics
+            self.local_data_directory = config.local_mapco2_data_directory
+        if form == 'wg':
+            self.url_source = config.waveglider_rudics
+            self.local_data_directory = config.local_waveglider_data_directory
         
         # local data files
         self.local_data_files = []
@@ -136,11 +137,12 @@ class Iridium(object):
                     pass
         self.data_names = [_.split("/")[-2:] for _ in self.data_urls]
     
-    def download_files(self, refresh_days=False, download_delay=False):
+    def download_files(self, oldest=None, refresh_days=False, download_delay=False):
         """Download files from Rudics to a local directory for processing
         
         Parameters
         ----------
+        oldest : str, oldest file to download, in YYYY_MM_DD date format
         refresh_days : int, number of days in the past to purge and redownload
         download_delay : int, number of seconds to pause between files
 
@@ -179,8 +181,8 @@ class Iridium(object):
                 t_local = os.path.getmtime(destination_file)
                 self.local_data_files.append(destination_file)
             
-                _refresh = (self.time_file(destination_file)
-                            > int(time.time() - self.time_span(days=refresh_days)))
+                _refresh = (self.time_file(destination_file) >
+                            int(time.time() - self.time_span(days=refresh_days)))
                 if _refresh:
                     os.remove(destination_file)
                 

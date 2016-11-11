@@ -6,7 +6,13 @@ Configuration values
 
 import os
 
-local_data_directory = os.path.normpath("C:\\Users\\dietrich\\data\\rudics")
+mapco2_rudics = "http://eclipse.pmel.noaa.gov/rudics/pco2/"
+waveglider_rudics = "http://eclipse.pmel.noaa.gov/rudics/PCWG/"
+dial_rudics = "http://eclipse.pmel.noaa.gov/rudics/ALL_RUDICS/PLATFORM_CALL_SUMMARIES/"
+
+local_mapco2_data_directory = os.path.normpath("C:\\Users\\dietrich\\data\\rudics\\mapco2\\")
+local_waveglider_data_directory = os.path.normpath("C:\\Users\\dietrich\\data\\rudics\\waveglider\\")
+local_rudics_dial_data = os.path.normpath("C:\\Users\\dietrich\\data\\rudics\\dial\\")
 
 # Iridium Data Format
 cycles = ["zero_pump_on", "zero_pump_off", "zero_post_cal", "span_pump_on",
