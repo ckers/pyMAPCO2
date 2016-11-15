@@ -29,28 +29,33 @@ def mwrite(x, n):
     s.write(bytes(x, 'utf-8') + b'\r')
     time.sleep(n)
 
-mwrite('\x03', 1)
-mwrite('\x03', 1)
-mwrite('apos', 1)
-mwrite('p', 1)    
+mwrite('\x03', 2)
+mwrite('\x03', 2)
+mwrite('apos', 2)  # this will be redundant but gets into test loop
 
-c = 0
-c_limit = 30
+cycles = (('ZERO', 'z'),
+          ('SPAN', 's'),
+          ('EQUIL', 'e'),
+          ('AIR', 'a'))
 
-while True:
+i = 0
+i_limit = 10
 
-    l = s.read()
+for cycle, c in cycles:    
+    mwrite(c, 2)
+    p_s = (('ON', 'p'), ('OFF', 'p'))    
+    for state, p in p_s:
+        mwrite(p, 3)
+        print('==== ', cycle, 'PUMP', state, '====')
+        while True:        
+            line = s.read()
+            a = line.split()
+            if (b'RT' in a) and (b'C' in a):
+                print('{:02d}'.format(i), '>>', line.decode('utf-8'))
+                i += 1
+                if i > i_limit:
+                    i = 0
+                    break
 
-    if l[0:4].decode('utf-8') == id:
-        a = l.split()
-        if (b'RT' in a) and (b'C' in a):
-            print(c, '>>', l.decode('utf-8'))
-            c += 1
-            if c > c_limit:
-                break
-        else:
-            print(l)
-
-mwrite('p', 1)                
-mwrite('\0x03', 1)
+mwrite('\0x03', 3)
 s.close()
