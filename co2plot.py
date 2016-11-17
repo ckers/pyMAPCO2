@@ -563,7 +563,7 @@ def plot_combined(co2, mbl, markers='.', lines='-', gtd=[]):
                         marker=markers, markersize=ms,
                         markerfacecolor='None', markeredgecolor=c,
                         label='Licor Temp')
-
+        """
         # CO2 seawater
         y1,y2 = host.get_ylim()
         host.set_ylim((ylim_finder(co2.xCO2_SW_dry, data_type="xco2_sw")[0],y2))
@@ -594,6 +594,7 @@ def plot_combined(co2, mbl, markers='.', lines='-', gtd=[]):
         y_data = np.concatenate([co2.Licor_Atm_Pressure, gtd])
         limits = (ylim_finder(y_data, data_type="atm_press"))
         par5.set_ylim(limits[0], limits[1])
+        """
         
         host.axis["left"].label.set_color(p1.get_color())
         par1.axis["right"].label.set_color(p2.get_color())

@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 from os import walk
 
+from utils.general import pad_date
+
 class CDIACCSV(object):
     
     def __init__(self):
@@ -17,6 +19,7 @@ class CDIACCSV(object):
         
     def load_df(self, fp):
         """Load MAPCO2 data from final .csv to Pandas DataFrame
+        Skips the first row, assuming units are there.
         
         Parameters
         ----------
@@ -56,10 +59,12 @@ class CDIACCSV(object):
         _df = pd.read_csv(fp, sep=',',
                              header=0,
                              skiprows=[1])
+        
+        _df.Date = _df.Date.map(pad_date)
+        
         _df['datetime'] = _df.Date + ' ' + _df.Time
         _df['datetime'] = pd.DatetimeIndex(_df.datetime)
-#        _df['datetime'] = pd.DatetimeIndex(_df.loc[:,'datetime'],
-#                                         format='%m/%d/%Y_%H:%M')
+
         return _df
         
     def get_files(self, fp):
@@ -79,7 +84,7 @@ class CDIACCSV(object):
                 files_out.append(root + name)
         return files_out        
         
-    def load_batch(self, fp_list):       
+    def load_batch(self, fp_list, verbose=False):       
         """Load all files in a directory that are CDIAC VBA MAPCO2 format
 
         Parameters
@@ -97,20 +102,27 @@ class CDIACCSV(object):
         for fp in fp_list:
             if "mbl" in fp:
                 mbl_fp = fp
+                if verbose:
+                    print("MBL found:", mbl_fp)
+
             else:
                 mapco2_fp_list.append(fp)
         
-        _df = self.load_df(mapco2_fp_list[0])
+        _dfmbl = self.load_mbl(mbl_fp)
+        print('MBL data.head:', _dfmbl.head())
+        
+        _fp = mapco2_fp_list[0]
+        if verbose:
+            print('Loading:', _fp)
+        _df = self.load_df(_fp)
         for _fp in mapco2_fp_list[1:]:
+            if verbose:
+                print('Loading:', _fp)
             _df2 = self.load_df(_fp)
             _df = pd.concat([_df, _df2])
-            
+        
         _df = _df.sort_values(by=["datetime"], axis=0)
         _df.reset_index(inplace=True)
-        
-        
-        _dfmbl = self.load_mbl(mbl_fp)
-        print(_dfmbl.head())
         
         return _df, _dfmbl
 
@@ -135,7 +147,6 @@ class CDIACCSV(object):
 
         _df = pd.read_csv(fp, sep=',',
                           header=0)
-#        _df['t'] = pd.to_datetime(_df['t'])
         _df['datetime'] = pd.DatetimeIndex(_df['t'])
 
         return _df
@@ -151,41 +162,4 @@ class CDIACPlot(object):
     
     def __init__(self):
         pass
-    
-if __name__ == "__main__":
-#    import parse
-    import co2plot
-    
-    fp = 'C:\\Users\\dietrich\\data\\01 QC\\TAO_110W0N\\TAO_110W0N_all\\cdiac\\TAO110W_0N_Jul2010_Oct2010.csv'
-    fp_all = 'C:\\Users\\dietrich\\data\\01 QC\\TAO_110W0N\\TAO_110W0N_all\\cdiac\\'
-    c = CDIACCSV()
-    
-    fp_list = c.get_files(fp_all)
-    print(fp_list)
-
-    df3, mbl = c.load_batch(fp_list=fp_list)
-    
-    df3["day"] = df3.datetime.map(co2plot.day_of_year)
-    df3["year"] = df3.datetime.map(co2plot.year)
-    
-    mbl["day"] = mbl.datetime.map(co2plot.day_of_year)
-    mbl["year"] = mbl.datetime.map(co2plot.year)
-    
-#    co2plot.plot_combined(date_time=df3.datetime,
-#                          xCO2_air_dry=df3.xCO2_Air_dry,
-#                          xCO2_sw_dry=df3.xCO2_SW_dry,
-#                          o2_percent=df3.Percent_O2,
-#                          sss=df3.SSS,
-#                          sst=df3.SST,
-#                          licor_temp=df3.Licor_Temp,
-#                          licor_press=df3.Licor_Atm_Pressure,
-#                          mbl=mbl)
-    
-    
-    co2plot.plot_annual(co2=df3,
-                        mbl=mbl)    
-    
-#    final = parse.MAPCO2DataFinal()
-#    final.xCO2_air_dry = df3.xCO2_Air_dry
-#    final.date_time = df3.datetime
     
