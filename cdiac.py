@@ -5,7 +5,6 @@ Created on Wed Sep 21 17:17:47 2016
 @author: dietrich
 """
 
-import numpy as np
 import pandas as pd
 from os import walk
 

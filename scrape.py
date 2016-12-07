@@ -41,6 +41,7 @@ class Iridium(object):
         # list of data files for all units searched for
         self.data_urls = []
         self.data_urls_modtime = []
+        self.data_urls_modtime_str = []
         
         # network access apache file index
         html = requests.get(self.url_source)
@@ -121,9 +122,11 @@ class Iridium(object):
             a_soup = soup.find_all("a")
             for a in a_soup:
                 fa = a.text.strip()
-                ft = a.next_element.next_element.text.strip()
+                fts = a.next_element.next_element.text.strip()
+                
                 try:
-                    ft = time.mktime(time.strptime(ft, "%d-%b-%Y %H:%M"))
+                    ft = time.mktime(time.strptime(fts, "%d-%b-%Y %H:%M"))
+                    self.data_urls_modtime_str.append(fts)
                 except ValueError:
                     # these are the non-timestamp rows in the page                    
                     pass
@@ -150,6 +153,8 @@ class Iridium(object):
         -------
         None, writes to disk
         """
+        
+        files_downloaded = []
         
         names_urls = zip(self.data_names, self.data_urls)
         urls_times = dict(zip(self.data_urls, self.data_urls_modtime))
@@ -199,6 +204,7 @@ class Iridium(object):
                 _file = open(destination_file, 'wb')  # open as bytes
                 _file.write(_text)                    # write the data
                 _file.close()
+                files_downloaded.append(name)
             
             if download_delay:
                 if download_delay == "random":
@@ -210,7 +216,12 @@ class Iridium(object):
                 time.sleep(t)
 
         self.local_data_files.sort()
-
+        
+        if len(files_downloaded) == 0:
+            files_downloaded = None
+        
+        return files_downloaded
+            
 
 class CallLog(object):
 
@@ -233,15 +244,4 @@ class CallLog(object):
             href = _["href"]
             if "outlogs" in href:
                 print("|", text, "|", href)
-
-
-if __name__ == "__main__":
-#    i = Iridium(local_data_directory="C:\\Users\\dietrich\\data\\rudics\\test")
-#    i.unit_files(units=["0006"])
-#    print(i.data_names)
-#    print(i.data_urls_modtime)
-#    i.download_files()
-    
-    c = CallLog(local_data_directory="C:\\Users\\dietrich\\data\\rudics\\call_log_test")
-    
     

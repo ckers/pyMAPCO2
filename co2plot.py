@@ -41,7 +41,7 @@ def day_of_year(date_time):
 def year(date_time):
     return date_time.year 
     
-def ylim_finder(data, margin=0.1, data_type=None):
+def ylim_finder(data, margin=0.1, data_type=None, verbose=False):
     """Set y axis limits to something based on reality
     
     Parameters
@@ -74,10 +74,11 @@ def ylim_finder(data, margin=0.1, data_type=None):
     
     try:
         limits = d_limits[data_type]
-        print(limits)
-        print(limits[0])
-        print(limits[1])
-        print(d_min, d_max)
+        if verbose:
+            print(limits)
+            print(limits[0])
+            print(limits[1])
+            print(d_min, d_max)
         return np.max([limits[0], d_min]), np.min([limits[1], d_max])
     except KeyError:
         return d_min, d_max
