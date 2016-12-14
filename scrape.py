@@ -38,6 +38,10 @@ class Iridium(object):
 
         self.data_names = None
 
+        self.data_sn = []
+        self.data_filename = []
+        self.data_new_filename = []
+
         # list of data files for all units searched for
         self.data_urls = []
         self.data_urls_modtime = []
@@ -138,7 +142,48 @@ class Iridium(object):
                         self.data_urls_modtime.append(ft)
                 except ValueError:
                     pass
-        self.data_names = [_.split("/")[-2:] for _ in self.data_urls]
+        
+    def rename_file(self, filename):
+        """Rename a rudics file to sort chronologically in a file browswer
+        
+        Parameters
+        ----------
+        name : str, file name as found on the Rudics server
+        
+        Returns
+        -------
+        destination_file : str, new file name to save locally, formatted 
+            CNNNN_YYYY_mm_dd_version.txt
+        """
+#        print(name)
+        
+#        sn_sn_date = url.split("/")[-2:]
+        
+        
+        
+#        if "." in name[1]: 
+        if "." in filename:
+            filename, version = filename.split(".")
+            version = '_' + version
+#            name = name.split("_")
+            
+        else:
+                        
+#            name = name[1].split("_")
+            version = ""
+
+        sn_m_d_y = filename.split("_")
+            
+        # reorder files so they sort by time
+#        name = name[0] + "_" + name[3] + "_" + name[1] + "_" + name[2]
+            
+        new_filename = (sn_m_d_y[0] + '_' + sn_m_d_y[3] + '_' + 
+                        sn_m_d_y[1] + '_' + sn_m_d_y[2] + version +
+                        '.txt')
+        
+#        destination_file = name + version + ".txt"
+#        return destination_file
+        return new_filename
     
     def download_files(self, oldest=None, refresh_days=False, download_delay=False):
         """Download files from Rudics to a local directory for processing
@@ -156,10 +201,50 @@ class Iridium(object):
         
         files_downloaded = []
         
+
+#        print('#######>', self.data_urls)
+#        self.data_names = [_.split("/")[-2:] for _ in self.data_urls]
+#        print("0>>", self.data_names)
+                
+        
+        """
         names_urls = zip(self.data_names, self.data_urls)
         urls_times = dict(zip(self.data_urls, self.data_urls_modtime))
         
-        for name, url in names_urls:
+        # for name, url in names_urls:
+        name ===== filename now!
+        """
+        
+        urls_times = dict(zip(self.data_urls, self.data_urls_modtime))
+                
+        
+        for url in self.data_urls:
+            url_parts = url.split('/')
+            filename = url_parts[-1]
+            
+            new_filename = self.rename_file(filename)
+            sn = new_filename[1:5]  # based on Iridium server files
+#            print(filename, sn, new_filename)
+
+            self.data_sn.append(sn)
+            self.data_filename.append(filename)
+            
+            _dir = self.local_data_directory + os.path.sep + sn + os.path.sep
+
+            # if the local folder does not exist, make it
+            if os.path.exists(_dir):
+                pass
+            else:
+                os.mkdir(_dir)
+
+            t_server = urls_times[url]
+            
+
+            """
+            self.data_names = [_.split("/")[-2:] for _ in self.data_urls]
+            
+            
+            
             _dir = self.local_data_directory + os.path.sep + name[0] + os.path.sep
             t_server = urls_times[url]
             
@@ -168,19 +253,15 @@ class Iridium(object):
                 pass
             else:
                 os.mkdir(_dir)
-            
+            """
+        
             # create the local data file and keep a record of it's 
-            # absolute path.  Also, change format of the file name
-            # to YYYY_MM_DD_version
-            if "." in name[1]:
-                name, version = name[1].split(".")
-                name = name.split("_")
-                version = "_" + version
-            else:
-                name = name[1].split("_")
-                version = ""
-            name = name[0] + "_" + name[3] + "_" + name[1] + "_" + name[2]
-            destination_file = _dir + name + version + ".txt"
+            # absolute path.
+            # print('download_files>>', name)
+        
+        
+            destination_file = _dir + new_filename
+            self.data_new_filename.append(new_filename)
             
             if os.path.exists(destination_file):
                 t_local = os.path.getmtime(destination_file)
@@ -204,14 +285,14 @@ class Iridium(object):
                 _file = open(destination_file, 'wb')  # open as bytes
                 _file.write(_text)                    # write the data
                 _file.close()
-                files_downloaded.append(name)
+                files_downloaded.append(filename)
             
             if download_delay:
                 if download_delay == "random":
                     t = random.random()*5
                 else:
                     t = float(download_delay)
-                print("scrape.download_files>> Done with %s" % str(name))
+                print("scrape.download_files>> Done with %s" % str(filename))
                 print("...pausing for %s seconds." % "{:10.2f}".format(t))
                 time.sleep(t)
 
@@ -221,7 +302,7 @@ class Iridium(object):
             files_downloaded = None
         
         return files_downloaded
-            
+         
 
 class CallLog(object):
 
@@ -245,3 +326,4 @@ class CallLog(object):
             if "outlogs" in href:
                 print("|", text, "|", href)
     
+        

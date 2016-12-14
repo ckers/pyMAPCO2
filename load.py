@@ -156,7 +156,9 @@ class Indexer(object):
         if file is not None:
             try:
                 self.run(file)
+                print('ran indexer ok!')
             except:
+                print('failed to open:', file)
                 self.status = "Auto import failed"
 
     @staticmethod

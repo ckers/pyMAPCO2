@@ -1,5 +1,6 @@
 import pandas as pd
 
+import datatypes
 import parse
 from load import Cleaner, Indexer
 
@@ -38,9 +39,9 @@ def get(f):
     print("Data Type Detected:", cleaner.data_type)
 
     # header descriptions
-    print("Header>> ", parse.MAPCO2Header().data_names)
-    print("GPS>>    ", parse.MAPCO2GPS().data_names)
-    print("ENGR>>   ", parse.MAPCO2Engr(data_type=cleaner.data_type).data_names)
+    print("Header>> ", datatypes.MAPCO2Header().data_names)
+    print("GPS>>    ", datatypes.MAPCO2GPS().data_names)
+    print("ENGR>>   ", datatypes.MAPCO2Engr(data_type=cleaner.data_type).data_names)
 
     # testing flash cycle parsing
     h, g, e, co2, aux, sbe16 = parse.chooser(data=z,
