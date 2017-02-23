@@ -413,10 +413,10 @@ class MAPCO2Engr(MAPCO2Base):
 
 
 class AuxData(object):
-    def __init__(self, raw_data, header, log):
-        self.raw = raw_data
-        self.h = header
-        self.log = log
+    def __init__(self):
+        self.raw
+        self.h
+        self.log
         self.aux_type = ""
         self.number = None
         self.data = pd.DataFrame(data=None)
@@ -449,9 +449,54 @@ class MetData(AuxData):
 
 
 class SBE16Data(AuxData):
+    def __init__(self):
+        super(AuxData, self).__init__()
+
     """Hold SBE16 data"""
     def extract(self):
         print("SBE16Data.extract>> raw:", self.raw)
+        
+    def convert(self):
+        self.data = pd.DataFrame(data=None)
+
+
+class SAMI2Data(AuxData):
+    """Hold SAMI2 hex data"""
+
+    def __init__(self):
+        super(AuxData, self).__init__()
+        self.datetime = None
+        self.data = None
+        
+    def extract(self):
+        print("SAMI2.extract>> raw:", self.raw)
+        self.datetime = self.raw[1]
+        _n = None
+        try:
+            _n = self.raw.index('^0A')
+        except ValueError:
+            return
+            
+#        if _n is not None:
+        first = self.raw[:_n]
+        second = self.raw[_n+1:]
+        print(first)
+        print(len(first))
+        print(second)
+        print(len(second))
+
+        second = ''.join(second)
+        
+        if len(first) == 3:
+            first = first[-1]
+            self.data = [first, second]
+        else:
+            self.data = [second]
+        
+        print(self.data)
+        
+        
+        
         
     def convert(self):
         self.data = pd.DataFrame(data=None)

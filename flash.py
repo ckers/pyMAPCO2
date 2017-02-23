@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Methods for analyzing MAPCO2 flash data
+Parse MAPCO2 flash data
+
 @author: Colin Dietrich
 """
 

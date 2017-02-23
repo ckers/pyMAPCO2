@@ -17,26 +17,27 @@ from load import Cleaner, Indexer
 
 # if __name__ == "__main__":
 
-units_tested = ['0132', '0176', '0002', '0005', '0019', '0168']
+#units_tested = ['0132', '0176', '0002', '0005', '0019', '0168']
+
+units_tested = ['0015']
+
 
 # search for data within a range
-days_in_past = 8
+days_in_past = None
 
-t_start = '11/28/2016 00:00'
-t_end = '12/10/2016 00:00'
+t_start = '03/06/2016 00:00'
+t_end = '01/09/2017 00:00'
 
 verbose = True
 
-# now back to the start of the day specified by 'days_in_past'
-t_end = pd.to_datetime('now')
-t_start = pd.to_datetime('today') - pd.Timedelta('%s days' % days_in_past)
+# determine time range to filter on
+t_start = pd.to_datetime(t_start)
+t_end = pd.to_datetime(t_end)
 
-# alternately, just use the pasted date range
-if days_in_past is None:
-    
-    # determine time range to filter on
-    t_start = pd.to_datetime(t_start)
-    t_end = pd.to_datetime(t_end)
+# now back to the start of the day specified by 'days_in_past'
+if days_in_past is not None:
+    t_end = pd.to_datetime('now')
+    t_start = pd.to_datetime('today') - pd.Timedelta('%s days' % days_in_past)
 
 # instance Iridium data class
 i = Iridium(form='ma')  # ma = mapco2, wg = waveglider
@@ -149,11 +150,20 @@ for n in range(1, len(df.filename)):
         co2 = pd.concat([co2, co2_n])
 
 
-df_epof = co2[co2.cycle == 'epof']
-df_apof = co2[co2.cycle == 'apof']
+df_epof = co2[co2.cycle == 'epof'].copy()
+df_apof = co2[co2.cycle == 'apof'].copy()
+
+df_epof.reset_index(inplace=True)
+df_apof.reset_index(inplace=True)
+
+df_epof.drop_duplicates(inplace=True)
+df_apof.drop_duplicates(inplace=True)
 
 p_epof = df_epof.pivot(index='datetime', columns='system', values='xCO2')
 p_apof = df_apof.pivot(index='datetime', columns='system', values='xCO2')
+
+# create a MultiIndex based on datetime and cycle values
+co2m = co2.set_index(['datetime', 'cycle'])
 
 print('Done!')
 print('='*40)

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Parse MAPCO2 Iridium data
+
 Created on Thu Jul 28 14:45:54 2016
 @author: Colin Dietrich
 """
@@ -25,7 +26,7 @@ def concat(data, start, end, verbose=False):
     """
 
     (h, g, e,
-     co2, aux, sbe16) = frame(data[start[0]:end[0]],
+     co2, aux, sbe16, ph) = frame(data[start[0]:end[0]],
                               verbose=verbose)
 
     '''
@@ -38,16 +39,18 @@ def concat(data, start, end, verbose=False):
     for n in range(1, len(start)):
 
         (h_n, g_n, e_n,
-         co2_n, aux_n, sbe16_n) = frame(data[start[n]:end[n]],
+         co2_n, aux_n, sbe16_n, ph_n) = frame(data[start[n]:end[n]],
                                         verbose=verbose)
 
         print('aux_n>>', aux_n)
         print('sbe16_n', sbe16_n)
+        print('yay!')
 
         h = pd.concat([h, h_n])
         g = pd.concat([g, g_n])
         e = pd.concat([e, e_n])
         co2 = pd.concat([co2, co2_n])
+        ph = pd.concat([ph, ph_n])
 #        aux = pd.concat([aux, aux_n])
 #        sbe16 = pd.concat([sbe16, sbe16_n])
 
@@ -57,7 +60,7 @@ def concat(data, start, end, verbose=False):
     aux = None
     sbe16 = None
 
-    return h, g, e, co2, aux, sbe16
+    return h, g, e, co2, aux, sbe16, ph
 
 
 def frame(sample, verbose=False):
@@ -72,6 +75,8 @@ def frame(sample, verbose=False):
     -------
 
     """
+
+    ph = False
 
     if verbose:
         print('frame:')
@@ -158,17 +163,25 @@ def frame(sample, verbose=False):
         print('ph_i>>', ph_i)
 
     if len(sbe16_i) == 2:
-        sbe16 = datatypes.SBE16Data(raw_data=sample[sbe16_i[0]:sbe16_i[1]], header=None, log=None)
+        sbe16 = datatypes.SBE16Data()
+        sbe16.raw = sample[sbe16_i[0]:sbe16_i[1]]
+        
     if len(ph_i) == 2:
-        ph = datatypes.SBE16Data(raw_data=sample[ph_i[0]:ph_i[1]], header=None, log=None)
-
-#    sbe16.convert()
-#    ph.convert()
-
+        # TODO: Seafet data handler
+        ph = datatypes.SAMI2Data()
+        ph.raw = sample[ph_i[0]:ph_i[1]]
+        ph.extract()
+        if ph.data is not None:
+            phdf = pd.DataFrame({'hex': ph.data, 'index':list(range(0,len(ph.data)))})
+        else:
+            phdf = pd.DataFrame({})
+    else:
+        phdf = pd.DataFrame({})
+        
     sbe16 = []
     aux = []
 
-    return h, g, e, _co2, aux, sbe16
+    return h, g, e, _co2, aux, sbe16, phdf
 
 
 def index_frame(data, verbose=False):

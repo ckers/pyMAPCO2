@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Scrape the Iridium (Rudics) data repository
+Scrape PMEL html server data and save locally
+
 Created on Mon Apr 20 11:43:28 2015
 @author: Colin Dietrich
 """
