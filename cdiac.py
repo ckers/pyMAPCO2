@@ -10,10 +10,10 @@ from os import walk
 
 from utils.general import pad_date
 
+
 class CDIACCSV(object):
     
     def __init__(self):
-#        self.fp = fp
         self.target = None
         
     def load_df(self, fp):
@@ -156,9 +156,9 @@ class CDIACDL(object):
     def __init__(self, target=None):
         """Download data from CDIAC and store locally"""
         pass
-    
+
+
 class CDIACPlot(object): 
     
     def __init__(self):
         pass
-    

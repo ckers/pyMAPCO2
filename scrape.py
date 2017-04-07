@@ -11,14 +11,203 @@ import time
 import requests
 import random
 from bs4 import BeautifulSoup
+import pandas as pd
 
 import config
+
+
+def apache_table_scraper(html_file):
+    """Scrape HTML table from an Apache Server index into a
+    Pandas DataFrame.  Note: assumes the table is the only
+    one on the page, this is a pretty good assumption on
+    Apache servers producing generic 'index.html' like files.
+
+    Parameters
+    ----------
+    html_file : str, url path to HTML file to parse
+
+    Returns
+    -------
+    Pandas DataFrame, containing parsed HTML table
+
+    """
+
+    html = requests.get(html_file)
+    soup = BeautifulSoup(html.text, "html.parser")
+    table = soup.find_all('table')[0]  # first table is only one
+    df_list = pd.read_html(io=str(table))
+    return df_list[0]
+
+
+def apache_concat(url_sources):
+    """Concatenate Pandas DataFrames scraped from a list of
+    Apache Server urls.
+
+    Parameters
+    ----------
+    url_sources : list,
+
+    Returns
+    -------
+    Pandas DataFrame, all Apache server files found
+    """
+
+    df_list = []
+    for _u in url_sources:
+        df_n = apache_table_scraper(_u)
+        df_n['url_source'] = _u
+        df_list.append(df_n)
+    return pd.concat(df_list)
+
+def rudics_file_timestamp(filename):
+    """Get the timestamp of a Rudics Iridium data file
+    
+    Parameters
+    ----------
+    filename : str, filename
+    
+    Returns
+    -------
+    datetime object : datetime of file timestamp
+    """
+    pass
+    
+def rudics_file_time_modified(server_timestamp):
+    """Get the timestamp of a Apache modified timestamp
+    
+    Parameters
+    ----------
+    filename : str, filename
+    
+    Returns
+    -------
+    datetime object : datetime of file timestamp
+    """
+    return time.mktime(time.strptime(server_timestamp, "%d-%b-%Y %H:%M"))
+    
+    
+def rudics_file_time(filename):
+    """Get the timestamp of a Apache Rudics data file.
+    """
+    
+    if "." in filename:
+        filename = filename.split(".")[0]
+    return filename[6:]
+
+    
+def local_file_time(filepath):
+    """Get the date from a Python formatted local file where:
+    C0AAA_YYYY_MM_DD.txt
+
+    Parameters
+    ----------
+    filepath : str, absolute path (C:// etc) to file being dated
+
+    Returns
+    -------
+    tfile : int, unix time of file date
+    """
+    
+    tstr = "_".join(filepath.split(".")[0].split("\\")[-1].split("_")[1:4])
+    tfile = int(time.mktime(time.strptime(tstr, "%Y_%m_%d")))
+    return tfile
+    
+
+def rename_file(filename):
+    """Rename a rudics file to sort chronologically in a file browswer
+    
+    Parameters
+    ----------
+    filename : str, file name as found on the Rudics server
+    
+    Returns
+    -------
+    destination_file : str, new file name to save locally, formatted 
+        CNNNN_YYYY_mm_dd_version.txt
+    """
+
+    if "." in filename:
+        filename, version = filename.split(".")
+        version = '_' + version
+    else:
+        version = ""
+
+    sn_m_d_y = filename.split("_")
+        
+    # reorder files so they sort by time
+    new_filename = (sn_m_d_y[0] + '_' + sn_m_d_y[3] + '_' +
+                    sn_m_d_y[1] + '_' + sn_m_d_y[2] + version +
+                    '.txt')
+    return new_filename
+
+def rudics_files(url_sources, local_target):
+    """Get inventory of all files that should be downloaded
+    """
+    
+    _df = apache_concat(url_sources)
+    _df.columns = ['img',
+                   'filename', 'modified', 'size',
+                   'description', 'url_source']
+    _df.drop(['img', 'description'], axis=1, inplace=True)
+    
+    for _value in ['Name', 'Parent Directory']:
+        _df = _df[_df.filename != _value]
+    
+    _df['datetime_file'] = pd.to_datetime(_df.modified)
+    _df['filename_new'] = _df.filename.apply(rename_file)
+    _df['datetime64_ns'] = _df.filename.apply(rudics_file_time)
+    _df['datetime64_ns'] = pd.to_datetime(_df.datetime64_ns,
+                                          format='%m_%d_%Y')
+    _df.sort_values(by='datetime64_ns', inplace=True, axis=0)
+    _df['url_file'] = (_df.url_source.astype(str) + 
+                       '/' + 
+                       _df.filename.astype(str))
+    _df['unit'] = _df.filename.str[1:5]
+    _df['local_dir'] = local_target + '\\' + _df.unit
+    _df['local_filepath'] = local_target + '\\' + _df.unit + '\\' + _df.filename_new
+    return _df
+
+
+def download_files(x):
+    # data_urls, local_targets, download_delay=False):
+    """Download files from Rudics to a local directory for processing
+    
+    Parameters
+    ----------
+    oldest : str, oldest file to download, in YYYY_MM_DD date format
+    refresh_days : int, number of days in the past to purge and redownload
+    download_delay : int, number of seconds to pause between files
+
+    Returns
+    -------
+    None, writes to disk
+    """
+    try:
+        url = x.url_file
+
+        # if the local folder does not exist, make it
+        if not os.path.exists(x.local_dir):
+            os.mkdir(x.local_dir)
+
+        # note: no modified time checks!
+        # get the text, convert to unicode and save using byte write
+        _text = requests.get(url)             # request the data
+        _text = _text.text                    # get the text body
+        _text = _text.encode('utf-8')         # convert to unicode
+        _file = open(x.local_filepath, 'wb')  # open as bytes
+        _file.write(_text)                    # write the data
+        _file.close()
+
+        return True
+    except:
+        return False
 
 
 class Iridium(object):
     
     def __init__(self, form):
-        
+        """OBSOLETE, see static methods above!"""
+
         # location of pCO2 Rudics data
         if form == 'ma':
             self.url_source = config.mapco2_rudics
@@ -75,24 +264,7 @@ class Iridium(object):
         """
         
         return 60 * 60 * (hours + (24 * days))
-        
-    @staticmethod
-    def time_file(filepath):
-        """Get the date from a Python formatted local file where:
-        C0AAA_YYYY_MM_DD.txt
 
-        Parameters
-        ----------
-        filepath : str, absolute path (C:// etc) to file being dated
-
-        Returns
-        -------
-        tfile : int, unix time of file date
-        """
-        
-        tstr = "_".join(filepath.split(".")[0].split("\\")[-1].split("_")[1:4])
-        tfile = int(time.mktime(time.strptime(tstr, "%Y_%m_%d")))
-        return tfile
 
     def unit_num_filter(self):
         
@@ -104,7 +276,8 @@ class Iridium(object):
             except ValueError:
                 pass
         self.units = units_temp
-                
+
+
     def unit_files(self, units=None):
         """Compile all files of the requested unit numbers
         
@@ -118,6 +291,8 @@ class Iridium(object):
         None, sets self.download_files to a list of string path names
         """
         
+        
+        
         # filter out links that aren't unit numbers i.e. "0123/"
         self.unit_num_filter()        
         
@@ -125,66 +300,28 @@ class Iridium(object):
             html = requests.get(self.url_source + _u)
             soup = BeautifulSoup(html.text, "html.parser")
             a_soup = soup.find_all("a")
+
             for a in a_soup:
                 fa = a.text.strip()
                 fts = a.next_element.next_element.text.strip()
                 
+                # timestamp in 3rd column of rows are file listings
                 try:
                     ft = time.mktime(time.strptime(fts, "%d-%b-%Y %H:%M"))
                     self.data_urls_modtime_str.append(fts)
-                except ValueError:
-                    # these are the non-timestamp rows in the page                    
-                    pass
-                
-                try:
-                    if fa not in self.apache_links:
-                        self.data_urls.append(self.url_source + 
-                            _u + "/" + fa)
-                        self.data_urls_modtime.append(ft)
-                except ValueError:
-                    pass
-        
-    def rename_file(self, filename):
-        """Rename a rudics file to sort chronologically in a file browswer
-        
-        Parameters
-        ----------
-        name : str, file name as found on the Rudics server
-        
-        Returns
-        -------
-        destination_file : str, new file name to save locally, formatted 
-            CNNNN_YYYY_mm_dd_version.txt
-        """
-#        print(name)
-        
-#        sn_sn_date = url.split("/")[-2:]
-        
-        
-        
-#        if "." in name[1]: 
-        if "." in filename:
-            filename, version = filename.split(".")
-            version = '_' + version
-#            name = name.split("_")
-            
-        else:
-                        
-#            name = name[1].split("_")
-            version = ""
 
-        sn_m_d_y = filename.split("_")
-            
-        # reorder files so they sort by time
-#        name = name[0] + "_" + name[3] + "_" + name[1] + "_" + name[2]
-            
-        new_filename = (sn_m_d_y[0] + '_' + sn_m_d_y[3] + '_' + 
-                        sn_m_d_y[1] + '_' + sn_m_d_y[2] + version +
-                        '.txt')
-        
-#        destination_file = name + version + ".txt"
-#        return destination_file
-        return new_filename
+                    # skip links that are standard apache server links
+                    try:
+                        if fa not in self.apache_links:
+                            self.data_urls.append(self.url_source +
+                                                  _u + "/" + fa)
+                            self.data_urls_modtime.append(ft)
+                    except ValueError:
+                        pass
+                except ValueError:
+                    # non-timestamp rows in the page                    
+                    pass
+
     
     def download_files(self, oldest=None, refresh_days=False, download_delay=False):
         """Download files from Rudics to a local directory for processing
@@ -201,32 +338,15 @@ class Iridium(object):
         """
         
         files_downloaded = []
-        
-
-#        print('#######>', self.data_urls)
-#        self.data_names = [_.split("/")[-2:] for _ in self.data_urls]
-#        print("0>>", self.data_names)
-                
-        
-        """
-        names_urls = zip(self.data_names, self.data_urls)
         urls_times = dict(zip(self.data_urls, self.data_urls_modtime))
-        
-        # for name, url in names_urls:
-        name ===== filename now!
-        """
-        
-        urls_times = dict(zip(self.data_urls, self.data_urls_modtime))
-                
         
         for url in self.data_urls:
             url_parts = url.split('/')
             filename = url_parts[-1]
             
-            new_filename = self.rename_file(filename)
+            new_filename = self.rename_file(filename=filename)
             sn = new_filename[1:5]  # based on Iridium server files
-#            print(filename, sn, new_filename)
-
+            
             self.data_sn.append(sn)
             self.data_filename.append(filename)
             
@@ -239,28 +359,7 @@ class Iridium(object):
                 os.mkdir(_dir)
 
             t_server = urls_times[url]
-            
 
-            """
-            self.data_names = [_.split("/")[-2:] for _ in self.data_urls]
-            
-            
-            
-            _dir = self.local_data_directory + os.path.sep + name[0] + os.path.sep
-            t_server = urls_times[url]
-            
-            # if the local folder does not exist, make it
-            if os.path.exists(_dir):
-                pass
-            else:
-                os.mkdir(_dir)
-            """
-        
-            # create the local data file and keep a record of it's 
-            # absolute path.
-            # print('download_files>>', name)
-        
-        
             destination_file = _dir + new_filename
             self.data_new_filename.append(new_filename)
             
@@ -268,7 +367,7 @@ class Iridium(object):
                 t_local = os.path.getmtime(destination_file)
                 self.local_data_files.append(destination_file)
             
-                _refresh = (self.time_file(destination_file) >
+                _refresh = (time_file(destination_file) >
                             int(time.time() - self.time_span(days=refresh_days)))
                 if _refresh:
                     os.remove(destination_file)
@@ -276,7 +375,8 @@ class Iridium(object):
                 # if the server file has newer data, refresh as well
                 elif t_local < t_server:
                         os.remove(destination_file)
-                
+
+            # download and rename data files
             # if the local file does not exist, make it
             if not os.path.exists(destination_file):
                 # get the text, convert to unicode and save using byte write
@@ -307,7 +407,8 @@ class Iridium(object):
 
 class CallLog(object):
 
-    # TODO: scrap Rudics call logs for connection failures
+    """scrap Rudics call logs for connection failures
+    """
 
     def __init__(self, url_source="http://eclipse.pmel.noaa.gov/rudics/ALL_RUDICS/",
                  local_data_directory=None):
@@ -326,5 +427,3 @@ class CallLog(object):
             href = _["href"]
             if "outlogs" in href:
                 print("|", text, "|", href)
-    
-        

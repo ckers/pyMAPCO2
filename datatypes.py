@@ -50,6 +50,8 @@ class MAPCO2Base(object):
 class MAPCO2Header(MAPCO2Base):
 
     def __init__(self):
+        super(MAPCO2Base, self).__init__()
+
         self.line = None
         self.df = None
         self.mode = None
@@ -109,7 +111,10 @@ class MAPCO2Header(MAPCO2Base):
 
 
 class MAPCO2GPS(MAPCO2Base):
+
     def __init__(self):
+        super(MAPCO2Base, self).__init__()
+
         self.df = None
 
         self.date_time = []
@@ -207,7 +212,9 @@ class MAPCO2GPS(MAPCO2Base):
 
 
 class MAPCO2Engr(MAPCO2Base):
+
     def __init__(self, data_type="iridium"):
+        super(AuxData, self).__init__()
 
         self.df = None
 
@@ -340,7 +347,6 @@ class MAPCO2Engr(MAPCO2Base):
         self.zero_coeff = float(engr[2])
         self.span_coeff = float(engr[3])
 
-
         if verbose:
             print('engr:', engr, len(engr))
             
@@ -413,10 +419,11 @@ class MAPCO2Engr(MAPCO2Base):
 
 
 class AuxData(object):
-    def __init__(self):
+    def __init__(self, header=None, log=None):
+
         self.raw
-        self.h
-        self.log
+        self.h = header
+        self.log = log
         self.aux_type = ""
         self.number = None
         self.data = pd.DataFrame(data=None)
@@ -439,6 +446,9 @@ class AuxData(object):
 
 class MetData(AuxData):
     """Hold auxilary and meterological data"""
+
+    def __init__(self):
+        super(AuxData, self).__init__()
 
     def extract(self):
         print("MetData.extract>> raw:", self.raw)
@@ -471,13 +481,12 @@ class SAMI2Data(AuxData):
     def extract(self):
         print("SAMI2.extract>> raw:", self.raw)
         self.datetime = self.raw[1]
-        _n = None
+
         try:
             _n = self.raw.index('^0A')
         except ValueError:
             return
-            
-#        if _n is not None:
+
         first = self.raw[:_n]
         second = self.raw[_n+1:]
         print(first)
@@ -494,15 +503,28 @@ class SAMI2Data(AuxData):
             self.data = [second]
         
         print(self.data)
-        
-        
-        
-        
+
+    def convert(self):
+        self.data = pd.DataFrame(data=None)
+
+
+class SeaFETData(AuxData):
+    """Hold SeaFET data"""
+    def __init__(self):
+        super(AuxData, self).__init__()
+
+    def extract(self):
+        print("SeaFET.extract>> raw:", self.raw)
+
     def convert(self):
         self.data = pd.DataFrame(data=None)
 
 
 class LIData(AuxData):
+
+    def __init__(self):
+        super(AuxData, self).__init__()
+
     def extract(self):
         """Extract string list of """
         self.header()
@@ -531,7 +553,9 @@ class LIData(AuxData):
 
 
 class MAPCO2DataFinal(MAPCO2Base):
+
     def __init__(self):
+        super(MAPCO2Base, self).__init__()
         self.dp = []
         self.df = None
 
@@ -613,14 +637,10 @@ class MAPCO2DataFinal(MAPCO2Base):
         return _a
 
 
-# def dataframe(self, date_time):
-#        self.df = pd.DataFrame(data=self.data(),
-#                               index=self.date_time,
-#                               columns=self.data_names)
-
-
 class MAPCO2Data(MAPCO2Base):
+
     def __init__(self):
+        super(MAPCO2Base, self).__init__()
         self.df = None
 
         self.cycle = []

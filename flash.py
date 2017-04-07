@@ -4,9 +4,13 @@ Parse MAPCO2 flash data
 
 @author: Colin Dietrich
 """
+import pandas as pd
+
+import datatypes
+import parse
 
 
-def flash(data, start, end, verbose=False):
+def concat(data, start, end, verbose=False):
     """Parse a list of lines from a flash MAPCO2 data file which contains
     frames of data
         cycle measurements within the frame
@@ -21,20 +25,14 @@ def flash(data, start, end, verbose=False):
     verbose : bool
     """
 
-    global global_key
-    global global_log
-
-    # start = start[0]
-    # end = end[0]
-
     # break the data file into samples
     frame = data[start[0]:end[0]]
 
     # first frame of data to initialize DataFrames and Panel
-    h_0, g_0, e_0, co2_0, aux_0, sbe16_0 = flash_compile(sample=frame, verbose=verbose)
+    h_0, g_0, e_0, co2_0, aux_0, sbe16_0 = frame(sample=frame, verbose=verbose)
 
-    print('h>>', g_0.date_time, h_0.system, h_0.date_time)
-    print('h>>', h_0.data)
+    # print('h>>', g_0.date_time, h_0.system, h_0.date_time)
+    # print('h>>', h_0.data)
 
     if g_0.date_time == 'NaT':
         dt = h_0.date_time
@@ -42,10 +40,7 @@ def flash(data, start, end, verbose=False):
         dt = g_0.date_time
 
     common_key = dt + '_' + h_0.system
-    print('h common_key>>', common_key)
-
-    # for error logging
-    global_key = common_key
+    # print('h common_key>>', common_key)
 
     h = pd.DataFrame(data=[h_0.data], columns=h_0.data_names)
     g = pd.DataFrame(data=[g_0.data], columns=g_0.data_names)
@@ -54,11 +49,9 @@ def flash(data, start, end, verbose=False):
     g['common_key'] = common_key
     e['common_key'] = common_key
 
-    print(h.head())
-    print(g.head())
-    print(e.head())
-
-    # co2 = pd.Panel({common_key: co2_0})
+    # print(h.head())
+    # print(g.head())
+    # print(e.head())
 
     co2 = co2_0
     co2['common_key'] = common_key
@@ -69,14 +62,12 @@ def flash(data, start, end, verbose=False):
 
     # TODO: break this out to use in IRIDIUM files and terminal dumps too!
 
-
-
     for n in range(1, len(start)):
         # break the data file into samples
         frame = data[start[n]:end[n]]
-        h_n, g_n, e_n, co2_n_df, aux_n, sbe16_n = flash_compile(sample=frame, verbose=verbose)
+        h_n, g_n, e_n, co2_n_df, aux_n, sbe16_n = frame(sample=frame, verbose=verbose)
         # print('co2_n df>>', co2_n.head())
-        print('h>>', g_n.date_time, h_n.system, h_n.date_time)
+        # print('h>>', g_n.date_time, h_n.system, h_n.date_time)
         # print('h>>', h_n.data)
 
         if g_n.date_time == 'NaT':
@@ -85,10 +76,7 @@ def flash(data, start, end, verbose=False):
             dt = g_n.date_time
 
         common_key = dt + '_' + h_n.system
-        print('h common_key>>', common_key)
-
-        # for error logging
-        global_key = common_key
+        # print('h common_key>>', common_key)
 
         try:
             h_n_df = pd.DataFrame(data=[h_n.data], columns=h_n.data_names)
@@ -102,7 +90,7 @@ def flash(data, start, end, verbose=False):
             g = pd.concat([g, g_n_df])
             e = pd.concat([e, e_n_df])
         except:
-            global_log.events.append('Error parsing aux data at:', common_key)
+            # global_log.events.append('Error parsing aux data at:', common_key)
             print('Error parsing aux data at:', common_key)
         try:
             # co2[common_key] = co2_n
@@ -110,7 +98,7 @@ def flash(data, start, end, verbose=False):
             co2 = pd.concat([co2, co2_n_df])
         except ValueError:
             # print('parse.flash>> co2', co2.ix[-1])
-            global_log.events.append('Error parsing co2 data at:', common_key)
+            # global_log.events.append('Error parsing co2 data at:', common_key)
             print('Error parsing co2 data at:', common_key)
         aux.append(aux_n)
         sbe16.append(sbe16_n)
@@ -118,7 +106,7 @@ def flash(data, start, end, verbose=False):
     return h, g, e, co2, aux, sbe16
 
 
-def flash_compile(sample, verbose=False):
+def frame(sample, verbose=False):
     h = sample[0]
     g = sample[1]
     e = sample[2]
@@ -128,10 +116,10 @@ def flash_compile(sample, verbose=False):
         print("frame gps>>", g)
         print("frame engineering>>", e)
 
-    h = parse_header(h, verbose=verbose)
-    g = parse_gps(g, verbose=verbose)
+    h = parse.header(line=h, verbose=verbose)
+    g = parse.gps(line=g, verbose=verbose)
     g.timestamp = h.timestamp
-    e = parse_engr(e, verbose=verbose, data_type='flash')
+    e = parse.engr(line=e, verbose=verbose, data_type='flash')
     e.decode_flag()
     e.timestamp = h.timestamp
 
@@ -148,12 +136,6 @@ def flash_compile(sample, verbose=False):
     return h, g, e, co2, aux, sbe16
 
 
-#def parse_iridium(data, start, end, verbose=False, data_type="iridium"):
-#    return parse_iridium_file(data=data, start=start, end=end,
-#                              verbose=verbose,
-#                              data_type=data_type)
-
-
 def clean_flash_line(line):
     """Clean a line of flash data
 
@@ -165,7 +147,8 @@ def clean_flash_line(line):
     -------
 
     """
-    pass
+    if line == '':
+        pass
 
 
 def flash_cycle_id(line):
@@ -198,11 +181,12 @@ def flash_cycle_id(line):
     return minute, cycle
 
 
-def flash_index_frame(data, verbose=False):
+def index_frame(data, verbose=False):
     """Find delimiters between cycles
+
     Parameters
     ----------
-    sample : list, str of each line from flash file in this frame
+    data : list, str of each line from flash file in this frame
     verbose : bool
     Returns
     -------
@@ -221,9 +205,8 @@ def flash_index_frame(data, verbose=False):
             indexes.append(n)
             minutes.append(m)
             cycles.append(c)
+
     return indexes, minutes, cycles
-
-
 
 
 def flash_co2_aux(sample, header, verbose=False):
@@ -242,7 +225,10 @@ def flash_co2_aux(sample, header, verbose=False):
     met_container.data : pd.DataFrame, all aux sensor data, sbe16 etc
     """
 
-    i, m, c = flash_index_frame(sample, verbose=False)
+    met_df = None
+    sbe16_df = None
+
+    i, m, c = frame(sample, verbose=False)
     i_end = i[1:] + [len(sample)]
 
     if verbose:
@@ -251,13 +237,7 @@ def flash_co2_aux(sample, header, verbose=False):
         print("frame cycles, c>>", c)
         print("frame info lengths>> ", len(i), len(m), len(c))
 
-    # def co2_cycle(data, cycle_name):
-    #     container = flash_single_cycle(data)
-    #     container.data["cycle"] = cycle_name
-    #     return container
-
     cycle_0 = sample[i[0]:i_end[0]]
-    # co2_container_0 = co2_cycle(data=cycle_0, cycle_name=c[0])
     co2_container_0 = flash_single_cycle(cycle_0)
 
     co2_container_0.data["cycle"] = c[0]
@@ -268,45 +248,62 @@ def flash_co2_aux(sample, header, verbose=False):
 
         cycle = sample[i[n]:i_end[n]]
 
-#        if c[n].lower() in ['met', 'sbe16']:
         if c[n].lower() == 'met':
-            met_container = flash_single_met(cycle, header=header,
-                                             verbose=verbose)
+            met_container = frame_met(cycle, header=header,
+                                      verbose=verbose)
+            met_df = met_container.data
         elif c[n].lower() == 'sbe16':
-            sbe16_container = flash_single_sbe16(cycle, header=header,
-                                                 verbose=verbose)
+            sbe16_container = frame_sbe16(cycle, header=header,
+                                          verbose=verbose)
+            sbe16_df = sbe16_container.data
         else:
-            # co2_df_n = co2_cycle(data=cycle, cycle_name=c[n])
             co2_df_n = flash_single_cycle(cycle)
             if co2_df_n is None:
                 continue
             co2_df_n.data["cycle"] = c[n]
             co2_df = pd.concat([co2_df, co2_df_n.data])
-
-    co2_df['n'] = co2_df.index
-    met_df = met_container.data
-    sbe16_df = sbe16_container.data
+            co2_df['n'] = co2_df.index
 
     return co2_df, met_df, sbe16_df
 
 
-def flash_single_met(data, header, verbose=False):
-    """Parse met data from the flash frame"""
+def frame_met(raw_data, header, verbose=False):
+    """Parse met data from the flash frame
+
+    Parameters
+    ----------
+    raw_data :
+    header :
+    verbose : bool,
+    """
+
     if verbose:
         pass
-    md = MetData(data, header=header, log=global_log)
 
+    md = datatypes.MetData()
+    md.raw = raw_data
+    md.header = header
     md.extract()
     md.convert()
     return md
 
 
-def flash_single_sbe16(data, header, verbose=False):
-    """Parse met data from the flash frame"""
+def frame_sbe16(raw_data, header, verbose=False):
+    """Parse met data from the flash frame
+
+    Parameters
+    ----------
+    raw_data :
+    header :
+    verbose : bool,
+    """
+
     if verbose:
         pass
-    sbe16 = SBE16Data(data, header=header, log=global_log)
 
+    sbe16 = datatypes.SBE16Data()
+    sbe16.raw = raw_data
+    sbe16.header = header
     sbe16.extract()
     sbe16.convert()
     return sbe16
@@ -324,7 +321,7 @@ def flash_find_sections(cycle, verbose=False):
     for n in range(0, len(cycle)):
         if verbose:
             print(n, cycle[n][0:2])
-        if cycle[n][0:2] in ("Li", "O2", "RH", "Rh", "Met", "SBE16"):
+        if cycle[n][0:2] in ('Li', 'O2', 'RH', 'Rh', 'Met', 'SBE16', 'Seafet Data'):
             indexes.append(n)
             names.append(cycle[n])
     indexes.append(len(cycle))
@@ -339,7 +336,6 @@ def flash_single_cycle(cycle, verbose=False):
     verbose : bool
 
     """
-    global parse_log
 
     indexes, names = flash_find_sections(cycle, verbose=False)
 
@@ -362,28 +358,34 @@ def flash_single_cycle(cycle, verbose=False):
     cycle_rh = cycle[indexes[2]:indexes_end[2]]
     cycle_rht = cycle[indexes[3]:indexes_end[3]]
 
-    cycle_out = datatypes.LIData(raw_data=cycle_li, header=None, log=global_log)
+    cycle_out = datatypes.LIData()
+    cycle_out.raw = cycle_li
     cycle_out.header()
-    if cycle_out.number > 1:
-        # return pd.DataFrame(data=None)
-        cycle_out.extract()
-        cycle_out.convert()
+    cycle_out.extract()
+    cycle_out.convert()
 
-    o2 = datatypes.AuxData(raw_data=cycle_o2, header=None, log=global_log)
+    # if cycle_out.number > 1:
+    #     cycle_out.extract()
+    #     cycle_out.convert()
+
+    o2 = datatypes.AuxData()
     o2.header()
     if o2.number > 1 & len(cycle_out.data) > 0:
+        o2.raw = cycle_o2
         o2.extract()
         cycle_out.data["O2_percent"] = o2.data
 
-    rh = datatypes.AuxData(raw_data=cycle_rh, header=None, log=global_log)
+    rh = datatypes.AuxData()
     rh.header()
     if rh.number > 1 & len(cycle_out.data) > 0:
+        rh.raw = cycle_rh
         rh.extract()
         cycle_out.data["RH_percent"] = rh.data
 
-    rht = datatypes.AuxData(raw_data=cycle_rht, header=None, log=global_log)
+    rht = datatypes.AuxData()
     rht.header()
     if rht.number > 1 & len(cycle_out.data) > 0:
+        rht.raw = cycle_rht
         rht.extract()
         cycle_out.data["RH_temp_c"] = rht.data
 

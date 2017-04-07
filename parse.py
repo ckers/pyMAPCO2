@@ -132,7 +132,7 @@ def co2_line(line, verbose=False):
     return c
 
 
-def parse_co2_series(data, verbose):
+def co2_series(data, verbose):
     """Convert line of co2 data into a pandas series
     Parameters
     ----------

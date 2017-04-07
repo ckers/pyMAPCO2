@@ -14,7 +14,7 @@ import parse
 
 
 def concat(data, start, end, verbose=False):
-    """Bread the data file into sections
+    """Break the data file into sections
 
     Parameters
     ----------
@@ -25,9 +25,8 @@ def concat(data, start, end, verbose=False):
 
     """
 
-    (h, g, e,
-     co2, aux, sbe16, ph) = frame(data[start[0]:end[0]],
-                              verbose=verbose)
+    (h, g, e, co2, aux, sbe16, ph) = frame(data[start[0]:end[0]],
+                                           verbose=verbose)
 
     '''
     for n in range(1, len(start)):
@@ -40,7 +39,7 @@ def concat(data, start, end, verbose=False):
 
         (h_n, g_n, e_n,
          co2_n, aux_n, sbe16_n, ph_n) = frame(data[start[n]:end[n]],
-                                        verbose=verbose)
+                                              verbose=verbose)
 
         print('aux_n>>', aux_n)
         print('sbe16_n', sbe16_n)
@@ -54,29 +53,25 @@ def concat(data, start, end, verbose=False):
 #        aux = pd.concat([aux, aux_n])
 #        sbe16 = pd.concat([sbe16, sbe16_n])
 
-#        aux = pd.DataFrame(data=None)
-#        sbe16 = pd.DataFrame(data=None)
-        
     aux = None
     sbe16 = None
 
     return h, g, e, co2, aux, sbe16, ph
 
 
-def frame(sample, verbose=False):
+def frame(sample, verbose=False, ph=False):
     """Handle one frame of data
 
     Parameters
     ----------
     sample :
     verbose : bool, print debug statements
+    pH : bool, whether to process pH data found in Iridium data
 
     Returns
     -------
 
     """
-
-    ph = False
 
     if verbose:
         print('frame:')
@@ -90,19 +85,11 @@ def frame(sample, verbose=False):
     h = pd.DataFrame(data=[h.data], columns=h.data_names)
     g = pd.DataFrame(data=[g.data], columns=g.data_names)
     e = pd.DataFrame(data=[e.data], columns=e.data_names)
-    
 
     if verbose:
         print('g.date_time, h.system, h.date_time')
         print('  >>', g.date_time, h.system, h.date_time)
         print('h>>', h, type(h), type(h.date_time), type(h.system))
-
-#    if g.date_time in ['NaT', '0000/00/00_00:00:00']:
-#        dt = h.date_time
-#    else:
-#        dt = g.date_time
-
-    
 
     common_key = h.date_time[0] + '_' + h.system[0]
 
@@ -143,7 +130,7 @@ def frame(sample, verbose=False):
     data_template = datatypes.MAPCO2Data()
 
     _co2 = pd.DataFrame(data=[zpon, zpof, zpcl, spon, spof, spcl, epon, epof,
-                             apon, apof], columns=['cycle']+data_template.data_names)
+                              apon, apof], columns=['cycle']+data_template.data_names)
 
     _co2['common_key'] = common_key
     _co2['system'] = h.system[0]
@@ -172,7 +159,7 @@ def frame(sample, verbose=False):
         ph.raw = sample[ph_i[0]:ph_i[1]]
         ph.extract()
         if ph.data is not None:
-            phdf = pd.DataFrame({'hex': ph.data, 'index':list(range(0,len(ph.data)))})
+            phdf = pd.DataFrame({'hex': ph.data, 'index': list(range(0, len(ph.data)))})
         else:
             phdf = pd.DataFrame({})
     else:
@@ -186,6 +173,7 @@ def frame(sample, verbose=False):
 
 def index_frame(data, verbose=False):
     """Find delimiters between cycles
+
     Parameters
     ----------
     data : list, str of each line from flash file in this frame

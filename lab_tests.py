@@ -19,11 +19,11 @@ from load import Cleaner, Indexer
 
 #units_tested = ['0132', '0176', '0002', '0005', '0019', '0168']
 
-units_tested = ['0015']
+units_tested = ['0009']
 
 
 # search for data within a range
-days_in_past = None
+days_in_past = 11
 
 t_start = '03/06/2016 00:00'
 t_end = '01/09/2017 00:00'
