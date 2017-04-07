@@ -150,17 +150,20 @@ def create_start_end(index_df, data_len):
     _len = len(index_df['datetime'])
 
     for name in data_types:
-        index_df[name + '_end'] = index_df[name + '_start'].shift(-1)
-        index_df[name + '_end'] -= 1
-        _end_i = index_df[name + '_end'].ix[_len-2] + index_df[name + '_end'].diff().mean()
-        index_df.ix[_len-1, name + '_end'] = min(_end_i, data_len)
+        #index_df[name + '_end'] = index_df[name + '_start'].shift(-1)
+        #index_df[name + '_end'] -= 1
+        #_end_i = index_df[name + '_end'].ix[_len-2] + index_df[name + '_end'].diff().mean()
+        #index_df.ix[_len-1, name + '_end'] = min(_end_i, data_len)
+
+        index_df[name + '_end'] = index_df[name + '_start']
         index_df[name + '_end'] = index_df[name + '_end'].astype(int)
+        index_df[name + '_end'] += 20
         index_df = index_df.replace(-1000, -999)
 
     return index_df
 
 
-def iridium_single(f):
+def iridium_file(f):
     """Laoad indexes for a single iridium file
     Parameters
     ----------
@@ -179,8 +182,40 @@ def iridium_single(f):
     df['datetime64_ns'] = pd.to_datetime(df.datetime, format='%Y/%m/%d_%H:%M:%S')
     df = df.replace('', -999)
     df = create_start_end(index_df=df, data_len=len(lc))
-    return df
+    return lc, df
 
+
+def iridium_frames(lc, start, end, delimiters):
+
+    delim_start = delimiters[0]
+    delim_end = delimiters[1]
+
+    data = [[] for _ in range(5000)]
+
+    c = 0
+    for i in range(len(start)):
+
+        _data = lc[start[i]:end[i]]
+
+        i = 0
+        _j = []
+        save = True
+        for j in _data:
+
+            if j[0:len(delim_start)] == delim_start:
+                save = True
+            if j[0:len(delim_end)] == delim_end:
+                save = False
+                _j.append(j)
+                i += 1
+            if save:
+                _j.append(j)
+        data[c] = _j
+
+        c += 1
+
+    data = data[:c]
+    return data
 
 def unicode_check(line):
     """Try to decode each line to Unicode
