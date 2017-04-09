@@ -5,6 +5,7 @@ Created on Mon Jul 25 14:30:25 2016
 @author: Colin Dietrich
 """
 
+import os
 import unicodedata
 import pandas as pd
 
@@ -164,14 +165,15 @@ def create_start_end(index_df, data_len):
 
 
 def iridium_file(f):
-    """Laoad indexes for a single iridium file
+    """Load indexes for a single iridium file
     Parameters
     ----------
     f : str, filepath to file to parse
 
     Returns
     -------
-    Pandas Dataframe
+    lc: list, lines cleaned data
+    df: Pandas Dataframe, indexes of all identified data types
     """
 
     l = file_to_list(f)
@@ -184,9 +186,22 @@ def iridium_file(f):
     df = create_start_end(index_df=df, data_len=len(lc))
     return lc, df
 
-
+    
 def iridium_frames(lc, start, end, delimiters):
-
+    """Get data of one type from data file.  Type is determined by delimiters
+    
+    Parameters
+    ----------
+    lc: list, lines cleaned data
+    start: array-like, indexes of start of data frame in lc
+    end: array-like, indexes of end of data frame in lc
+    
+    Returns
+    -------
+    delimiters: list of str, two item long representing the starting
+        and ending delimiters of a frame of data
+    """
+    
     delim_start = delimiters[0]
     delim_end = delimiters[1]
 
@@ -217,6 +232,69 @@ def iridium_frames(lc, start, end, delimiters):
     data = data[:c]
     return data
 
+
+def iridium_file_all(f):
+    """Load all available data types in a file
+    Note: data types are determined by delimiter definitions, which 
+    are hardcoded below.
+    
+    Parameters
+    ----------
+    f : str, filepath to file to parse
+
+    Returns
+    -------
+    df: Pandas Dataframe, data of all identified data types
+    TODO: document columns and types
+    """
+    
+    lc, df = iridium_file(f)
+    df['source'] = os.path.normpath(f).split('\\')[-1]
+    df['sbe16_list'] = iridium_frames(lc,
+                                      start=df.sbe16_start,
+                                      end=df.sbe16_end,
+                                      delimiters=['SBE16 DATA', 'END SBE16'])
+    
+    df['ph_sami_list'] = iridium_frames(lc,
+                                        start=df.sami_ph_start,
+                                        end=df.sami_ph_end,
+                                        delimiters=['PH', 'END PH'])
+    
+    df['ph_seafet_list'] = iridium_frames(lc,
+                                          start=df.seafet_ph_start,
+                                          end=df.seafet_ph_end,
+                                          delimiters=['Seafet Data', 'End Seafet Data'])
+    
+    df['co2_list'] = iridium_frames(lc,
+                                    start=df.mapco2_start,
+                                    end=df.mapco2_end,
+                                    delimiters=['NORM', 'SW_xCO2(dry)'])
+    
+    return df
+    
+def iridium_file_batch(f_list):
+    """Load multiple iridium files using iridium_frames_all
+    
+    Parameters
+    ----------
+    f_list : list of str, filepath to file to parse
+    
+    Returns
+    -------
+    Pandas Dataframe, data of all identified data types
+    """
+    
+    df = pd.DataFrame()
+    _df_list = []
+    for _f in f_list:
+        _df = iridium_file_all(_f)
+        _df_list.append(_df)
+        
+    df = pd.concat(_df_list)
+        
+    return df
+
+    
 def unicode_check(line):
     """Try to decode each line to Unicode
 

@@ -12,7 +12,8 @@ import requests
 import random
 from bs4 import BeautifulSoup
 import pandas as pd
-
+import matplotlib.pyplot as plt
+        
 import config
 
 
@@ -203,6 +204,80 @@ def download_files(x):
         return False
 
 
+def get_timespan(t_start, t_end, days_in_past):
+    """Get the start and end dates for further calculations.
+    d supercedes t0, t1 range.
+    format = 'mm/dd/yyyy hh:mm'
+    
+    Parameters
+    ----------
+    t_start : str, start of time range
+    t_end : str, end of time range
+    days_in_past : int, number of days from present to create time range
+    
+    Returns
+    -------
+    t_start : Pandas datetime64
+    t_end : Pandas datetime64
+    """
+    # time range to filter on
+    t_start = pd.to_datetime(t_start)
+    t_end = pd.to_datetime(t_end)
+    
+    # if True, override to start of the day specified by 'days_in_past'
+    if days_in_past is not None:
+        t_end = pd.to_datetime('now')
+        t_start = pd.to_datetime('today') - pd.Timedelta('%s days' % days_in_past)
+    return t_start, t_end
+
+     
+def run(units, t_start, t_end, days_in_past=None,
+        url_source=config.mapco2_rudics,
+        local_target=config.local_mapco2_data_directory,
+        verbose=False):
+    """Download files from the rudics server
+    
+    Parameters
+    ----------
+    units : str or list, one or more unit serial numbers to scrape data for
+    t_start : str, start of time range
+    t_end : str, end of time range
+    days_in_past : int, number of days from present to create time range
+    url_source : str, eclipse location to download files from
+    local_target : str, location to save files downloaded
+    verbose : bool, enable verbose printout
+    
+    Returns
+    -------
+    Pandas Dataframe, containing file attributes and download status
+    """
+    
+    if isinstance(units, str):
+        units = [units]
+    
+    url_source = config.mapco2_rudics
+    url_sources = [url_source + _u for _u in units]
+    if verbose:
+        print('scrape.download>> URL sources:\n', url_sources)
+    local_target = config.local_mapco2_data_directory
+    if verbose:
+        print('scrape.download>> Local Target:', local_target)
+    
+    df = rudics_files(url_sources, local_target)
+    if verbose:
+        plt.plot(df.datetime64_ns)
+        plt.show()
+    
+    df = df[(df.datetime64_ns >= t_start) & (df.datetime64_ns <= t_end)]
+    df.reset_index(inplace=True)
+    if verbose:
+        plt.plot(df.datetime64_ns)
+        plt.show()
+    
+    df['download_success'] = df.apply(download_files, axis=1)
+    return df
+
+    
 class Iridium(object):
     
     def __init__(self, form):
