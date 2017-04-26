@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import matplotlib.pyplot as plt
         
-import config
+from . import config
 
 
 def apache_table_scraper(html_file):
@@ -72,13 +72,14 @@ def rudics_file_timestamp(filename):
     datetime object : datetime of file timestamp
     """
     pass
-    
+
+
 def rudics_file_time_modified(server_timestamp):
     """Get the timestamp of a Apache modified timestamp
     
     Parameters
     ----------
-    filename : str, filename
+    server_timestamp : str, file timestamp
     
     Returns
     -------
@@ -141,6 +142,7 @@ def rename_file(filename):
                     '.txt')
     return new_filename
 
+
 def rudics_files(url_sources, local_target):
     """Get inventory of all files that should be downloaded
     """
@@ -170,14 +172,11 @@ def rudics_files(url_sources, local_target):
 
 
 def download_files(x):
-    # data_urls, local_targets, download_delay=False):
     """Download files from Rudics to a local directory for processing
     
     Parameters
     ----------
-    oldest : str, oldest file to download, in YYYY_MM_DD date format
-    refresh_days : int, number of days in the past to purge and redownload
-    download_delay : int, number of seconds to pause between files
+    x : str, absolute filepath to file to download
 
     Returns
     -------

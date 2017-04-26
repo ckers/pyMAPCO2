@@ -10,7 +10,7 @@ import re
 import numpy as np
 import pandas as pd
 
-import datatypes
+from . import datatypes
 
 
 def date_time_convert(dt, ft):
@@ -103,10 +103,7 @@ def co2_line(line, verbose=False):
 
     co2 = line.split()
 
-    #    co2 = [float(n) for n in co2]
-    # print(co2)
     co2 = float_converter(co2)
-    # print(co2)
 
     try:
         c.minute = co2[0]

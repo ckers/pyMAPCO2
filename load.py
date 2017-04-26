@@ -7,12 +7,15 @@ Created on Mon Jul 25 14:30:25 2016
 
 import os
 import unicodedata
+import numpy as np
 import pandas as pd
 
-import config
+from . import config
+from .algebra import float_year_to_datetime
 
-
-data_types = ['mapco2', 'sami_ph', 'seafet_ph', 'sbe16']
+# TODO: more config info, probably should move to config.py
+data_types = ['mapco2', 'ph_sami', 'ph_seafet', 'sbe16', 'met']
+default_number_of_list_lines = 30  # how many lines to save if no end line found
 
 
 def sniff(file):
@@ -69,10 +72,11 @@ def index_data(data):
 
     c = 0
     i = 0
-    out = [['']*4 for _ in range(5000)]
+    out = [['']*5 for _ in range(5000)]
 
     for _line in data:
         _id = _line[0:4]
+
         if _id in config.pco2_start_delimiters:
             out[i][0] = c
             i += 1
@@ -82,6 +86,8 @@ def index_data(data):
             out[i][2] = c
         if _id == 'SBE1':
             out[i][3] = c
+        if _id == 'Met ':  # note single whitespace - bad luck, full line is 'Met Data'
+            out[i][4] = c
         c += 1
 
     out = out[:i+1]
@@ -102,9 +108,10 @@ def create_index_dataframe(index_list):
     """
 
     _df = pd.DataFrame(index_list, columns=data_types)
-    _df.sami_ph = _df.sami_ph.shift(-1)
-    _df.seafet_ph = _df.seafet_ph.shift(-1)
+    _df.ph_sami = _df.ph_sami.shift(-1)
+    _df.seafet_ph = _df.ph_seafet.shift(-1)
     _df.sbe16 = _df.sbe16.shift(-1)
+    _df.met = _df.met.shift(-1)
     _df = _df.dropna(axis=0)
 
     return _df
@@ -133,7 +140,18 @@ def get_start_timestamp(data_list, index_df):
     return out
 
 
-def create_start_end(index_df, data_len):
+def create_start_end(index_df):
+    """Find the start and end columns from a DataFrame of
+    only start indexes
+
+    Parameters
+    ----------
+    index_df : Pandas DataFrame, start indexes
+
+    Returns
+    -------
+    Pandas DataFrame of 'name'_start and 'name'_end index data
+    """
 
     rename_columns = []
     for name in index_df.columns:
@@ -148,57 +166,49 @@ def create_start_end(index_df, data_len):
         if 'start' in name:
             index_df[name.replace('start', 'end')] = ''
 
-    _len = len(index_df['datetime'])
-
     for name in data_types:
-        #index_df[name + '_end'] = index_df[name + '_start'].shift(-1)
-        #index_df[name + '_end'] -= 1
-        #_end_i = index_df[name + '_end'].ix[_len-2] + index_df[name + '_end'].diff().mean()
-        #index_df.ix[_len-1, name + '_end'] = min(_end_i, data_len)
-
         index_df[name + '_end'] = index_df[name + '_start']
         index_df[name + '_end'] = index_df[name + '_end'].astype(int)
-        index_df[name + '_end'] += 20
+        index_df[name + '_end'] += default_number_of_list_lines
         index_df = index_df.replace(-1000, -999)
 
     return index_df
 
 
-def iridium_file(f):
+def format_index_dataframe(lc):
     """Load indexes for a single iridium file
     Parameters
     ----------
-    f : str, filepath to file to parse
+    lc : list, lines of cleaned data
 
     Returns
     -------
-    lc: list, lines cleaned data
-    df: Pandas Dataframe, indexes of all identified data types
+    df : Pandas Dataframe, indexes of all identified data types
     """
 
-    l = file_to_list(f)
-    lc, errors, blanks = cleaner(data_list=l)
     d = index_data(lc)
     df = create_index_dataframe(d)
     df['datetime'] = get_start_timestamp(data_list=lc, index_df=df)
     df['datetime64_ns'] = pd.to_datetime(df.datetime, format='%Y/%m/%d_%H:%M:%S')
     df = df.replace('', -999)
-    df = create_start_end(index_df=df, data_len=len(lc))
-    return lc, df
+    df = create_start_end(index_df=df)
+    return df
 
     
-def iridium_frames(lc, start, end, delimiters):
+def frames(lc, start, end, delimiters):
     """Get data of one type from data file.  Type is determined by delimiters
     
     Parameters
     ----------
-    lc: list, lines cleaned data
-    start: array-like, indexes of start of data frame in lc
-    end: array-like, indexes of end of data frame in lc
+    lc : list, lines of cleaned data
+    start : array-like, indexes of start of data frame in lc
+    end : array-like, indexes of end of data frame in lc
+    delimiters : list of 2 str, characters to use as start and end of
+        section of data
     
     Returns
     -------
-    delimiters: list of str, two item long representing the starting
+    delimiters : list of str, two item long representing the starting
         and ending delimiters of a frame of data
     """
     
@@ -209,6 +219,11 @@ def iridium_frames(lc, start, end, delimiters):
 
     c = 0
     for i in range(len(start)):
+
+        if start[i] == -999:
+            data[c] = []
+            c += 1
+            continue
 
         _data = lc[start[i]:end[i]]
 
@@ -233,7 +248,7 @@ def iridium_frames(lc, start, end, delimiters):
     return data
 
 
-def iridium_file_all(f):
+def load_file(f):
     """Load all available data types in a file
     Note: data types are determined by delimiter definitions, which 
     are hardcoded below.
@@ -247,33 +262,46 @@ def iridium_file_all(f):
     df: Pandas Dataframe, data of all identified data types
     TODO: document columns and types
     """
-    
-    lc, df = iridium_file(f)
+
+    l = file_to_list(f)
+    lc, errors, blanks = cleaner(data_list=l)
+    df = format_index_dataframe(lc)
+
     df['source'] = os.path.normpath(f).split('\\')[-1]
-    df['sbe16_list'] = iridium_frames(lc,
-                                      start=df.sbe16_start,
-                                      end=df.sbe16_end,
-                                      delimiters=['SBE16 DATA', 'END SBE16'])
+    df['unit'] = df.source.str[1:5]
+    df['common_key'] = (df.unit.astype(str) +
+                        '_' +
+                        df.datetime.str.replace(':', '_').str.replace('/', '_'))
+    df['sbe16_list'] = frames(lc,
+                              start=df.sbe16_start,
+                              end=df.sbe16_end,
+                              delimiters=['SBE16 DATA', 'END SBE16'])
     
-    df['ph_sami_list'] = iridium_frames(lc,
-                                        start=df.sami_ph_start,
-                                        end=df.sami_ph_end,
-                                        delimiters=['PH', 'END PH'])
+    df['ph_sami_list'] = frames(lc,
+                                start=df.ph_sami_start,
+                                end=df.ph_sami_end,
+                                delimiters=['PH', 'END PH'])
     
-    df['ph_seafet_list'] = iridium_frames(lc,
-                                          start=df.seafet_ph_start,
-                                          end=df.seafet_ph_end,
-                                          delimiters=['Seafet Data', 'End Seafet Data'])
-    
-    df['co2_list'] = iridium_frames(lc,
-                                    start=df.mapco2_start,
-                                    end=df.mapco2_end,
-                                    delimiters=['NORM', 'SW_xCO2(dry)'])
+    df['ph_seafet_list'] = frames(lc,
+                                  start=df.ph_seafet_start,
+                                  end=df.ph_seafet_end,
+                                  delimiters=['Seafet Data', 'End Seafet Data'])
+
+    df['met_list'] = frames(lc,
+                            start=df.met_start,
+                            end=df.met_end,
+                            delimiters=['Met', ''])
+
+    df['co2_list'] = frames(lc,
+                            start=df.mapco2_start,
+                            end=df.mapco2_end,
+                            delimiters=['NORM', 'SW_xCO2(dry)'])
     
     return df
-    
-def iridium_file_batch(f_list):
-    """Load multiple iridium files using iridium_frames_all
+
+
+def file_batch(f_list):
+    """Load multiple iridium files using frames_all
     
     Parameters
     ----------
@@ -284,14 +312,14 @@ def iridium_file_batch(f_list):
     Pandas Dataframe, data of all identified data types
     """
     
-    df = pd.DataFrame()
     _df_list = []
     for _f in f_list:
-        _df = iridium_file_all(_f)
+        _df = load_file(_f)
         _df_list.append(_df)
         
     df = pd.concat(_df_list)
-        
+    df.reset_index(inplace=True, drop=True)
+
     return df
 
     
@@ -301,6 +329,10 @@ def unicode_check(line):
     Parameters
     ----------
     line : bytes or str, data to be encoded to 'utf-8'
+
+    Returns
+    -------
+    str or bool, decoded line or False
     """
 
     try:
@@ -310,15 +342,36 @@ def unicode_check(line):
         return False
 
 
-def whitespace(line):
+def rsls_whitespace(line):
     """Try to remove whitespace from line
 
     Parameters
     ----------
     line : str, line of text to remove whitespace from
+
+    Returns
+    -------
+    str or bool, stripped line or False
     """
     try:
         return line.rstrip().lstrip()
+    except:
+        return False
+
+
+def remove_star(line):
+    """Try to remove star ('*') characters from a line
+
+    Parameters
+    ----------
+    line : str, line
+
+    Returns
+    -------
+    str or bool, line with '*' removed or False
+    """
+    try:
+        return line.replace('*', '')
     except:
         return False
 
@@ -331,6 +384,10 @@ def remove_control_characters(s):
     Parameters
     ----------
     s : str, to look for control characters
+
+    Returns
+    -------
+    str or bool, line with control characters removed or False
     """
     try:
         return ''.join(ch for ch in s if unicodedata.category(ch)[0] != 'C')
@@ -354,8 +411,6 @@ def cleaner(data_list, limit=700, line_len=10, verbose=False):
     x : list, blank lines
     """
 
-    line_starts = []
-
     if data_list is None:
         if verbose:
             print('load.cleaner>> No list passed to clean!')
@@ -374,12 +429,12 @@ def cleaner(data_list, limit=700, line_len=10, verbose=False):
 
         line = data_list[n]
 
-        if n < limit:
-            # collate data lines for identification
-            line_starts.append(line[0:line_len])
+        # remove all '*' characters
+        _y = remove_star(line)
 
-            # strip whitespace from start & end
-        _y = whitespace(line)
+        # strip whitespace from start & end
+        _y = rsls_whitespace(_y)
+
         if _y is False:
             y[n] = True
         else:
@@ -387,13 +442,62 @@ def cleaner(data_list, limit=700, line_len=10, verbose=False):
 
         # remove control characters
         _x = remove_control_characters(line)
+
         if _x is False:
             x[n] = True
         else:
             line = _x
+
         z[n] = line
 
     if verbose:
         print('load.cleaner>> done!')
 
     return z, y, x
+
+
+def mbl_source(mbl_file):
+    """Load MBL data from .csv
+
+    Parameters
+    ----------
+    mbl_file : str, filepath to .csv of MBL data from ESRL
+
+    Returns
+    -------
+    Pandas DataFrame
+    """
+
+    # grid latitude
+    lat_sin = np.linspace(-1.0, 1.0, 41)
+    # create column names
+    col_names = ['YYYY.YYYYYY']
+    for n in lat_sin:
+        col_names.append("{0:.2f}".format(n))
+        col_names.append("{0:.2f}".format(n) + "_uncert")
+    # read in data
+    df = pd.read_table(mbl_file,
+                   sep=" ",
+                   skipinitialspace=True,
+                   dtype=float,
+                   comment='#',
+                   names=col_names)
+    # format datetime
+    df['datetime_mbl'] = df['YYYY.YYYYYY'].map(float_year_to_datetime)
+    return df
+
+
+def mbl_site(mbl_file):
+    """Load MBL data generated for a specific site
+    Note: this could be combined with the original loading
+
+    Parameters
+    ----------
+    mbl_file : str
+    """
+
+    dfmbl = pd.read_csv(mbl_file, sep=',')
+    dfmbl['xCO2_low_uncert'] = dfmbl.xCO2 - dfmbl.xCO2_uncert
+    dfmbl['xCO2_high_uncert'] = dfmbl.xCO2 + dfmbl.xCO2_uncert
+    dfmbl['datetime64_ns'] = pd.to_datetime(dfmbl.datetime_mbl)
+    return dfmbl
