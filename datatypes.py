@@ -7,7 +7,8 @@ Created on Wed Dec 14 09:41:25 2016
 
 import pandas as pd
 
-import config
+from . import config
+#import pyMAPCO2.config as config
 
 # we're shooting for all this data:
 pco2_header = ("location_code", "system_code",
@@ -46,6 +47,10 @@ class MAPCO2Base(object):
         """Multi dimension timeseries data"""
         self.df = pd.DataFrame(data=self.data(), columns=self.data_names)
 
+    @property
+    def data_dict(self):
+        return dict(zip(self.data_names, self.data))
+
 
 class MAPCO2Header(MAPCO2Base):
 
@@ -57,11 +62,11 @@ class MAPCO2Header(MAPCO2Base):
         self.mode = None
         self.checksum = None
         self.size = None
-        self.date_time = None
+        self.datetime_mapco2 = None
         self.location = None
         self.system = None
         self.firmware = None
-        self.timestamp = None
+        self.firmware_timestamp = None
 
         self.date_time_format = "%Y/%m/%d_%H:%M:%S"
         self.firmware_format = "A.B_%m/%d/%Y"
@@ -69,11 +74,11 @@ class MAPCO2Header(MAPCO2Base):
         self.data_names = ["mode",
                            "checksum",
                            "size",
-                           "date_time",
+                           "datetime_mapco2",
                            "location",
                            "system",
                            "firmware",
-                           "timestamp"]
+                           "firmware_timestamp"]
 
     def parse(self, line, verbose=False):
         """Parse one line of MAPCO2 data that contains the header information"""
@@ -86,27 +91,27 @@ class MAPCO2Header(MAPCO2Base):
         self.mode = header[0]
         self.checksum = header[1]
         self.size = header[2]
-        self.date_time = header[3] + "_" + header[4]
-        self.timestamp = pd.Timestamp(header[3] + " " + header[4])
+        self.datetime_mapco2 = header[3] + "_" + header[4]
         self.location = header[5]
         self.system = header[6]
 
         # older versions of the firmware don't include the version number
         try:
-            self.firmware = header[7] # + "_" + header[8]
-        except:
-            self.firmware = '0.0'
+            self.firmware = header[7]
+            self.firmware_timestamp = pd.Timestamp(header[8])
+        except IndexError:
+            pass
 
     @property
     def data(self):
         _a = [self.mode,
               self.checksum,
               self.size,
-              self.date_time,
+              self.datetime_mapco2,
               self.location,
               self.system,
               self.firmware,
-              self.timestamp]
+              self.firmware_timestamp]
         return _a
 
 
@@ -151,8 +156,6 @@ class MAPCO2GPS(MAPCO2Base):
         # convert month/day/year to year/month/day
         _date = _date[6:10] + '/' + _date[:2] + '/' + _date[3:5]
         _t = _date + "_" + gps[1]
-
-
 
         # if no fix, fill with zero
         if _t in config.time_ignore:
@@ -214,7 +217,7 @@ class MAPCO2GPS(MAPCO2Base):
 class MAPCO2Engr(MAPCO2Base):
 
     def __init__(self, data_type="iridium"):
-        super(AuxData, self).__init__()
+        super(MAPCO2Base, self).__init__()
 
         self.df = None
 
@@ -421,7 +424,7 @@ class MAPCO2Engr(MAPCO2Base):
 class AuxData(object):
     def __init__(self, header=None, log=None):
 
-        self.raw
+        self.raw = None
         self.h = header
         self.log = log
         self.aux_type = ""

@@ -8,9 +8,10 @@ Created on Thu Jul 28 14:45:54 2016
 
 import pandas as pd
 
-
-import datatypes
-import parse
+from . import datatypes
+from . import parse
+#import pyMAPCO2.datatypes as datatypes
+#import pyMAPCO2.parse as parse
 
 
 def concat(data, start, end, verbose=False):
