@@ -24,9 +24,17 @@ column_names = ['Mooring', 'Latitude', 'Longitude',
                 'fCO2_SW_sat', 'fCO2_Air_sat', 'dfCO2',
                 'pCO2_SW_sat', 'pCO2_Air_sat', 'dpCO2', 'pH', 'pH_QF']
 
+# merged data in .xlsx workbooks, before being output to .csv
+xlsx_merged_header = column_names[3:-2]   # just pCO2 data
+xlsx_merged_header_ph = column_names[3:]  # pCo2 and pH data
+
 # year range for generated time deltas and multiyear plots
 y0 = 2000
 y1 = 2020
+
+# Time formatting specifications
+iso_strftime_utc = '%Y-%m-%dT%H:%M:%SZ'         # assumes time is UTC/Z
+iso_strftime_timezone = '%Y-%m-%dT%H:%M:%S%Z'   # returns timezone or blank if naive
 
 # ranges of data considered possible/reality
 k_limits = {'datetime64_ns': [to_datetime('1980-01-01'), to_datetime('2020-01-01')],
@@ -34,6 +42,7 @@ k_limits = {'datetime64_ns': [to_datetime('1980-01-01'), to_datetime('2020-01-01
             'xco2_air': [380, 500],
             'xco2': [0, 20000],
             'o2_percent': [85, 100],
+            'sso2': [85, 100],
             'sst': [-5, 40],
             'sss': [30, 40],
             'atm_press': [45, 130],

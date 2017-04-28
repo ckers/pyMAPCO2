@@ -632,3 +632,33 @@ def plot_combined(co2, mbl, markers='.', lines='-', gtd=[]):
     host.legend(loc=2)
 
     plt.show()
+
+
+def show(title=None, legend=True):
+    """Format timeseries plots nicely for Jupyter
+
+    Parameters
+    ----------
+    #array : array-like, each item containing parameters to pass to
+    #    matplotlib.pyplot.plot method
+    title : str, optional title text
+
+    Returns
+    -------
+    None, directly displays
+    """
+
+    if legend:
+        ax = plt.gca()
+        # Shrink current axis by 20%
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        # add legend
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+    if title is not None:
+        plt.title(title, loc='right')
+
+    plt.margins(0.05, 0.1)
+    plt.xticks(rotation='vertical')
+    plt.show()

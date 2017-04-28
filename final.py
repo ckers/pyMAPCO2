@@ -19,6 +19,13 @@ for _c in ['Date', 'Time', 'Mooring']:
     float_names.remove(_c)
 
 
+def load(all_files):
+    """Load all finalized .csv files into a Pandas DataFrame"""
+    _df = read_files(all_files)
+    _df = refactor(_df)
+    return _df
+
+
 def read_files(all_files):
     """Read all MAPCO2 files into a Pandas DataFrame
 
@@ -31,10 +38,13 @@ def read_files(all_files):
     Pandas DataFrame
     """
     df_list = []
+    if isinstance(all_files, str):
+        all_files = [all_files]
     for file in all_files:
-        print('Loading: ', str(file))
+        if verbose:
+            print('Loading: ', str(file))
         _df_n = pd.read_csv(file, index_col=None, sep=',', skiprows=0)
-        units = _df_n.ix[0.:]
+        _units = _df_n.ix[0.:]
         _df_n.drop(0, inplace=True)
         df_list.append(_df_n)
     _df = pd.concat(df_list)
@@ -113,7 +123,7 @@ def refactor(_df):
 class FinalCSV(object):
     def __init__(self):
         self.target = None
-
+        """NOTE: USE MODULE METHODS ABOVE - remove this if not used!"""
     def load_df(self, fp):
         """Load MAPCO2 data from final .csv to Pandas DataFrame
         Skips the first row, assuming units are there.
@@ -156,13 +166,10 @@ class FinalCSV(object):
         """
 
         _df = pd.read_csv(fp, sep=',',
-                          header=0,
-                          skiprows=[1])
-
+                          names=conf)
         _df.Date = _df.Date.map(pad_date)
-
         _df['datetime'] = _df.Date + ' ' + _df.Time
-        _df['datetime'] = pd.DatetimeIndex(_df.datetime)
+        _df['datetime'] = pd.to_datetime(_df.datetime)
 
         return _df
 
@@ -208,7 +215,8 @@ class FinalCSV(object):
                 mapco2_fp_list.append(fp)
 
         _dfmbl = self.load_mbl(mbl_fp)
-        print('MBL data.head:', _dfmbl.head())
+        if verbose:
+            print('MBL data.head:', _dfmbl.head())
 
         _fp = mapco2_fp_list[0]
         if verbose:

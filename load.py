@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from . import config
-from .algebra import float_year_to_datetime
+from .algebra import float_year_to_datetime, common_key
 
 # TODO: more config info, probably should move to config.py
 data_types = ['mapco2', 'ph_sami', 'ph_seafet', 'sbe16', 'met']
@@ -248,7 +248,7 @@ def frames(lc, start, end, delimiters):
     return data
 
 
-def load_file(f):
+def load_file(f, unit=None):
     """Load all available data types in a file
     Note: data types are determined by delimiter definitions, which 
     are hardcoded below.
@@ -256,6 +256,8 @@ def load_file(f):
     Parameters
     ----------
     f : str, filepath to file to parse
+    unit : str, unit serial number.  Primarily used for single flash imports
+        TODO: find another way?
 
     Returns
     -------
@@ -268,10 +270,19 @@ def load_file(f):
     df = format_index_dataframe(lc)
 
     df['source'] = os.path.normpath(f).split('\\')[-1]
-    df['unit'] = df.source.str[1:5]
+    if unit is None:
+        df['unit'] = df.source.str[1:5]
+    else:
+        df['unit'] = str(unit)
     df['common_key'] = (df.unit.astype(str) +
                         '_' +
                         df.datetime.str.replace(':', '_').str.replace('/', '_'))
+
+    # df['common_key'] = (df.unit.astype(str) +
+    #                     '_' + timestamp_rounder(df.datetime64_ns).astype(str))
+
+    df['common_key'] = df.apply(common_key, axis=1)
+
     df['sbe16_list'] = frames(lc,
                               start=df.sbe16_start,
                               end=df.sbe16_end,
@@ -501,3 +512,4 @@ def mbl_site(mbl_file):
     dfmbl['xCO2_high_uncert'] = dfmbl.xCO2 + dfmbl.xCO2_uncert
     dfmbl['datetime64_ns'] = pd.to_datetime(dfmbl.datetime_mbl)
     return dfmbl
+

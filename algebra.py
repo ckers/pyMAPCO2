@@ -1,11 +1,16 @@
-"""Algebra for CO2 data processing"""
+# -*- coding: utf-8 -*-
+"""
+Algebra for CO2 data processing
+
+@author: Colin Dietrich
+"""
 
 
 import numpy as np
 from datetime import datetime, timedelta
 
 
-def linear_fit(x, a, b):
+def linear(x, a, b):
     """Linear equation of a line as:
     y = ax + b
 
@@ -23,7 +28,7 @@ def linear_fit(x, a, b):
     return a * x + b
 
 
-def inverse_linear_fit(y, a, b):
+def inverse_linear(y, a, b):
     """Inverse linear equation of a line as:
     y = ax + b
 
@@ -40,7 +45,7 @@ def inverse_linear_fit(y, a, b):
     return (y - b) / a
 
 
-def natural_log_fit(x, a, b):
+def natural_log(x, a, b):
     """Natural logarithm equation as:
     y = a * ln(x) + b
 
@@ -171,6 +176,7 @@ def subtropic_TA(sss, sst):
     ------
     ta : float
     """
+
     ta = (2305 + 
           58.66 * (sss-35) + 
           2.32 * (sss-35)**2 - 
@@ -178,3 +184,26 @@ def subtropic_TA(sss, sst):
           0.04 * (sst-20)**2)
     return ta
 
+
+def timestamp_rounder(t):
+    """Round a DatetimeIndex to a 30 minute interval"""
+    return t.replace(minute= 30 * (t.minute // 30), second= 0)
+
+
+def common_key(row):
+    """Create a common key value.
+
+    Parameters
+    ----------
+    row : Pandas DataFrame row with:
+        'datetime64_ns' and 'unit' columns
+
+    Returns
+    -------
+    str : common key formatted as:
+        'xxxx_'%Y-%m-%dT%H:%M:%SZ'' with time rounded to the half hour
+    """
+
+    ck = (row.unit + '_' +
+          timestamp_rounder(row.datetime64_ns).strftime('%Y-%m-%dT%H:%M:%SZ'))
+    return ck

@@ -11,6 +11,8 @@ import plotly.offline as ply
 import plotly.graph_objs as go
 
 from . import plot
+from . import config
+from . import stats
 
 xco2_air_color = 'cyan'
 xco2_sw_color = 'blue'
@@ -23,29 +25,74 @@ sss_color = 'purple'
 ntu_color = 'grey'
 sso2_color = 'red'
 ph_color = 'green'
+ph_int_color = '#9ff22b'
+ph_ext_color = '#2bf2bd'
 mbl_color = 'black'
 
 
-def default_layout(xco2_range,
-                   sst_range,
-                   ph_range,
-                   sso2_range,
+def default_layout(xco2_sw_range=None,
+                   xco2_air_range=None,
+                   sst_range=None,
+                   sss_range=None,
+                   ph_range=None,
+                   sso2_range=None,
+                   atm_press_range=None,
+                   autoscale=False,
                    title=None,
+
                    ):
     """Plot.ly default layout for xCO2, SST, SSS, pH
 
     Parameters
     ----------
-    xco2_range : array-like, two values - kmin & kmax
+    xco2_sw_range : array-like, two values - kmin & kmax
+    xco2_air_range : array-like, two values - kmin & kmax
     sst_range : array-like, two values - kmin & kmax
-    sso2_range : array-like, two values - kmin & kmax
+    sss_range : array-like, two values - kmin & kmax
     ph_range : array-like, two values - kmin & kmax
+    sso2_range : array-like, two values - kmin & kmax
+    atm_press_range : array-like, two values - kmin & kmax
+    autoscale : bool, calculate autoscaled
     title : str, name of plot
 
     Returns
     -------
     Plot.ly layout
     """
+
+    # TODO: add second left axis for Air xCO2 level
+    if xco2_sw_range is None:
+        xco2_sw_range = config.k_limits['xco2_sw']
+    if xco2_air_range is None:
+        xco2_air_range = config.k_limits['xco2_air']
+    if sst_range is None:
+        sst_range = config.k_limits['sst']
+        if autoscale:
+            lcf_sst = stats.Linear2dCurveFit()
+            lcf_sst.x = df.xCO2_SW_dry
+            lcf_sst.y = df.SST
+            lcf_sst.fit()
+            sst_min = lcf_sst.apply(min(df.xCO2_SW_dry))
+            sst_max = lcf_sst.apply(max(df.xCO2_SW_dry))
+            sst_range = [sst_min - sst_min*0.05,
+                         sst_max + sst_max*0.05]
+    if ph_range is None:
+        ph_range = config.k_limits['ph']
+        if autoscale:
+                lcf_ph = stats.Linear2dCurveFit()
+                lcf_ph.x = df.xCO2_SW_dry
+                lcf_ph.y = df.pH
+                lcf_ph.fit()
+                ph_min = lcf_ph.apply(min(df.xCO2_SW_dry))
+                ph_max = lcf_ph.apply(max(df.xCO2_SW_dry))
+                ph_range = [ph_min - ph_min*0.05,
+                            ph_min + ph_max*0.05]
+    if sso2_range is None:
+        sso2_range = config.k_limits['sso2']
+    if sss_range is None:
+        sss_range = config.k_limits['sss']
+    if atm_press_range is None:
+        atm_press_range = config.k_limits['atm_press']
 
     _title = 'MAPCO2 pCO2 pH SSTC'
     if title is None:
@@ -56,7 +103,7 @@ def default_layout(xco2_range,
     layout = go.Layout(
         title='MAPCO2 SSTC pH Data for ' + title,
         xaxis=dict(title='Date Time', domain=[0.0, 0.86]),
-        yaxis=dict(title='MAPCO2 xCO2 (umol/mol)', range=xco2_range),
+        yaxis=dict(title='MAPCO2 xCO2 (umol/mol)', range=xco2_sw_range),
         legend=dict(orientation="h"),
 
         yaxis2=dict(
@@ -73,6 +120,7 @@ def default_layout(xco2_range,
             tickfont=dict(color=sss_color),
             overlaying='y',
             side='right',
+            range=sss_range,
             position=0.89
         ),
 
@@ -82,6 +130,7 @@ def default_layout(xco2_range,
             tickfont=dict(color=ntu_color),
             overlaying='y',
             side='right',
+            range=atm_press_range,
             position=0.91
         ),
         yaxis5=dict(
@@ -159,7 +208,7 @@ def default_data(df, df_mbl=None):
         data.append(go.Scatter(
             x=x, y=df.xCO2_SW_dry_flagged_3,
             name='xCO2 SW Dry Flag 3',
-            yaxis='y6',
+            mode='markers',
             marker=dict(size=10, symbol='square-open', color='orange'))
         )
 
@@ -168,6 +217,7 @@ def default_data(df, df_mbl=None):
         data.append(go.Scatter(
             x=x, y=df.xCO2_SW_dry_flagged_4,
             name='xCO2 SW Dry Flag 4',
+            mode='markers',
             marker=dict(size=10, symbol='circle-open', color='red'))
         )
 
@@ -202,6 +252,7 @@ def default_data(df, df_mbl=None):
         data.append(go.Scatter(
             x=x, y=df.xCO2_Air_dry_flagged_3,
             name='xCO2 Air Dry Flag 3',
+            mode='markers',
             marker=dict(size=10, symbol='square-open', color='orange'))
         )
 
@@ -210,6 +261,7 @@ def default_data(df, df_mbl=None):
         data.append(go.Scatter(
             x=x, y=df.xCO2_Air_dry_flagged_4,
             name='xCO2 Air Dry Flag 4',
+            mode='markers',
             marker=dict(size=10, symbol='circle-open', color='red'))
         )
 
@@ -345,6 +397,71 @@ def default_data(df, df_mbl=None):
         )
 
     return data
+
+
+def ph_data(df):
+
+    df_columns = list(df.columns)
+
+    data = []
+    x = df.datetime64_ns
+
+    # sea surface pH INITIAL
+    if 'pH' in df_columns:
+        data.append(go.Scatter(
+            x=x, y=df.pH,
+            name='pH Initial',
+            yaxis='y6',
+            line=dict(width=2, color=ph_color))
+        )
+
+    # sea surface pH INITIAL
+    if 'ph_int' in df_columns:
+        data.append(go.Scatter(
+            x=x, y=df.ph_int,
+            name='pH Internal',
+            yaxis='y6',
+            line=dict(width=2, color=ph_int_color))
+        )
+
+    # sea surface pH INITIAL
+    if 'ph_ext' in df_columns:
+        data.append(go.Scatter(
+            x=x, y=df.ph_ext,
+            name='pH External',
+            yaxis='y6',
+            line=dict(width=2, color=ph_ext_color))
+        )
+
+    # sea surface pH FINAL
+    if 'pH_final' in df_columns:
+        data.append(go.Scatter(
+            x=x, y=df.pH_final,
+            name='pH Final',
+            yaxis='y6',
+            line=dict(width=2, color=ph_color))
+        )
+
+    # sea surface pH flagged 3
+    if 'pH_flagged_3' in df_columns:
+        data.append(go.Scatter(
+            x=x, y=df.pH_flagged_3,
+            name='pH Flag 3',
+            yaxis='y6',
+            marker=dict(size=10, symbol='square-open', color='orange'))
+        )
+
+    # sea surface pH flagged 4
+    if 'pH_flagged_4' in df_columns:
+        data.append(go.Scatter(
+            x=x, y=df.pH_flagged_4,
+            name='pH Flag 4',
+            yaxis='y6',
+            marker=dict(size=10, symbol='circle-open', color='red'))
+        )
+
+    return data
+
 
 
 def my_data(df):
