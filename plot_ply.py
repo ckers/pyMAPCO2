@@ -28,7 +28,8 @@ ph_color = 'green'
 ph_int_color = '#9ff22b'
 ph_ext_color = '#2bf2bd'
 mbl_color = 'black'
-
+epon_press_color = '#f442f4'  # purple-ish
+apon_press_color = '#f47141'  # salmon/orange-ish
 
 def default_layout(xco2_sw_range=None,
                    xco2_air_range=None,
@@ -395,6 +396,25 @@ def default_data(df, df_mbl=None):
             line=dict(width=2, color=sso2_color),
             marker=dict(size=4))
         )
+
+    if 'epon_press' in df_columns:
+        data.append(go.Scatter(
+            x=x, y=df.epon_press,
+            name='Equilibrator Pump On Pressure (kPa)',
+            yaxis='y4',
+            line=dict(width=2, color=epon_press_color),
+            marker=dict(size=4))
+        )
+
+    if 'apon_press' in df_columns:
+        data.append(go.Scatter(
+            x=x, y=df.apon_press,
+            name='Air Pump On Pressure (kPa)',
+            yaxis='y4',
+            line=dict(width=2, color=apon_press_color),
+            marker=dict(size=4))
+        )
+
 
     return data
 

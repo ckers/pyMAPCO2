@@ -662,3 +662,14 @@ def show(title=None, legend=True):
     plt.margins(0.05, 0.1)
     plt.xticks(rotation='vertical')
     plt.show()
+
+
+def scatter_cm(x, y, c, cmap='hot'):
+    """Scatter colormap template
+    Call with plot_plt.show for extra formatting
+    """
+
+    fig, ax = plt.subplots(1,1)
+    sc = ax.scatter(x=x, y=y, c=c, cmap=cmap,
+                    edgecolor='face', alpha=0.5)
+    plt.colorbar(sc)

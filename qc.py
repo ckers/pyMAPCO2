@@ -9,15 +9,17 @@ from time import strftime
 from pandas import read_excel
 
 from . import config
+from .algebra import timestamp_rounder, common_key
 
 
-def import_merged(f):
+def import_merged(f, unit):
     """Import Merged data worksheet from an Excel Workbook
     Assumes there is a worksheet named 'Merged'
 
     Parameters
     ----------
     f : str, absolute file path to .xlsx workbook
+    unit : str, system id number or serial number
 
     Returns
     -------
@@ -28,6 +30,8 @@ def import_merged(f):
     _df['datetime64_ns'] = _df.Date.copy()
     _df['datetime'] = _df.Date.copy()
     _df['datetime'] = _df.datetime.astype(str)
+    _df['unit'] = str(unit)
+    _df['common_key'] = _df.apply(common_key, axis=1)
     return _df
 
 
@@ -61,8 +65,10 @@ def sss_sami_export(df, filepath, description=''):
 
     return _df
 
+
 def sss_seafet_export(df):
     pass
+
 
 def co2sys_xls_export(df, filepath,
                       p_dbar_in=0.5, p_dbar_out=0.5,
@@ -118,9 +124,7 @@ def co2sys_xls_export(df, filepath,
     _df['fco2'] = fco2
     _df['SST_out'] = sst_out
 
-    _df = _df[['datetime', 'SSS', 'SST', 'p_dbar_in', 'total_P', 'total_Si',
-               'SST_out', 'p_dbar_out',
-               'TA', 'tco2', 'pH', 'fco2', 'pCO2_SW_sat']]
+    _df = _df[config.co2sys_column_names_in]
 
     _df.dropna(axis=0, how='any', inplace=True)
 
@@ -131,5 +135,52 @@ def co2sys_xls_export(df, filepath,
     _f = filepath + description + 'data_for_co2sys_' + t + '.csv'
 
     _df.to_csv(_f, sep=',', header=True, index=False)
+
+    return _df
+
+
+def import_co2sysxls(f, unit):
+    """Import Merged data worksheet from an Excel Workbook
+    Assumes there is a worksheet named 'Merged'
+
+    Parameters
+    ----------
+    f : str, absolute file path to .xlsx workbook
+    unit : str, system id number or serial number
+
+    Returns
+    -------
+    Pandas DataFrame
+    """
+
+    _df = read_excel(f, sheetname='DATA',
+                     skiprows=[0, 1, 2],
+                     names=config.co2sysxls_column_names)
+    # _df['datetime64_ns'] = _df.Date.copy()
+    # _df['datetime'] = _df.Date.copy()
+    # _df['datetime'] = _df.datetime.astype(str)
+    _df['unit'] = str(unit)
+    # _df['common_key'] = _df.apply(common_key, axis=1)
+    return _df
+
+
+def import_xlsx_cycle(df, name):
+    """Import one sheet from a VBA imported data set"""
+
+    _df = df[name]
+    _df = _df.reset_index()
+
+    _df = _df.ix[:, ['Time', 'Calculated xCO2 from Averaged Data',
+                     'index', 'Mode', 'Raw1', 'Raw2']]
+
+    renames = {'Time': 'cycle_datetime64_ns',
+               'Calculated xCO2 from Averaged Data': 'xCO2',
+               'index': 'mode', 'Mode': 'cycle'}
+    _df = _df.rename(columns=renames)
+    _df = _df.dropna(how='all', axis=0)
+    _df = _df[_df['mode'] != 'DEPL']
+    _df = _df.drop('mode', axis=1)
+    _df['cycle'] = config.cycle_names[name]
+    _df['datetime64_ns'] = _df.apply(lambda x: timestamp_rounder(x.cycle_datetime64_ns), axis=1)
 
     return _df

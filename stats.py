@@ -124,4 +124,4 @@ class Linear2dSKL(object):
         if self.solution:
             plt.plot(self.x_test, self.regr.predict(self.x_test), 'r-',
                      label='Fit: {:3f}(x) + {:3f}'.format(self.a, self.b))
-        plot_plt.show(title=self.description)
+        #plot_plt.show(title=self.description)
