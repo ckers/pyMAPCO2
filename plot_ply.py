@@ -270,7 +270,7 @@ def default_data(df, df_mbl=None):
     if 'SST' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.SST,
-            name='SST Final',
+            name='SST',
             yaxis='y2',
             line=dict(width=2, color=sst_color))
         )
@@ -351,7 +351,7 @@ def default_data(df, df_mbl=None):
     if 'SSS' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.SSS,
-            name='SSS Final',
+            name='SSS',
             yaxis='y3',
             line=dict(width=2, color=sss_color),
             marker=dict(size=4))

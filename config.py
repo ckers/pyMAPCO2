@@ -408,3 +408,38 @@ cycle_names = {'Zero Pump On': 'zpon', 'Zero Pump Off': 'zpof', 'Zero Post Cal':
                'Span Pump On': 'zpon', 'Span Pump Off': 'spof', 'Span Post Cal': 'spcal',
                'Equil Pump On': 'epon', 'Equil Pump Off': 'epof',
                'Air Pump On': 'apon', 'Air Pump Off': 'apof'}
+
+sbe16_columns = ['datetime_v',
+                 'SBE16_SST', 'SBE16_SST_SD',
+                 'SBE16_Cond', 'SBE16_Cond_SD',
+                 'SBE16_Press', 'SBE16_Press_SD',
+                 'SBE16_V0', 'SBE16_V0_SD',
+                 'SBE16_V1', 'SBE16_V1_SD',
+                 'SBE16_V2', 'SBE16_V2_SD',
+                 'SBE16_V3', 'SBE16_V3_SD',
+                 'SBE16_V4', 'SBE16_V4_SD',
+                 'SBE16_V5', 'SBE16_V5_SD',
+                 'SBE16_Serial_Temp', 'SBE16_Serial_Temp_SD',
+                 'SBE16_Serial_Press', 'SBE16_Serial_Press_SD',
+                 'SBE16_Serial_Temp2', 'SBE16_Serial_Temp2_SD',
+                 'SBE16_Serial_Press2', 'SBE16_Serial_Press2_SD',
+                 'SBE16_Serial_O2', 'SBE16_Serial_O2_SD',
+                 'SBE16_SSS', 'SBE16_SSS_SD',
+                 'SBE16_SV', 'SBE16_SV_SD',
+                 'SBE16_density', 'SBE16_density_SD',
+                 'SBE16_V_bat', 'SBE16_A_current',
+                 'SBE16_n_samples']
+
+# sheet names of MS Excel VBA sourced workbooks
+xls_sheet_names = ['Zero Pump On', 'Zero Pump Off', 'Zero Post Cal',
+               'Span Pump On', 'Span Pump Off', 'Span Post Cal',
+               'Equil Pump On', 'Equil Pump Off',
+               'Air Pump On', 'Air Pump Off']
+
+xls_merged_sheet = 'Merged'
+
+# Data type header IDs in Flash Data
+frame_data_types = ['mapco2', 'ph_sami', 'ph_seafet', 'sbe16', 'met']
+
+# Number of lines to save if no end of frame line is found
+frame_default_number_of_list_lines = 30

@@ -129,17 +129,17 @@ def co2_line(line, verbose=False):
     return c
 
 
-def co2_series(data, verbose):
+def co2_series(line, verbose):
     """Convert line of co2 data into a pandas series
     Parameters
     ----------
-    data : str, one line of licor data
+    line : str, one line of licor data
     verbose : bool, output print information
     Returns
     -------
     c_series : Series, pandas series object
     """
-    c = co2_line(data=data, verbose=verbose)
+    c = co2_line(line=line, verbose=verbose)
     c_series = pd.Series(data=c.data(), index=c.data_names)
     return c_series
 

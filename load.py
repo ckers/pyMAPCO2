@@ -12,11 +12,7 @@ import pandas as pd
 
 from . import config
 from .algebra import float_year_to_datetime, common_key
-
-# TODO: more config info, probably should move to config.py
-data_types = ['mapco2', 'ph_sami', 'ph_seafet', 'sbe16', 'met']
-default_number_of_list_lines = 30  # how many lines to save if no end line found
-
+from .utils.main import flatten
 
 def sniff(file):
     """Decide if file is a MAPCO2 flash data file
@@ -107,7 +103,7 @@ def create_index_dataframe(index_list):
     _df : Pandas Dataframe
     """
 
-    _df = pd.DataFrame(index_list, columns=data_types)
+    _df = pd.DataFrame(index_list, columns=config.frame_data_types)
     _df.ph_sami = _df.ph_sami.shift(-1)
     _df.seafet_ph = _df.ph_seafet.shift(-1)
     _df.sbe16 = _df.sbe16.shift(-1)
@@ -166,10 +162,10 @@ def create_start_end(index_df):
         if 'start' in name:
             index_df[name.replace('start', 'end')] = ''
 
-    for name in data_types:
+    for name in config.frame_data_types:
         index_df[name + '_end'] = index_df[name + '_start']
         index_df[name + '_end'] = index_df[name + '_end'].astype(int)
-        index_df[name + '_end'] += default_number_of_list_lines
+        index_df[name + '_end'] += config.frame_default_number_of_list_lines
         index_df = index_df.replace(-1000, -999)
 
     return index_df
@@ -404,6 +400,96 @@ def remove_control_characters(s):
         return ''.join(ch for ch in s if unicodedata.category(ch)[0] != 'C')
     except:
         return False
+
+
+def repeat_finder(s, min_count=16, verbose=False):
+    """Find repeated characters that are likely a firmware bug
+    i.e. '000000000000000'
+
+    Parameters
+    ----------
+    s : str, line of data
+    min_count : int, number of sequential characters required to
+        trigger a removal
+    verbose : bool, print debug info
+
+    Returns
+    -------
+    str, stripped of most common repeated character
+    """
+
+    c = -1
+    removals = {}
+    indexes = list(range(len(s)))[:-1]
+    if verbose:
+        print('load.repeat_stripper>> indexes:', indexes)
+
+    for n in indexes:
+
+        ns0 = s[n-1]
+        ns1 = s[n]
+
+        if ns0 == ns1:
+            c += 1
+        else:
+            c = -1
+        if verbose:
+            print('load.repeat_finder>> n:{} ns0:{} ns1:{} c:{}'.format(n, ns0, ns1, c))
+
+        if c > min_count:
+            if ns1 in removals:
+                removals[ns1][1] = n
+            else:
+                removals[ns1] = [n-c, n]
+
+    if len(removals) == 0:
+        if verbose:
+            print('load.repeat_finder>> Length of removals =', len(removals))
+        return False
+
+    return removals
+
+
+def repeat_stripper(s, min_count=16, verbose=True, limit=100):
+    """Remove repeated characters that are likely a firmware bug
+    i.e. '000000000000000'
+
+
+    Parameters
+    ----------
+    s : str, line of data
+    min_count : int, number of sequential characters required to
+        trigger a removal
+    verbose : bool, print debug info
+    limit : int, max number of characters to check (prevents runaway)
+
+    Returns
+    -------
+    str, stripped of most common repeated character
+    """
+
+    result = True
+    line_out = None
+    c = 0
+    while True:
+        result = repeat_finder(s=s, min_count=min_count, verbose=verbose)
+        if verbose:
+            print(result, type(result), result is False)
+        if result is False:
+            break
+        else:
+            ixs = [v for k, v in result.items()]
+            ixs = sorted(ixs)
+            ixs = list(flatten(ixs))
+            ixs = [0] + ixs + [len(ixs)+1]
+            new_s = ''
+            for ix in range(0, len(ixs)-2, 2):
+                new_s = new_s + s[ixs[ix]:ixs[ix+1]]
+            s = new_s
+        if c > limit:
+            break
+        c += 1
+    return s
 
 
 def cleaner(data_list, limit=700, line_len=10, verbose=False):
