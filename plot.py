@@ -50,7 +50,16 @@ def demo_palletes():
 
 def lim_finder(data, margin=0.1, data_type=None, verbose=False):
     """Set axis limits to something based on reality
-    Values set in config.k_limits
+    data_types accepted are in config.k_limits:
+        'datetime64_ns'
+        'xco2_sw'
+        'xco2_air'
+        'xco2'
+        'o2_percent'
+        'sst'
+        'sss'
+        'atm_press'
+        'ph'
 
     Parameters
     ----------
@@ -126,3 +135,30 @@ def pivot(df):
                      values='pH')
 
     return day_my, xco2_air_my, xco2_sw_my, sst_my, sss_my, ph_my
+
+
+def write_flag(x):
+    """Return data if flag is type"""
+
+
+def create_flag_columns(df):
+    """Create flag columns for plotting flagged points
+    """
+
+    df['xCO2_SW_dry_flagged_3'] = df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 3.0
+                                                                   else np.nan, axis=1)
+    df['xCO2_SW_dry_flagged_4'] = df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 4.0
+                                                                   else np.nan, axis=1)
+    df['xCO2_Air_dry_flagged_3'] = df.apply(lambda x: x.xCO2_Air_dry if x.xCO2_Air_QF == 3.0
+                                                                   else np.nan, axis=1)
+    df['xCO2_Air_dry_flagged_4'] = df.apply(lambda x: x.xCO2_Air_dry if x.xCO2_Air_QF == 4.0
+                                                                   else np.nan, axis=1)
+    if 'pH' in df.columns:
+        df['pH_flagged_3'] = df.apply(lambda x: x.pH if x.pH_QF == 3.0
+                                                     else np.nan, axis=1)
+        df['pH_flagged_4'] = df.apply(lambda x: x.pH if x.pH_QF == 4.0
+                                                     else np.nan, axis=1)
+
+    return df
+
+

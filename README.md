@@ -2,6 +2,14 @@
 
 Package for processing MAPCO2 CO2 data
 
+## Data Descriptions  
+Time format in string format is ISO 8601
+in strftime format that is: `'%Y-%m-%dT%H:%M:%S%Z'`
+see config.py for definition.
+Reference:
+    https://en.wikipedia.org/wiki/ISO_8601
+
+
 ## Folder Descriptions
 `\docs` :
 `\gserial` : generic serial package
