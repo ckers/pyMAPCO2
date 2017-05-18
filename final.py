@@ -26,7 +26,7 @@ def load(all_files):
     return _df
 
 
-def read_files(all_files):
+def read_files(all_files, verbose=False):
     """Read all MAPCO2 files into a Pandas DataFrame
 
     Parameters

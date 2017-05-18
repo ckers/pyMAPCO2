@@ -60,6 +60,7 @@ def apache_concat(url_sources):
         df_list.append(df_n)
     return pd.concat(df_list)
 
+
 def rudics_file_timestamp(filename):
     """Get the timestamp of a Rudics Iridium data file
     
@@ -173,7 +174,9 @@ def rudics_files(url_sources, local_target):
 
 def download_files(x):
     """Download files from Rudics to a local directory for processing
-    
+
+    If x.skip_download is set, skip downloading new data for that file
+
     Parameters
     ----------
     x : str, absolute filepath to file to download
@@ -183,6 +186,9 @@ def download_files(x):
     None, writes to disk
     """
     try:
+        if x.skip_download == True:
+            return False
+
         url = x.url_file
 
         # if the local folder does not exist, make it
@@ -203,7 +209,7 @@ def download_files(x):
         return False
 
 
-def get_timespan(t_start, t_end, days_in_past):
+def get_timespan(t_start='01/01/2010', t_end='01/01/2020', days_in_past=None):
     """Get the start and end dates for further calculations.
     d supercedes t0, t1 range.
     format = 'mm/dd/yyyy hh:mm'
@@ -219,20 +225,21 @@ def get_timespan(t_start, t_end, days_in_past):
     t_start : Pandas datetime64
     t_end : Pandas datetime64
     """
-    # time range to filter on
-    t_start = pd.to_datetime(t_start)
-    t_end = pd.to_datetime(t_end)
-    
+
     # if True, override to start of the day specified by 'days_in_past'
     if days_in_past is not None:
         t_end = pd.to_datetime('now')
         t_start = pd.to_datetime('today') - pd.Timedelta('%s days' % days_in_past)
+    else:
+        t_start = pd.to_datetime(t_start)
+        t_end = pd.to_datetime(t_end)
+
     return t_start, t_end
 
      
-def run(units, t_start, t_end, days_in_past=None,
-        url_source=config.mapco2_rudics,
-        local_target=config.local_mapco2_data_directory,
+def run(units, t_start, t_end,
+        url_source=False,
+        local_target=False,
         verbose=False):
     """Download files from the rudics server
     
@@ -253,12 +260,13 @@ def run(units, t_start, t_end, days_in_past=None,
     
     if isinstance(units, str):
         units = [units]
-    
-    url_source = config.mapco2_rudics
+    if not url_source:
+        url_source = config.mapco2_rudics
     url_sources = [url_source + _u for _u in units]
     if verbose:
         print('scrape.download>> URL sources:\n', url_sources)
-    local_target = config.local_mapco2_data_directory
+    if not local_target:
+        local_target = config.local_mapco2_data_directory
     if verbose:
         print('scrape.download>> Local Target:', local_target)
     

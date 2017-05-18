@@ -65,7 +65,7 @@ def frame(sample, verbose=False, ph=False):
 
     Parameters
     ----------
-    sample :
+    sample : list of str, cleaned data from MAPCO2
     verbose : bool, print debug statements
     pH : bool, whether to process pH data found in Iridium data
 
@@ -75,8 +75,9 @@ def frame(sample, verbose=False, ph=False):
     """
 
     if verbose:
-        print('frame:')
+        print('iridium.frame>>')
         print(sample)
+        print("="*10)
 
     h = parse.header(sample[0], verbose=verbose)
     g = parse.gps(sample[1], verbose=verbose)
@@ -88,11 +89,12 @@ def frame(sample, verbose=False, ph=False):
     e = pd.DataFrame(data=[e.data], columns=e.data_names)
 
     if verbose:
-        print('g.date_time, h.system, h.date_time')
-        print('  >>', g.date_time, h.system, h.date_time)
-        print('h>>', h, type(h), type(h.date_time), type(h.system))
+        print('g.datetime_gps, h.system, h.date_time')
+        print(g)
+        print('  >>', g.datetime_gps, h.system, h.datetime_mapco2)
+        print('h>>', h, type(h), type(h.datetime_mapco2), type(h.system))
 
-    common_key = h.date_time[0] + '_' + h.system[0]
+    common_key = h.datetime_mapco2[0] + '_' + h.system[0]
 
     if verbose:
         print('h common_key>>', common_key, type(common_key))
@@ -135,7 +137,7 @@ def frame(sample, verbose=False, ph=False):
 
     _co2['common_key'] = common_key
     _co2['system'] = h.system[0]
-    _co2['datetime_str'] = h.date_time[0]
+    _co2['datetime_str'] = h.datetime_mapco2[0]
 
     _co2['datetime'] = pd.to_datetime(_co2.datetime_str,
                                       format='%Y/%m/%d_%H:%M:%S')
@@ -166,8 +168,8 @@ def frame(sample, verbose=False, ph=False):
     else:
         phdf = pd.DataFrame({})
         
-    sbe16 = []
-    aux = []
+    sbe16 = pd.DataFrame({})
+    aux = pd.DataFrame({})
 
     return h, g, e, _co2, aux, sbe16, phdf
 
@@ -207,3 +209,25 @@ def index_frame(data, verbose=False):
             ph.append(n)
 
     return sbe16, ph
+
+
+def batch_list(data_list, verbose=False):
+    """Batch process and concatenate data from a DataFrame column
+    that contains list data"""
+
+    h, g, e, co2, aux, sbe16, phdf = frame(data_list[0], verbose=verbose)
+
+    for n in data_list[1:]:
+        h_n, g_n, e_n, co2_n, aux_n, sbe16_n, phdf_n = frame(n, verbose=verbose)
+        h = pd.concat([h, h_n])
+        g = pd.concat([g, g_n])
+        e = pd.concat([e, e_n])
+        co2 = pd.concat([co2, co2_n])
+        phdf = pd.concat([phdf, phdf_n])
+        if verbose:
+            print(type(aux_n))
+            print(type(phdf_n))
+        aux = pd.concat([aux, aux_n])
+        sbe16 = pd.concat([sbe16, sbe16_n])
+
+    return h, g, e, co2, aux, sbe16, phdf

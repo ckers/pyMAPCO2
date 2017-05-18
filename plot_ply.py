@@ -5,7 +5,7 @@ Created on 2017-04-25
 @author: Colin Dietrich
 """
 
-from pandas import notnull
+from pandas import notnull, DataFrame
 
 import plotly.offline as ply
 import plotly.graph_objs as go
@@ -30,6 +30,8 @@ ph_ext_color = '#2bf2bd'
 mbl_color = 'black'
 epon_press_color = '#f442f4'  # purple-ish
 apon_press_color = '#f47141'  # salmon/orange-ish
+precip_color = '#ede21e'      # yellowish
+
 
 def default_layout(xco2_sw_range=None,
                    xco2_air_range=None,
@@ -40,7 +42,6 @@ def default_layout(xco2_sw_range=None,
                    atm_press_range=None,
                    autoscale=False,
                    title=None,
-
                    ):
     """Plot.ly default layout for xCO2, SST, SSS, pH
 
@@ -135,7 +136,7 @@ def default_layout(xco2_sw_range=None,
             position=0.91
         ),
         yaxis5=dict(
-            title='SSO2 (μM)',
+            title='NTU (NTU) | CHL (μM) | SSO2 (μM)',
             titlefont=dict(color=sso2_color),
             tickfont=dict(color=sso2_color),
             overlaying='y',
@@ -153,7 +154,7 @@ def default_layout(xco2_sw_range=None,
             range=ph_range
         ),
         yaxis7=dict(
-            title='NTU (NTU) & CHL (μM)',
+            title='General',
             titlefont=dict(color=ph_color),
             tickfont=dict(color=ph_color),
             overlaying='y',
@@ -166,7 +167,7 @@ def default_layout(xco2_sw_range=None,
     return layout
 
 
-def default_data(df, df_mbl=None):
+def default_data(df, suffix='', df_mbl=None):
     """Define data dictionary to plot
 
     Note: hardcoded trace name srings must match dataframe column
@@ -175,7 +176,8 @@ def default_data(df, df_mbl=None):
     Parameters
     ----------
     df : Pandas DataFrame with columns of mapco2 data
-    mbl : Pandas DataFrame containing mbl air xco2 values
+    suffix : str, value to name this series if multiple sites/units are plotted
+    df_mbl : Pandas DataFrame containing mbl air xco2 values
 
     Returns
     -------
@@ -191,8 +193,9 @@ def default_data(df, df_mbl=None):
     if 'xCO2_SW_wet' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.xCO2_SW_wet,
-            name='xCO2_SW_wet',
+            name='xCO2_SW_wet' + suffix,
             opacity=0.5,
+            visible='legendonly',
             line=dict(width=2, color=xco2_sw_color, dash='dash'))
         )
 
@@ -200,7 +203,7 @@ def default_data(df, df_mbl=None):
     if 'xCO2_SW_dry' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.xCO2_SW_dry,
-            name='xCO2_SW_dry',
+            name='xCO2_SW_dry' + suffix,
             line=dict(width=2, color=xco2_sw_color))
         )
 
@@ -208,7 +211,7 @@ def default_data(df, df_mbl=None):
     if 'xCO2_SW_dry_flagged_3' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.xCO2_SW_dry_flagged_3,
-            name='xCO2 SW Dry Flag 3',
+            name='xCO2 SW Dry Flag 3' + suffix,
             mode='markers',
             marker=dict(size=10, symbol='square-open', color='orange'))
         )
@@ -217,17 +220,18 @@ def default_data(df, df_mbl=None):
     if 'xCO2_SW_dry_flagged_4' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.xCO2_SW_dry_flagged_4,
-            name='xCO2 SW Dry Flag 4',
+            name='xCO2 SW Dry Flag 4' + suffix,
             mode='markers',
             marker=dict(size=10, symbol='circle-open', color='red'))
         )
 
     # MBL Air data if available
-    if df_mbl is not None:
+    if isinstance(df_mbl, DataFrame):
         data.append(go.Scatter(
             x=df_mbl.datetime64_ns, y=df_mbl.xCO2,
             name='MBL xCO2',
             opacity=0.75,
+            visible='legendonly',
             line=dict(width=2, color=mbl_color))
         )
 
@@ -235,8 +239,9 @@ def default_data(df, df_mbl=None):
     if 'xCO2_Air_wet' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.xCO2_Air_wet,
-            name='xCO2_Air_wet',
+            name='xCO2_Air_wet' + suffix,
             opacity=0.5,
+            visible='legendonly',
             line=dict(width=2, color=xco2_air_color, dash='dash'))
         )
 
@@ -244,7 +249,7 @@ def default_data(df, df_mbl=None):
     if 'xCO2_Air_dry' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.xCO2_Air_dry,
-            name='xCO2_Air_dry',
+            name='xCO2_Air_dry' + suffix,
             line=dict(width=2, color=xco2_air_color))
         )
 
@@ -252,7 +257,7 @@ def default_data(df, df_mbl=None):
     if 'xCO2_Air_dry_flagged_3' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.xCO2_Air_dry_flagged_3,
-            name='xCO2 Air Dry Flag 3',
+            name='xCO2 Air Dry Flag 3' + suffix,
             mode='markers',
             marker=dict(size=10, symbol='square-open', color='orange'))
         )
@@ -261,7 +266,7 @@ def default_data(df, df_mbl=None):
     if 'xCO2_Air_dry_flagged_4' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.xCO2_Air_dry_flagged_4,
-            name='xCO2 Air Dry Flag 4',
+            name='xCO2 Air Dry Flag 4' + suffix,
             mode='markers',
             marker=dict(size=10, symbol='circle-open', color='red'))
         )
@@ -270,7 +275,7 @@ def default_data(df, df_mbl=None):
     if 'SST' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.SST,
-            name='SST',
+            name='SST' + suffix,
             yaxis='y2',
             line=dict(width=2, color=sst_color))
         )
@@ -279,7 +284,7 @@ def default_data(df, df_mbl=None):
     if 'SST_sso2' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.SST_sso2,
-            name='SST SSO2',
+            name='SST SSO2' + suffix,
             yaxis='y2',
             line=dict(width=2, color=sst_sso2_color))
         )
@@ -288,7 +293,7 @@ def default_data(df, df_mbl=None):
     if 'SST_mapco2' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.SST_mapco2,
-            name='SST MAPCO2',
+            name='SST MAPCO2' + suffix,
             yaxis='y2',
             line=dict(width=2, color=sst_mapco2_color))
         )
@@ -297,7 +302,7 @@ def default_data(df, df_mbl=None):
     if 'SST_ph' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.SST_ph,
-            name="SST pH",
+            name='SST pH' + suffix,
             yaxis='y2',
             line=dict(width=2, color=sst_ph_color))
         )
@@ -306,7 +311,7 @@ def default_data(df, df_mbl=None):
     if 'SST_merged' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.SST_merged,
-            name='SST MAPCO2 & Partner',
+            name='SST MAPCO2 & Partner' + suffix,
             yaxis='y2',
             line=dict(width=2, color=sst_partner_color))
         )
@@ -315,16 +320,16 @@ def default_data(df, df_mbl=None):
     if 'pH' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.pH,
-            name='pH Initial',
+            name='pH Initial' + suffix,
             yaxis='y6',
-            line=dict(width=2, color=ph_color, dash='dash'))
+            line=dict(width=2, color=ph_color))
         )
 
     # sea surface pH FINAL
     if 'pH_final' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.pH_final,
-            name='pH Final',
+            name='pH Final' + suffix,
             yaxis='y6',
             line=dict(width=2, color=ph_color))
         )
@@ -333,7 +338,7 @@ def default_data(df, df_mbl=None):
     if 'pH_flagged_3' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.pH_flagged_3,
-            name='pH Flag 3',
+            name='pH Flag 3' + suffix,
             yaxis='y6',
             marker=dict(size=10, symbol='square-open', color='orange'))
         )
@@ -342,7 +347,7 @@ def default_data(df, df_mbl=None):
     if 'pH_flagged_4' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.pH_flagged_4,
-            name='pH Flag 4',
+            name='pH Flag 4' + suffix,
             yaxis='y6',
             marker=dict(size=10, symbol='circle-open', color='red'))
         )
@@ -351,7 +356,7 @@ def default_data(df, df_mbl=None):
     if 'SSS' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.SSS,
-            name='SSS',
+            name='SSS' + suffix,
             yaxis='y3',
             line=dict(width=2, color=sss_color),
             marker=dict(size=4))
@@ -361,7 +366,7 @@ def default_data(df, df_mbl=None):
     if 'SSS_mapco2' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.SSS_mapco2,
-            name='SSS MAPCO2 SBE16',
+            name='SSS MAPCO2 SBE16' + suffix,
             yaxis='y3',
             line=dict(width=2, color=sss_color),
             marker=dict(size=4))
@@ -371,7 +376,7 @@ def default_data(df, df_mbl=None):
     if 'SSS_partner' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.SSS_partner,
-            name='SSS Partner',
+            name='SSS Partner' + suffix,
             yaxis='y3',
             line=dict(width=2, color=sss_color),
             marker=dict(size=4))
@@ -381,7 +386,7 @@ def default_data(df, df_mbl=None):
     if 'SSS_merged' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.SSS_merged,
-            name='SSS MAPCO2 & Partner Merged',
+            name='SSS MAPCO2 & Partner Merged' + suffix,
             yaxis='y3',
             line=dict(width=2, color=sss_color),
             marker=dict(size=4))
@@ -391,16 +396,25 @@ def default_data(df, df_mbl=None):
     if 'SSO2_uM' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.SSO2_uM,
-            name='SSO2 MAPCO2 SBE16',
+            name='SSO2 MAPCO2 SBE16' + suffix,
             yaxis='y3',
             line=dict(width=2, color=sso2_color),
+            marker=dict(size=4))
+        )
+
+    if 'delta_aepon_press' in df_columns:
+        data.append(go.Scatter(
+            x=x, y=df.delta_aepon_press,
+            name='ABS(diff) Air EQ Pump On Pressure (kPa)' + suffix,
+            yaxis='y4',
+            line=dict(width=2, color=apon_press_color),
             marker=dict(size=4))
         )
 
     if 'epon_press' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.epon_press,
-            name='Equilibrator Pump On Pressure (kPa)',
+            name='Equilibrator Pump On Pressure (kPa)' + suffix,
             yaxis='y4',
             line=dict(width=2, color=epon_press_color),
             marker=dict(size=4))
@@ -409,12 +423,29 @@ def default_data(df, df_mbl=None):
     if 'apon_press' in df_columns:
         data.append(go.Scatter(
             x=x, y=df.apon_press,
-            name='Air Pump On Pressure (kPa)',
+            name='Air Pump On Pressure (kPa)' + suffix,
             yaxis='y4',
             line=dict(width=2, color=apon_press_color),
             marker=dict(size=4))
         )
 
+    if 'precip' in df_columns:
+        data.append(go.Scatter(
+            x=x, y=df.precip,
+            name='Precipitation' + suffix,
+            yaxis='y7',
+            line=dict(width=2, color=precip_color),
+            marker=dict(size=4))
+        )
+
+    if 'windspeed' in df_columns:
+        data.append(go.Scatter(
+            x=x, y=df.windspeed,
+            name='Wind Speed MAG (m/s)' + suffix,
+            yaxis='y7',
+            line=dict(width=2, color=precip_color),
+            marker=dict(size=4))
+        )
 
     return data
 
@@ -481,7 +512,6 @@ def ph_data(df):
         )
 
     return data
-
 
 
 def my_data(df):

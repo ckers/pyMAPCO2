@@ -9,10 +9,11 @@ import os
 import unicodedata
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 from . import config
 from .algebra import float_year_to_datetime, common_key
-from .utils.main import flatten
+from utils.main import flatten
 
 def sniff(file):
     """Decide if file is a MAPCO2 flash data file
@@ -105,7 +106,7 @@ def create_index_dataframe(index_list):
 
     _df = pd.DataFrame(index_list, columns=config.frame_data_types)
     _df.ph_sami = _df.ph_sami.shift(-1)
-    _df.seafet_ph = _df.ph_seafet.shift(-1)
+    _df.ph_seafet = _df.ph_seafet.shift(-1)
     _df.sbe16 = _df.sbe16.shift(-1)
     _df.met = _df.met.shift(-1)
     _df = _df.dropna(axis=0)
@@ -599,3 +600,31 @@ def mbl_site(mbl_file):
     dfmbl['datetime64_ns'] = pd.to_datetime(dfmbl.datetime_mbl)
     return dfmbl
 
+
+def netCDF(filepath):
+    """Load one netCDF4 file from WHOI
+    Uses xarray and Pandas
+
+    Parameters
+    ----------
+    filepath : str
+
+    Returns
+    -------
+    Pandas DataFrame
+    """
+
+    ds = xr.open_dataset(filepath)
+
+    return ds.to_dataframe()
+
+
+def netCDF_batch(filepath_list):
+
+    df_list = []
+
+    for f in filepath_list:
+        df_list.append(netCDF(f))
+
+    df = pd.concat(df_list)
+    return df

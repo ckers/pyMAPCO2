@@ -10,9 +10,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
+from matplotlib.ticker import FormatStrFormatter
 
 from . import config, plot
-
+from .utils import utils
 
 def timeseries_multiyear(df, df_mbl=None):
     """Plot data in multiyear and timeseries plots
@@ -634,7 +635,7 @@ def plot_combined(co2, mbl, markers='.', lines='-', gtd=[]):
     plt.show()
 
 
-def show(title=None, legend=True):
+def show(title=None, legend=True, xformat=False, yformat=False):
     """Format timeseries plots nicely for Jupyter
 
     Parameters
@@ -642,14 +643,18 @@ def show(title=None, legend=True):
     #array : array-like, each item containing parameters to pass to
     #    matplotlib.pyplot.plot method
     title : str, optional title text
+    xformat : str, formatter string for number display
+    yformat : str, formatter string for number display
 
     Returns
     -------
     None, directly displays
     """
 
+    ax = plt.gca()
+
     if legend:
-        ax = plt.gca()
+
         # Shrink current axis by 20%
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
@@ -658,6 +663,13 @@ def show(title=None, legend=True):
 
     if title is not None:
         plt.title(title, loc='right')
+
+    if xformat:
+        ax.xaxis.set_major_formatter(FormatStrFormatter(xformat))
+
+    if yformat:
+        ax.yaxis.set_major_formatter(FormatStrFormatter(xformat))
+
 
     plt.margins(0.05, 0.1)
     plt.xticks(rotation='vertical')
@@ -673,3 +685,34 @@ def scatter_cm(x, y, c, cmap='hot'):
     sc = ax.scatter(x=x, y=y, c=c, cmap=cmap,
                     edgecolor='face', alpha=0.5)
     plt.colorbar(sc)
+
+
+def plot_dtstd(df, dt_data, cols=None):
+    """Plot the std deviation of differentiated data
+
+    Parameters
+    ----------
+    df : Pandas DataFrame, with columns:
+        datetime64_ns
+        (timeseries name)
+    dt_data : str, name of column with differentiated timeseries data
+    cols : list of str, columns of data to plot
+
+    Returns
+    -------
+    None, plots to notebook or popout
+    """
+
+    plt.plot(df.datetime64_ns, df[dt_data], zorder=1)
+    if cols is None:
+        cols = [n for n in df.columns if dt_data in n]
+    colors = utils.color_generator(len(cols))
+    markers = [n for n in utils.flatten([utils.mpl_markers_obvious] * 5)][0:len(cols)]
+    c = 0
+    for n in cols:
+        if 'dtf' in n:
+            print(n)
+            _df_plot = df[df[n] == True]
+            plt.scatter(_df_plot.datetime64_ns.values, _df_plot[dt_data],
+                        color=colors[c], marker=markers[c], s=20, label=n, zorder=c+2)
+            c += 1

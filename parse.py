@@ -39,10 +39,10 @@ def header(line, verbose=False):
     """
 
     if verbose:
-        print("parse_header >>  ", line)
+        print("parse.header>>  ", line)
 
     h = datatypes.MAPCO2Header()
-    h.parse(line=line)
+    h.parse(line=line, verbose=verbose)
 
     return h
 

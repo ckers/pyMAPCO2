@@ -5,10 +5,13 @@ Created on Wed Apr 26 2017
 @author: Colin Dietrich
 """
 
+import pandas as pd
+
 from time import strftime
-from pandas import read_excel
+from numpy import std
 
 from . import config
+from . import plot_plt
 from .algebra import timestamp_rounder, common_key
 
 
@@ -26,7 +29,7 @@ def import_merged(f, unit):
     Pandas DataFrame
     """
 
-    _df = read_excel(f, sheetname='Merged', names=config.xlsx_merged_header)
+    _df = pd.read_excel(f, sheetname='Merged', names=config.xlsx_merged_header)
     _df['datetime64_ns'] = _df.Date.copy()
     _df['datetime'] = _df.Date.copy()
     _df['datetime'] = _df.datetime.astype(str)
@@ -55,7 +58,7 @@ def sss_sami_export(df, filepath, description=''):
     _df['date_str'] = _df.datetime64_ns.dt.strftime('%m/%d/%y')
     _df['time_str'] = _df.datetime64_ns.dt.strftime('%H:%M:%S')
     _df = df[['date_str', 'time_str', 'SSS']]
-    t = time.strftime('%Y_%m_%d_%H_%M_%S')
+    t = strftime('%Y_%m_%d_%H_%M_%S')
 
     if description != '':
         description += '_'
@@ -153,21 +156,28 @@ def import_co2sysxls(f, unit):
     Pandas DataFrame
     """
 
-    _df = read_excel(f, sheetname='DATA',
+    _df = pd.read_excel(f, sheetname='DATA',
                      skiprows=[0, 1, 2],
                      names=config.co2sysxls_column_names)
-    # _df['datetime64_ns'] = _df.Date.copy()
-    # _df['datetime'] = _df.Date.copy()
-    # _df['datetime'] = _df.datetime.astype(str)
     _df['unit'] = str(unit)
-    # _df['common_key'] = _df.apply(common_key, axis=1)
     return _df
 
 
-def import_xlsx_cycle(df, name):
-    """Import one sheet from a VBA imported data set"""
+def import_xlsx_cycle(df_dict, name, verbose=False):
+    """Import one sheet from a VBA imported data set
 
-    _df = df[name]
+    Parameters
+    ----------
+    df_dict : dictionary of Pandas DataFrames, one for each worksheet
+    name : str, worksheet name to modify
+    verbose : bool, print debug statements
+
+    Returns
+    -------
+    Pandas DataFrame, reformatted data from 'name' worksheet
+    """
+
+    _df = df_dict[name]
     _df = _df.reset_index()
 
     _df = _df.ix[:, ['Time', 'Calculated xCO2 from Averaged Data',
@@ -183,4 +193,152 @@ def import_xlsx_cycle(df, name):
     _df['cycle'] = config.cycle_names[name]
     _df['datetime64_ns'] = _df.apply(lambda x: timestamp_rounder(x.cycle_datetime64_ns), axis=1)
 
+    return _df
+
+
+def batch_reformat(df_dict, verbose=False):
+    """Batch reformat all worksheet data as a dictionary of Pandas DataFrames
+    Note: this makes a copy and could be slow...
+    """
+
+    new_df_dict = {}
+    for k, v in config.cycle_names.items():
+        if verbose:
+            print('Working on:', k, v)
+        _df = import_xlsx_cycle(df_dict, k)
+        new_df_dict[v] = _df.copy()
+
+    # new column names needed later for merges
+    new_df_dict['apof']['xCO2_Air'] = new_df_dict['apof']['xCO2']
+    new_df_dict['epof']['xCO2_SW'] = new_df_dict['epof']['xCO2']
+
+    return new_df_dict
+
+
+def std_outlier_detecter(data_series, std=1):
+    """Identify outlier values in a timeseries
+
+    Parameters
+    ----------
+    series : Array-like, timeseries data
+    std : float, number of standard deviations to high pass on
+
+    Returns
+    -------
+    Array-like, timeseries values greater than std
+    """
+
+    return data_series > std * np.std(data_series)
+
+
+def dt_std_outlier_detector(df, timeseries, std_in=(0.5, 1, 2, 3, 4)):
+    """Finds outlier data in col_name of df, based on standard deviations
+    passed in std_in using the first derivative of the data.
+
+    Parameters
+    ----------
+    df : Pandas DataFrame
+    timeseries : str, name of column of timeseries data
+    std_in : list, standard deviation values to filter on
+    plot : bool, create a plot of the std
+
+    Returns
+    -------
+    Pandas DataFrame with columns:
+        timeseries_dt : derivative of timeseries
+        timeseries_dtfx : data that was outside of x std
+    """
+
+    # differentiate one values interval
+    df[timeseries + '_dt'] = df[timeseries].diff(1)
+
+    # std of dt
+    dt_std = df[timeseries + '_dt'].std()
+    dt_abs = df[timeseries + '_dt'].abs()
+    # filter on std
+    for std_n in std_in:
+        df[timeseries + '_dtf'+str(std_n)] = dt_abs > std_n * dt_std
+
+    return df
+
+
+def build_ply_flag_df(df_dict, df_flags):
+    """Build a Pandas DataFrame for plotting flags from a dictionary of DataFrames
+    where keys are 'apon', 'apof' etc
+
+    Parameters
+    ----------
+    df_dict : dict of Pandas DataFrames
+
+    Returns
+    -------
+    Pandas DataFrame
+    """
+
+    _dfa = df_dict['apof']
+    _dfa = _dfa[['datetime64_ns', 'xCO2_Air']].reset_index()
+    _dfa = _dfa.drop('index', axis=1)
+
+    _dfe = df_dict['epof']
+    _dfe = _dfe[['datetime64_ns', 'xCO2_SW']].reset_index()
+    _dfe = _dfe.drop('index', axis=1)
+
+    plt_flags_qfa4 = df_flags[df_flags['QF_air'] == 4]
+    plt_flags_qfa4 = plt_flags_qfa4[['datetime64_ns', 'xCO2_Air']].reset_index()
+    plt_flags_qfa4 = plt_flags_qfa4.rename(columns={'xCO2_Air': 'xCO2_Air_dry_flagged_4'})
+    plt_flags_qfa4 = plt_flags_qfa4.drop('index', axis=1)
+
+    plt_flags_qfa3 = df_flags[df_flags['QF_air'] == 3]
+    plt_flags_qfa3 = plt_flags_qfa3[['datetime64_ns', 'xCO2_Air']].reset_index()
+    plt_flags_qfa3 = plt_flags_qfa3.rename(columns={'xCO2_Air': 'xCO2_Air_dry_flagged_3'})
+    plt_flags_qfa3 = plt_flags_qfa3.drop('index', axis=1)
+
+    plt_flags_qfs4 = df_flags[df_flags['QF_sw'] == 4]
+    plt_flags_qfs4 = plt_flags_qfs4[['datetime64_ns', 'xCO2_SW']].reset_index()
+    plt_flags_qfs4 = plt_flags_qfs4.rename(columns={'xCO2_SW': 'xCO2_SW_dry_flagged_4'})
+    plt_flags_qfs4 = plt_flags_qfs4.drop('index', axis=1)
+
+    plt_flags_qfs3 = df_flags[df_flags['QF_sw'] == 3]
+    plt_flags_qfs3 = plt_flags_qfs3[['datetime64_ns', 'xCO2_SW']].reset_index()
+    plt_flags_qfs3 = plt_flags_qfs3.rename(columns={'xCO2_SW': 'xCO2_SW_dry_flagged_3'})
+    plt_flags_qfs3 = plt_flags_qfs3.drop('index', axis=1)
+
+    dff = _dfa.merge(_dfe, on='datetime64_ns')
+    dff = dff.merge(plt_flags_qfa4, on='datetime64_ns', how='outer')
+    dff = dff.merge(plt_flags_qfa3, on='datetime64_ns', how='outer')
+    dff = dff.merge(plt_flags_qfs4, on='datetime64_ns', how='outer')
+    dff = dff.merge(plt_flags_qfs3, on='datetime64_ns', how='outer')
+
+    dff = dff.rename(columns={'xCO2_SW': 'xCO2_SW_dry', 'xCO2_Air': 'xCO2_Air_dry'})
+
+    return dff
+
+
+def extracter(df, sheet, name, t_col, d_col):
+    """Generic data extractor for xlsx sourced dict of DataFrames
+
+    Parameters
+    ----------
+    df : dict of Pandas DataFrames
+    sheet : str, key to df for DataFrame
+    name : str, column name to label output data
+    t_col : int, index of datatime64_ns timestamp column
+    d_col : int, index of data column
+
+    Returns
+    -------
+    Pandas DataFrame with:
+        reset index
+        name : data column
+        datetime64_ns : timestamp in datetime64[ns] format
+    """
+
+    _df = df[sheet]
+    _df = pd.DataFrame({'t': _df.iloc[:, t_col],
+                        name: _df.iloc[:, d_col]})
+    _df = _df.reset_index()
+    _df = _df.dropna(how='all', axis=0)
+    _df['datetime64_ns'] = _df.apply(lambda x: timestamp_rounder(x.t),
+                                     axis=1)
+    _df = _df.drop(['index', 't'], axis=1)
     return _df

@@ -122,7 +122,7 @@ class MAPCO2GPS(MAPCO2Base):
 
         self.df = None
 
-        self.date_time = []
+        self.datetime_gps = []
         self.lat_deg = []
         self.lat_min = []
         self.lat_direction = []
@@ -138,9 +138,9 @@ class MAPCO2GPS(MAPCO2Base):
         self.valve_time = []
         self.timestamp = None
 
-        self.date_time_format = "%m/%d/%Y_%H:%M:%S"
+        self.datetime_gps_format = "%m/%d/%Y_%H:%M:%S"
 
-        self.data_names = ["date_time",
+        self.data_names = ["datetime_gps",
                            "lat_deg", "lat_min", "lat_direction",
                            "lon_deg", "lon_min", "lon_direction",
                            "fix_time", "quality",
@@ -159,10 +159,10 @@ class MAPCO2GPS(MAPCO2Base):
 
         # if no fix, fill with zero
         if _t in config.time_ignore:
-            self.date_time = "NaT"
+            self.datetime_gps = "NaT"
         else:
             try:
-                self.date_time = _t
+                self.datetime_gps = _t
             except:
 #                parse_log.events.append("%s, %s, %s, Unable to parse %s"
 #                                        % (self.time, self.location,
@@ -186,8 +186,8 @@ class MAPCO2GPS(MAPCO2Base):
         self.time_before_check = gps[8] + "_" + gps[9]
         self.time_after_check = gps[10] + "_" + gps[11]
 
-        if self.date_time[0:4] == '0000':
-            self.date_time = self.time_after_check
+        if self.datetime_gps[0:4] == '0000':
+            self.datetime_gps = self.time_after_check
 
         try:
             if len(gps) > 12:
@@ -199,7 +199,7 @@ class MAPCO2GPS(MAPCO2Base):
 
     @property
     def data(self):
-        return [self.date_time,
+        return [self.datetime_gps,
                 self.lat_deg,
                 self.lat_min,
                 self.lat_direction,
