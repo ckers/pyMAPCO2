@@ -92,7 +92,7 @@ def lim_finder(data, margin=0.1, data_type=None, verbose=False):
            np.min([limits[1], d_max])
 
 
-def pivot(df):
+def pivot_year(df):
     """Pivot data based on year and day of year for multiyear plots
 
     Parameters
@@ -109,7 +109,7 @@ def pivot(df):
     ph_my = Pandas DataFrame or None
     """
 
-    # independed axis x for plots
+    # independent axis x for plots
     day_my = df.pivot(index='datetime64_ns',
                       columns='year',
                       values='day')
@@ -136,6 +136,61 @@ def pivot(df):
 
     return day_my, xco2_air_my, xco2_sw_my, sst_my, sss_my, ph_my
 
+
+def pivot_co2_system(df):
+    """Pivot data based on system and datetime64_ns for comparison plots
+
+    Parameters
+    ----------
+    df : Pandas DataFrame
+
+    Returns
+    -------
+    dt_ms : Pandas DataFrame or None, day of year for each year
+    xco2_air_ms : Pandas DataFrame or None
+    sw_ms = Pandas DataFrame or None
+    sst_ms = Pandas DataFrame or None
+    sss_ms = Pandas DataFrame or None
+    ph_ms = Pandas DataFrame or None
+    """
+
+    d_list = []
+    for system in df.system.unique():
+        print(system)
+
+        _df = df[df.system == system].copy()
+        _df = _df.drop_duplicates()
+        _df.reset_index(inplace=True, drop=True)
+
+        _ds = _df.pivot(index='datetime64_ns',
+                          columns='system',
+                          values='xCO2')
+        d_list.append(_ds)
+
+    """
+    xco2_air_ms = df.pivot(index='datetime64_ns',
+                           columns='system',
+                           values='xCO2_Air_dry')
+
+    xco2_sw_ms = df.pivot(index='datetime64_ns',
+                          columns='year',
+                          values='xCO2_SW_dry')
+
+    sst_ms = df.pivot(index='datetime64_ns',
+                      columns='year',
+                      values='SST')
+
+    sss_ms = df.pivot(index='datetime64_ns',
+                      columns='year',
+                      values='SSS')
+
+    ph_ms = df.pivot(index='datetime64_ns',
+                     columns='year',
+                     values='pH')
+
+    return day_my, xco2_air_my, xco2_sw_my, sst_my, sss_my, ph_my
+    """
+    return d_list
 
 def write_flag(x):
     """Return data if flag is type"""

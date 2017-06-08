@@ -30,8 +30,9 @@ def temperature_scaled(t_C):
     """
     c0 = 273.15  # zero degrees Celsius in Kelvin
     c25 = 298.15  # 25 degrees Celsius in Kelvin
-    return np.log((c25 - t_C)/(c0 + t_C))
-   
+    return np.log((c25 - t_C) / (c0 + t_C))
+
+
 def s_c_f(ts, s, s0=0):
     """Salinity compensatation factor for an oxygen measurement
     TODO: cite source of constants
@@ -47,18 +48,19 @@ def s_c_f(ts, s, s0=0):
     -------
     SCf : float, salinity compensation factor for Oxygen measurement
     """
-    
+
     # Coefficients for Salinity Compensation		
-    B0 = -6.24097E-03	
-    B1 = -6.93498E-03	
-    B2 = -6.90358E-03	
-    B3 = -4.29155E-03	
-    C0 = -3.11680E-07	
-    
-    scf = np.exp((s - s0) * 
-                 (B0 + B1 * ts + B2 * ts**2 + B3 * ts**3) + 
-                  C0 * (s**2 - s0**2))
+    B0 = -6.24097E-03
+    B1 = -6.93498E-03
+    B2 = -6.90358E-03
+    B3 = -4.29155E-03
+    C0 = -3.11680E-07
+
+    scf = np.exp((s - s0) *
+                 (B0 + B1 * ts + B2 * ts ** 2 + B3 * ts ** 3) +
+                 C0 * (s ** 2 - s0 ** 2))
     return scf
+
 
 def p_c_f(d=0, pc=0.032):
     """Pressure compensate an oxygen measurement
@@ -73,9 +75,10 @@ def p_c_f(d=0, pc=0.032):
     -------
     float, pressure compensation factor
     """
-    
+
     return ((np.abs(d) / 1000) * pc) + 1
-    
+
+
 def volts_to_temp_C(v):
     """Convert voltage out of Aanderaa 4175 to temperature in C
     
@@ -92,9 +95,10 @@ def volts_to_temp_C(v):
     -------
     t : float, temperature in degrees Celcius
     """
-    
+
     return ((v / 1) * (45.0 / 5.0)) - 5.0
-    
+
+
 def volts_to_O2_uM(v):
     """Convert voltage out of Aanderaa 4175 to μM Oxygen concentration
     o2 = (v2 / 5.0) * 500 --> units micromoles --> μM
@@ -107,6 +111,7 @@ def volts_to_O2_uM(v):
     v : float, voltage value from Aandera output (0-5 VDC)
     """
     return (v / 1) * (500.0 / 5.0)
+
 
 def solubility(p, ts, s):
     """Solubility of oxygen in seawater 
@@ -121,21 +126,22 @@ def solubility(p, ts, s):
     -------
     float, solubility of oxygen in seawater (μM)
     """
-    
-    sol = ((p / 1013.25) * 44.659 
-           * np.exp(2.00856 +
-                    3.224 * ts +
-                    3.99063 * ts**2 +
-                    4.80299 * ts**3 +
-                    0.978188 * ts**4 +
-                    1.71069 * ts**5 +
-                    s * (-0.00624097 - 0.00693498 * ts +
-                         -0.00690358 * ts**2 +
-                         -0.00429155 * ts**3) +
-                         -0.00000031168 * s**2))
+
+    sol = ((p / 1013.25) * 44.659 *
+           np.exp(2.00856 +
+                  3.224 * ts +
+                  3.99063 * ts ** 2 +
+                  4.80299 * ts ** 3 +
+                  0.978188 * ts ** 4 +
+                  1.71069 * ts ** 5 +
+                  s * (-0.00624097 - 0.00693498 * ts +
+                       -0.00690358 * ts ** 2 +
+                       -0.00429155 * ts ** 3) +
+                  -0.00000031168 * s ** 2))
 
     return sol
-    
+
+
 def o2_compensate(o2, scf, pcf, unit='uM'):
     """Compensate for salinity and pressure influences on oxygen measurement
     
@@ -153,17 +159,18 @@ def o2_compensate(o2, scf, pcf, unit='uM'):
     -------
     o2cc : float, oxygen compensated for salinity and pressure (μM)
     """
-    
+
     o2cc = o2 * scf * pcf
     if unit == 'uM':
         return o2cc
     elif unit == 'mg/l':
         return 32 * o2cc / 1000
     elif unit == 'ml/l':
-        return o2cc/ 44.615
+        return o2cc / 44.615
     else:
         return o2cc
-    
+
+
 def o2_air_saturation(o2cc, sol):
     """Oxygen saturation in air
     
@@ -176,6 +183,5 @@ def o2_air_saturation(o2cc, sol):
     -------
     float : saturation of oxygen in air (%)
     """
-    
+
     return 100 * o2cc / sol
-    

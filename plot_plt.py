@@ -15,6 +15,7 @@ from matplotlib.ticker import FormatStrFormatter
 from . import config, plot
 from .utils import utils
 
+
 def timeseries_multiyear(df, df_mbl=None):
     """Plot data in multiyear and timeseries plots
 

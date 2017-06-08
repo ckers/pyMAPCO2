@@ -35,6 +35,10 @@ y1 = 2020
 # Time formatting specifications
 iso_strftime_utc = '%Y-%m-%dT%H:%M:%SZ'  # assumes time is UTC/Z
 iso_strftime_timezone = '%Y-%m-%dT%H:%M:%S%Z'  # returns timezone or blank if naive
+header_datetime_format = '%Y/%m/%d_%H:%M:%S'
+header_firmware_datetime_format = 'A.B_%m/%d/%Y'
+gps_datetime_format = '%Y/%m/%d_%H:%M:%S'  # converted from '%m/%d/%Y_%H:%M:%S' in datatypes.py
+
 
 # ranges of data considered possible/reality
 k_limits = {'datetime64_ns': [to_datetime('1980-01-01'), to_datetime('2020-01-01')],
@@ -76,7 +80,7 @@ engr_header = {27: ['location_code', 'system_code',
                     'EW_vector', 'EW_vector_std', 'NS_vector', 'NS_vector_std',
                     'compass', 'vane', 'windspeed']}
 
-pco2_start_delimiters = ('NORM', 'FAST', 'DEPL', 'POSO', 'RECV', 'STSF')
+pco2_start_delimiters = ('NORM', 'FAST', 'DEPL', 'POSO', 'STSF')  #, 'RECV')
 pco2_end_delimiters = ('SW_xCO2', 'Ocean co2')
 
 pco2_header = ('location_code', 'system_code',
@@ -184,7 +188,7 @@ mpl_obvious_markers = ['o',  # circle marker
                        'D',  # diamond marker
                        'd']  # thin_diamond marker
 
-co2sys_column_names_in = ['datetime',
+co2sys_column_names_in = ['datetime64_ns',
                           'SSS',
                           'SST',
                           'p_dbar_in',
@@ -432,9 +436,9 @@ sbe16_columns = ['datetime_v',
 
 # sheet names of MS Excel VBA sourced workbooks
 xls_sheet_names = ['Zero Pump On', 'Zero Pump Off', 'Zero Post Cal',
-               'Span Pump On', 'Span Pump Off', 'Span Post Cal',
-               'Equil Pump On', 'Equil Pump Off',
-               'Air Pump On', 'Air Pump Off']
+                   'Span Pump On', 'Span Pump Off', 'Span Post Cal',
+                   'Equil Pump On', 'Equil Pump Off',
+                   'Air Pump On', 'Air Pump Off']
 
 xls_merged_sheet = 'Merged'
 

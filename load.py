@@ -12,8 +12,9 @@ import pandas as pd
 import xarray as xr
 
 from . import config
-from .algebra import float_year_to_datetime, common_key
+from .algebra import float_year_to_datetime, common_key, timestamp_rounder
 from utils.main import flatten
+
 
 def sniff(file):
     """Decide if file is a MAPCO2 flash data file
@@ -245,7 +246,7 @@ def frames(lc, start, end, delimiters):
     return data
 
 
-def load_file(f, unit=None):
+def load_file(f, unit=None, verbose=False):
     """Load all available data types in a file
     Note: data types are determined by delimiter definitions, which 
     are hardcoded below.
@@ -262,9 +263,30 @@ def load_file(f, unit=None):
     TODO: document columns and types
     """
 
+    if verbose:
+        print(f)
+
     l = file_to_list(f)
+
     lc, errors, blanks = cleaner(data_list=l)
+
+    # acknowledgement record, i.e. SS =3 or rebot to fast
+    if len(lc) < 10:
+        return pd.DataFrame([])
+
+    for line in lc[0:8]:
+        # system status transmission
+        if 'SYSTEM STATUS' in line:
+            return pd.DataFrame([])
+        # no data test transmission
+        if line[0:4] == 'Each':
+            return pd.DataFrame([])
+
     df = format_index_dataframe(lc)
+
+    # files that don't have any data (i.e. RECV frames)
+    if len(df) == 0:
+        return pd.DataFrame([])
 
     df['source'] = os.path.normpath(f).split('\\')[-1]
     if unit is None:
@@ -308,7 +330,7 @@ def load_file(f, unit=None):
     return df
 
 
-def file_batch(f_list):
+def file_batch(f_list, verbose=False):
     """Load multiple iridium files using frames_all
     
     Parameters
@@ -322,7 +344,7 @@ def file_batch(f_list):
     
     _df_list = []
     for _f in f_list:
-        _df = load_file(_f)
+        _df = load_file(_f, verbose=verbose)
         _df_list.append(_df)
         
     df = pd.concat(_df_list)
@@ -451,7 +473,7 @@ def repeat_finder(s, min_count=16, verbose=False):
     return removals
 
 
-def repeat_stripper(s, min_count=16, verbose=True, limit=100):
+def repeat_stripper(s, min_count=16, verbose=False, limit=100):
     """Remove repeated characters that are likely a firmware bug
     i.e. '000000000000000'
 
@@ -532,6 +554,9 @@ def cleaner(data_list, limit=700, line_len=10, verbose=False):
 
         # strip whitespace from start & end
         _y = rsls_whitespace(_y)
+
+        # remove repeat characters
+        _y = repeat_stripper(_y)
 
         if _y is False:
             y[n] = True
@@ -628,3 +653,56 @@ def netCDF_batch(filepath_list):
 
     df = pd.concat(df_list)
     return df
+
+
+def SAMI2_QCd(filepath):
+    """Load a Sunburst Sensors SAMI2 QC program output file
+
+    Parameters
+    ----------
+    filepath : str, path to .csv file output by QC program/MATLAB
+
+    Returns
+    -------
+    Pandas DataFrame
+    """
+
+    # with salinity applied there are more columns...
+    try:
+        f_sami_names = ['datetime_sami', 'pH', 'SST_sami', 'SSS_sami', 'flags']
+        df_sami = pd.read_csv(filepath, header=2, sep='\t', names=f_sami_names,
+                              converters={'timestamp': str, 'flags': str})
+    # constant salinity case
+    except:
+        f_sami_names = ['datetime_sami', 'pH', 'SST_sami', 'flags']
+        df_sami = pd.read_csv(filepath, header=3, sep='\t', names=f_sami_names,
+                              converters={'timestamp': str, 'flags': str})
+
+    df_sami = df_sami.drop_duplicates()
+    df_sami.reset_index(inplace=True, drop=True)
+    df_sami.flags = df_sami.flags.str.strip()
+
+    df_sami['outlier'] = df_sami.flags.str[3]
+    df_sami['pump'] = df_sami.flags.str[2]
+    df_sami['sat'] = df_sami.flags.str[1]
+    df_sami['blank'] = df_sami.flags.str[0]
+
+    df_sami['datetime64_ns_ph'] = pd.DatetimeIndex(df_sami.datetime_sami)
+    df_sami['datetime64_ns'] = df_sami['datetime64_ns_ph'].apply(timestamp_rounder)
+
+    df_sami.pH.replace(to_replace='NaN', value=np.nan, inplace=True)
+    df_sami.pH = df_sami.pH.astype(float)
+
+    df_sami['plot_outlier'] = np.where(df_sami.outlier == 1, df_sami.pH, np.nan)
+    df_sami['plot_pump'] = np.where(df_sami.pump == 1, df_sami.pH, np.nan)
+    df_sami['plot_sat'] = np.where(df_sami.sat == 1, df_sami.pH, np.nan)
+    df_sami['plot_blank'] = np.where(df_sami.blank == 1, df_sami.pH, np.nan)
+
+    return df_sami
+
+
+def ftp_data(filepath):
+    """Load FTP realtime data"""
+
+    return pd.read_csv(filepath, header=5, sep=',')
+

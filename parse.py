@@ -96,6 +96,7 @@ def co2_line(line, verbose=False):
     -------
     c : class, instance of data class MAPCO2Data with data set
     """
+
     if verbose:
         print("parse_co2    >>  ", line)
 

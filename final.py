@@ -75,7 +75,7 @@ def read_file(file, verbose=True):
     return _df
 
 
-def reformat_final(file, name='', initialize_ph=False, verbose=True, inplace=True):
+def reformat_final(file, name='', ph=False, verbose=True, inplace=True):
     """Reformat a previously published .csv MAPCO2 file.
     Fixes historical formatting errors previously published.
 
@@ -83,7 +83,12 @@ def reformat_final(file, name='', initialize_ph=False, verbose=True, inplace=Tru
     ----------
     file : list, absolute path to .csv source files
     name : str, rename mooring id if not ''
-    initialize_ph : bool, fill 'pH' = -999.0 and 'pH_QF' = 5
+    ph : bool or Pandas DataFrame,
+        False: do nothing
+        True: fill 'pH' = -999.0 and 'pH_QF' = 5
+        DataFrame: insert pH data and QF flags
+            Note DataFrame must have same number of rows and columns
+            'pH' and 'pH_QF'
     inplace : bool, overwrite input file
     verbose : bool
 
@@ -108,7 +113,11 @@ def reformat_final(file, name='', initialize_ph=False, verbose=True, inplace=Tru
 
     if name != '':
         _df['Mooring'] = name
-    if initialize_ph:
+
+    if isinstance(ph, pd.DataFrame):
+        _df['pH'] = ph.pH
+        _df['pH_QF'] = ph.pH_QF
+    elif ph:
         _df.pH_QF = 5
         _df.pH = -999.0
 

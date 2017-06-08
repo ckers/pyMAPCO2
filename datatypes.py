@@ -68,8 +68,9 @@ class MAPCO2Header(MAPCO2Base):
         self.firmware = None
         self.firmware_timestamp = None
 
-        self.date_time_format = "%Y/%m/%d_%H:%M:%S"
-        self.firmware_format = "A.B_%m/%d/%Y"
+        # moved to config.py
+        #self.date_time_format = "%Y/%m/%d_%H:%M:%S"
+        #self.firmware_format = "A.B_%m/%d/%Y"
 
         self.data_names = ["mode",
                            "checksum",
@@ -138,7 +139,8 @@ class MAPCO2GPS(MAPCO2Base):
         self.valve_time = []
         self.timestamp = None
 
-        self.datetime_gps_format = "%m/%d/%Y_%H:%M:%S"
+        # moved to config.py
+        # self.datetime_gps_format = "%m/%d/%Y_%H:%M:%S"
 
         self.data_names = ["datetime_gps",
                            "lat_deg", "lat_min", "lat_direction",
