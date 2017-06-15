@@ -90,45 +90,6 @@ def frame_co2(sample, verbose=False):
     g['common_key'] = common_key
     e['common_key'] = common_key
 
-    if verbose:
-        print('h.head()>>', h.head())
-        print('g.head()>>', g.head())
-        print('e.head()>>', e.head())
-
-    zpon = parse.co2_line(sample[3], verbose=verbose)
-    zpof = parse.co2_line(sample[4], verbose=verbose)
-    zpcl = parse.co2_line(sample[5], verbose=verbose)
-    spon = parse.co2_line(sample[6], verbose=verbose)
-    spof = parse.co2_line(sample[7], verbose=verbose)
-    spcl = parse.co2_line(sample[8], verbose=verbose)
-    epon = parse.co2_line(sample[9], verbose=verbose)
-    epof = parse.co2_line(sample[10], verbose=verbose)
-    apon = parse.co2_line(sample[11], verbose=verbose)
-    apof = parse.co2_line(sample[12], verbose=verbose)
-
-    zpon = ['zpon'] + zpon.data
-    zpof = ['zpof'] + zpof.data
-    zpcl = ['zpcl'] + zpcl.data
-    spon = ['spon'] + spon.data
-    spof = ['spof'] + spof.data
-    spcl = ['spcl'] + spcl.data
-    epon = ['epon'] + epon.data
-    epof = ['epof'] + epof.data
-    apon = ['apon'] + apon.data
-    apof = ['apof'] + apof.data
-
-    data_template = datatypes.MAPCO2Data()
-
-    _co2 = pd.DataFrame(data=[zpon, zpof, zpcl, spon, spof, spcl, epon, epof,
-                              apon, apof], columns=['cycle']+data_template.data_names)
-
-    _co2['common_key'] = common_key
-    _co2['system'] = str(h.system[0])
-    _co2['datetime_str'] = h.datetime_mapco2[0]
-
-    _co2['datetime64_ns'] = pd.to_datetime(_co2.datetime_str,
-                                           format='%Y/%m/%d_%H:%M:%S')
-
     h['datetime64_ns_mapco2'] = pd.to_datetime(h.datetime_mapco2,
                                                format=config.header_datetime_format)
 
@@ -139,15 +100,52 @@ def frame_co2(sample, verbose=False):
             return x
 
     g.datetime_gps = g.datetime_gps.apply(gps_time_fix)
-    #
-    # if g.datetime_gps[0:4] == '0000':
-    #     gps_datetime = h.datetime_mapco2
-    # else:
-    #     gps_datetime = g.datetime_gps
 
     g['datetime64_ns_gps'] = pd.to_datetime(g.datetime_gps,
                                             format=config.gps_datetime_format)
     e['datetime64_ns_engr'] = pd.to_datetime(h.datetime64_ns_mapco2)
+
+    if verbose:
+        print('h.head()>>', h.head())
+        print('g.head()>>', g.head())
+        print('e.head()>>', e.head())
+
+    if len(sample) < 12:
+        _co2 = pd.DataFrame(data=None)
+    else:
+        zpon = parse.co2_line(sample[3], verbose=verbose)
+        zpof = parse.co2_line(sample[4], verbose=verbose)
+        zpcl = parse.co2_line(sample[5], verbose=verbose)
+        spon = parse.co2_line(sample[6], verbose=verbose)
+        spof = parse.co2_line(sample[7], verbose=verbose)
+        spcl = parse.co2_line(sample[8], verbose=verbose)
+        epon = parse.co2_line(sample[9], verbose=verbose)
+        epof = parse.co2_line(sample[10], verbose=verbose)
+        apon = parse.co2_line(sample[11], verbose=verbose)
+        apof = parse.co2_line(sample[12], verbose=verbose)
+
+        zpon = ['zpon'] + zpon.data
+        zpof = ['zpof'] + zpof.data
+        zpcl = ['zpcl'] + zpcl.data
+        spon = ['spon'] + spon.data
+        spof = ['spof'] + spof.data
+        spcl = ['spcl'] + spcl.data
+        epon = ['epon'] + epon.data
+        epof = ['epof'] + epof.data
+        apon = ['apon'] + apon.data
+        apof = ['apof'] + apof.data
+
+        data_template = datatypes.MAPCO2Data()
+
+        _co2 = pd.DataFrame(data=[zpon, zpof, zpcl, spon, spof, spcl, epon, epof,
+                                  apon, apof], columns=['cycle']+data_template.data_names)
+
+        _co2['common_key'] = common_key
+        _co2['system'] = str(h.system[0])
+        _co2['datetime_str'] = h.datetime_mapco2[0]
+
+        _co2['datetime64_ns'] = pd.to_datetime(_co2.datetime_str,
+                                               format='%Y/%m/%d_%H:%M:%S')
 
     if verbose:
         print(_co2.head())

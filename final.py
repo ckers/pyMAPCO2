@@ -97,6 +97,7 @@ def reformat_final(file, name='', ph=False, verbose=True, inplace=True):
     saves back to .csv file with 'reformated YYYY-MM-DD_HH:MM:SS'
         inserted into filename
     """
+
     header = extract_lines(file, n=2, verbose=verbose)
     _df = read_file(file, verbose=verbose)
     _df['new_date_1'] = pd.to_datetime(_df.Date)

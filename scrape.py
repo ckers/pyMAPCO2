@@ -238,7 +238,8 @@ def run(units, t_start, t_end,
         url_source=False,
         local_target=False,
         skip=[],
-        verbose=False):
+        verbose=False,
+        plot=False):
     """Download files from the rudics server
     
     Parameters
@@ -251,6 +252,7 @@ def run(units, t_start, t_end,
     local_target : str, location to save files downloaded
     skip : list, str file name to skip (if perhaps manually edited locally)
     verbose : bool, enable verbose printout
+    plot : bool, show plots of indexes and datetime values
     
     Returns
     -------
@@ -270,14 +272,16 @@ def run(units, t_start, t_end,
         print('scrape.download>> Local Target:', local_target)
     
     df = rudics_files(url_sources, local_target)
-    if verbose:
+    if plot:
         plt.plot(df.datetime64_ns)
+        plt.title('Data Indexes and Dates')
         plt.show()
     
     df = df[(df.datetime64_ns >= t_start) & (df.datetime64_ns <= t_end)]
     df.reset_index(inplace=True)
-    if verbose:
+    if plot:
         plt.plot(df.datetime64_ns)
+        plt.title('Data Indexes and Dates - filtered to date range')
         plt.show()
 
     df['skip_download'] = ''

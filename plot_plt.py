@@ -431,6 +431,9 @@ def plot_annual(co2, mbl, markers='.', lines='-', gtd=[]):
 
 
 def plot_combined(co2, mbl, markers='.', lines='-', gtd=[]):
+    """Plot multiple timeseries on stacked twinx axis
+    data columns must be present
+    """
     #                  date_time,
     #                  xCO2_air_dry, xCO2_sw_dry,
     #                  o2_percent,
