@@ -8,6 +8,8 @@ Created on Wed Sep 21 17:17:47 2016
 import numpy as np
 import pandas as pd
 from os import walk
+from datetime import datetime
+from io import StringIO
 
 from .config import column_names
 from . import algebra
@@ -32,6 +34,7 @@ def read_files(all_files, verbose=False):
     Parameters
     ----------
     all_files : list, absolute path to .csv source files
+    verbose : bool
 
     Returns
     -------
@@ -43,15 +46,135 @@ def read_files(all_files, verbose=False):
     for file in all_files:
         if verbose:
             print('Loading: ', str(file))
-        _df_n = pd.read_csv(file, index_col=None, sep=',', skiprows=0)
-        _units = _df_n.ix[0.:]
-        _df_n.drop(0, inplace=True)
+        _df_n = read_file(file)
         df_list.append(_df_n)
     _df = pd.concat(df_list)
     _df.reset_index(drop=True, inplace=True)
     _df = _df[column_names]
 
     return _df
+
+
+def read_file(file, verbose=True):
+    """Read one MAPCO2 file into a Pandas DataFrame
+
+    Parameters
+    ----------
+    file : list, absolute path to .csv source files
+    verbose : bool
+
+    Returns
+    -------
+    Pandas DataFrame
+    """
+    _df = pd.read_csv(file, index_col=None, sep=',', skiprows=0)
+    _units = _df.ix[0.:]
+    _df.drop(0, inplace=True)
+    _df.reset_index(drop=True, inplace=True)
+    _df = _df[column_names]
+    return _df
+
+
+def reformat_final(file, name='', ph=False, verbose=True, inplace=True):
+    """Reformat a previously published .csv MAPCO2 file.
+    Fixes historical formatting errors previously published.
+
+    Parameters
+    ----------
+    file : list, absolute path to .csv source files
+    name : str, rename mooring id if not ''
+    ph : bool or Pandas DataFrame,
+        False: do nothing
+        True: fill 'pH' = -999.0 and 'pH_QF' = 5
+        DataFrame: insert pH data and QF flags
+            Note DataFrame must have same number of rows and columns
+            'pH' and 'pH_QF'
+    inplace : bool, overwrite input file
+    verbose : bool
+
+    Returns
+    -------
+    saves back to .csv file with 'reformated YYYY-MM-DD_HH:MM:SS'
+        inserted into filename
+    """
+
+    header = extract_lines(file, n=2, verbose=verbose)
+    _df = read_file(file, verbose=verbose)
+    _df['new_date_1'] = pd.to_datetime(_df.Date)
+    _df['new_date_2'] = _df.new_date_1.apply(lambda x: x.strftime('%m/%d/%Y'))
+
+    _df['new_time_1'] = pd.to_datetime(_df.Time)
+    _df['new_time_2'] = _df.new_time_1.apply(lambda x: x.strftime('%H:%M'))
+
+    _df.Date = _df.new_date_2
+    _df.Time = _df.new_time_2
+
+    _df.drop(labels=['new_date_1', 'new_date_2', 'new_time_1', 'new_time_2'],
+             axis=1, inplace=True)
+
+    if name != '':
+        _df['Mooring'] = name
+
+    if isinstance(ph, pd.DataFrame):
+        _df['pH'] = ph.pH
+        _df['pH_QF'] = ph.pH_QF
+    elif ph:
+        _df.pH_QF = 5
+        _df.pH = -999.0
+
+    for column in _df.columns:
+        if 'QF' in column:
+            _df[column] = _df[column].astype(int)
+
+    if not inplace:
+        t_now = datetime.now().strftime('%Y-%m-%dT%H_%M_%S')
+        f_list = file.split('.')
+        f_out = f_list[0] + '_' + t_now + '.' + f_list[1]
+    else:
+        f_out = file
+
+    sio_all = StringIO()
+    for line in header:
+        sio_all.write(line)
+    sio_data = StringIO()
+    _df.to_csv(sio_data, header=False, index=False)
+
+    sio_all.write(sio_data.getvalue())
+
+    with open(f_out, 'w') as f_sio:
+        f_sio.write(sio_all.getvalue())
+
+    sio_data.close()
+    sio_all.close()
+    if verbose:
+        print('Done reformatting:')
+        print(f_out)
+    return _df, header
+
+
+def extract_lines(file, n=2, verbose=True):
+    """Extract lines up to a set number in a file
+
+    Parameters
+    ----------
+    file : str, absolute path to .csv source files
+    n : int, lines to extract
+    verbose : bool
+
+    Returns
+    -------
+    list, n number of lines from start of file
+    """
+    lines = []
+    with open(file) as f:
+        _n = 0
+        for line in f:
+            lines.append(line)
+            _n += 1
+            if _n > n - 1:
+                break
+
+    return lines
 
 
 def make_datetime(_df):

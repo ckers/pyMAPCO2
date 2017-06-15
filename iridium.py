@@ -8,10 +8,9 @@ Created on Thu Jul 28 14:45:54 2016
 
 import pandas as pd
 
+from . import config
 from . import datatypes
 from . import parse
-#import pyMAPCO2.datatypes as datatypes
-#import pyMAPCO2.parse as parse
 
 
 def concat(data, start, end, verbose=False):
@@ -60,6 +59,130 @@ def concat(data, start, end, verbose=False):
     return h, g, e, co2, aux, sbe16, ph
 
 
+def frame_co2(sample, verbose=False):
+    """CO2 data only"""
+    if verbose:
+        print('iridium.frame>>')
+        print(sample)
+        print("="*10)
+
+    h = parse.header(sample[0], verbose=verbose)
+    g = parse.gps(sample[1], verbose=verbose)
+    e = parse.engr(sample[2], verbose=verbose,
+                   data_type='iridium', firmware=h.firmware)
+
+    h = pd.DataFrame(data=[h.data], columns=h.data_names)
+    g = pd.DataFrame(data=[g.data], columns=g.data_names)
+    e = pd.DataFrame(data=[e.data], columns=e.data_names)
+
+    if verbose:
+        print('g.datetime_gps, h.system, h.date_time')
+        print(g)
+        print('  >>', g.datetime_gps, h.system, h.datetime_mapco2)
+        print('h>>', h, type(h), type(h.datetime_mapco2), type(h.system))
+
+    common_key = h.datetime_mapco2[0] + '_' + h.system[0]
+
+    if verbose:
+        print('h common_key>>', common_key, type(common_key))
+
+    h['common_key'] = common_key
+    g['common_key'] = common_key
+    e['common_key'] = common_key
+
+    h['datetime64_ns_mapco2'] = pd.to_datetime(h.datetime_mapco2,
+                                               format=config.header_datetime_format)
+
+    def gps_time_fix(x):
+        if x[0:4] == '0000':
+            return h.datetime_mapco2
+        else:
+            return x
+
+    g.datetime_gps = g.datetime_gps.apply(gps_time_fix)
+
+    g['datetime64_ns_gps'] = pd.to_datetime(g.datetime_gps,
+                                            format=config.gps_datetime_format)
+    e['datetime64_ns_engr'] = pd.to_datetime(h.datetime64_ns_mapco2)
+
+    if verbose:
+        print('h.head()>>', h.head())
+        print('g.head()>>', g.head())
+        print('e.head()>>', e.head())
+
+    if len(sample) < 12:
+        _co2 = pd.DataFrame(data=None)
+    else:
+        zpon = parse.co2_line(sample[3], verbose=verbose)
+        zpof = parse.co2_line(sample[4], verbose=verbose)
+        zpcl = parse.co2_line(sample[5], verbose=verbose)
+        spon = parse.co2_line(sample[6], verbose=verbose)
+        spof = parse.co2_line(sample[7], verbose=verbose)
+        spcl = parse.co2_line(sample[8], verbose=verbose)
+        epon = parse.co2_line(sample[9], verbose=verbose)
+        epof = parse.co2_line(sample[10], verbose=verbose)
+        apon = parse.co2_line(sample[11], verbose=verbose)
+        apof = parse.co2_line(sample[12], verbose=verbose)
+
+        zpon = ['zpon'] + zpon.data
+        zpof = ['zpof'] + zpof.data
+        zpcl = ['zpcl'] + zpcl.data
+        spon = ['spon'] + spon.data
+        spof = ['spof'] + spof.data
+        spcl = ['spcl'] + spcl.data
+        epon = ['epon'] + epon.data
+        epof = ['epof'] + epof.data
+        apon = ['apon'] + apon.data
+        apof = ['apof'] + apof.data
+
+        data_template = datatypes.MAPCO2Data()
+
+        _co2 = pd.DataFrame(data=[zpon, zpof, zpcl, spon, spof, spcl, epon, epof,
+                                  apon, apof], columns=['cycle']+data_template.data_names)
+
+        _co2['common_key'] = common_key
+        _co2['system'] = str(h.system[0])
+        _co2['datetime_str'] = h.datetime_mapco2[0]
+
+        _co2['datetime64_ns'] = pd.to_datetime(_co2.datetime_str,
+                                               format='%Y/%m/%d_%H:%M:%S')
+
+    if verbose:
+        print(_co2.head())
+    return h, g, e, _co2
+
+
+def batch_co2_list(data_list, verbose=False):
+    """Batch process and concatenate data from a DataFrame column
+    that contains list data
+
+    Parameters
+    ----------
+    data_list : list/itterable with sections of data
+    verbose : bool, print debug statements
+
+    Returns
+    -------
+    h, g, e, co2 : Pandas DataFrames
+    """
+
+    if verbose:
+        print(len(data_list[0]))
+
+    h, g, e, co2 = frame_co2(data_list[0], verbose=verbose)
+
+    for n in data_list[1:]:
+        if verbose:
+            print(len(n))
+        h_n, g_n, e_n, co2_n = frame_co2(n, verbose=verbose)
+        h = pd.concat([h, h_n])
+        g = pd.concat([g, g_n])
+        e = pd.concat([e, e_n])
+        co2 = pd.concat([co2, co2_n])
+
+    return h, g, e, co2
+
+
 def frame(sample, verbose=False, ph=False):
     """Handle one frame of data
 
@@ -98,7 +221,7 @@ def frame(sample, verbose=False, ph=False):
 
     if verbose:
         print('h common_key>>', common_key, type(common_key))
-    
+
     h['common_key'] = common_key
     g['common_key'] = common_key
     e['common_key'] = common_key

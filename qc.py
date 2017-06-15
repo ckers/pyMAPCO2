@@ -114,7 +114,7 @@ def co2sys_xls_export(df, filepath,
     Pandas DataFrame of data written to file
     """
 
-    _df = df[['datetime', 'datetime64_ns',
+    _df = df[['datetime64_ns',
               'SSS', 'SST',
               'TA', 'pCO2_SW_sat']].copy()
 
@@ -157,8 +157,8 @@ def import_co2sysxls(f, unit):
     """
 
     _df = pd.read_excel(f, sheetname='DATA',
-                     skiprows=[0, 1, 2],
-                     names=config.co2sysxls_column_names)
+                        skiprows=[0, 1],
+                        names=config.co2sysxls_column_names)
     _df['unit'] = str(unit)
     return _df
 

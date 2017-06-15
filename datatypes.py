@@ -68,8 +68,9 @@ class MAPCO2Header(MAPCO2Base):
         self.firmware = None
         self.firmware_timestamp = None
 
-        self.date_time_format = "%Y/%m/%d_%H:%M:%S"
-        self.firmware_format = "A.B_%m/%d/%Y"
+        # moved to config.py
+        #self.date_time_format = "%Y/%m/%d_%H:%M:%S"
+        #self.firmware_format = "A.B_%m/%d/%Y"
 
         self.data_names = ["mode",
                            "checksum",
@@ -138,7 +139,8 @@ class MAPCO2GPS(MAPCO2Base):
         self.valve_time = []
         self.timestamp = None
 
-        self.datetime_gps_format = "%m/%d/%Y_%H:%M:%S"
+        # moved to config.py
+        # self.datetime_gps_format = "%m/%d/%Y_%H:%M:%S"
 
         self.data_names = ["datetime_gps",
                            "lat_deg", "lat_min", "lat_direction",
@@ -378,7 +380,22 @@ class MAPCO2Engr(MAPCO2Base):
             self.raw_compass = float(engr[15+_x])
             self.raw_vane = float(engr[16+_x])
             self.raw_windspeed = float(engr[17+_x])
+        # handle any indexing problems with a broad catch
         except:
+            self.flag = '0000'  # needs to remain string for flag bit access
+            self.sst = -999.0
+            self.sst_std = -999.0
+            self.ssc = -999.0
+            self.ssc_std = -999.0
+            self.sss = -999.0
+            self.sss_std = -999.0
+            self.u = -999.0
+            self.u_std = -999.0
+            self.v = -999.0
+            self.v_std = -999.0
+            self.raw_compass = -999.0
+            self.raw_vane = -999.0
+            self.raw_windspeed = -999.0
             if verbose:
                 print("parse_engr>> ENGR line met data parsing error")
 

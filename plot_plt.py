@@ -15,6 +15,7 @@ from matplotlib.ticker import FormatStrFormatter
 from . import config, plot
 from .utils import utils
 
+
 def timeseries_multiyear(df, df_mbl=None):
     """Plot data in multiyear and timeseries plots
 
@@ -430,6 +431,9 @@ def plot_annual(co2, mbl, markers='.', lines='-', gtd=[]):
 
 
 def plot_combined(co2, mbl, markers='.', lines='-', gtd=[]):
+    """Plot multiple timeseries on stacked twinx axis
+    data columns must be present
+    """
     #                  date_time,
     #                  xCO2_air_dry, xCO2_sw_dry,
     #                  o2_percent,

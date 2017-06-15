@@ -185,28 +185,25 @@ def download_files(x):
     -------
     None, writes to disk
     """
-    try:
-        if x.skip_download == True:
-            return False
-
-        url = x.url_file
-
-        # if the local folder does not exist, make it
-        if not os.path.exists(x.local_dir):
-            os.mkdir(x.local_dir)
-
-        # note: no modified time checks!
-        # get the text, convert to unicode and save using byte write
-        _text = requests.get(url)             # request the data
-        _text = _text.text                    # get the text body
-        _text = _text.encode('utf-8')         # convert to unicode
-        _file = open(x.local_filepath, 'wb')  # open as bytes
-        _file.write(_text)                    # write the data
-        _file.close()
-
-        return True
-    except:
+    if x.skip_download:
         return False
+
+    url = x.url_file
+
+    # if the local folder does not exist, make it
+    if not os.path.exists(x.local_dir):
+        os.mkdir(x.local_dir)
+
+    # note: no modified time checks!
+    # get the text, convert to unicode and save using byte write
+    _text = requests.get(url)             # request the data
+    _text = _text.text                    # get the text body
+    _text = _text.encode('utf-8')         # convert to unicode
+    _file = open(x.local_filepath, 'wb')  # open as bytes
+    _file.write(_text)                    # write the data
+    _file.close()
+
+    return True
 
 
 def get_timespan(t_start='01/01/2010', t_end='01/01/2020', days_in_past=None):
@@ -240,7 +237,9 @@ def get_timespan(t_start='01/01/2010', t_end='01/01/2020', days_in_past=None):
 def run(units, t_start, t_end,
         url_source=False,
         local_target=False,
-        verbose=False):
+        skip=[],
+        verbose=False,
+        plot=False):
     """Download files from the rudics server
     
     Parameters
@@ -251,7 +250,9 @@ def run(units, t_start, t_end,
     days_in_past : int, number of days from present to create time range
     url_source : str, eclipse location to download files from
     local_target : str, location to save files downloaded
+    skip : list, str file name to skip (if perhaps manually edited locally)
     verbose : bool, enable verbose printout
+    plot : bool, show plots of indexes and datetime values
     
     Returns
     -------
@@ -271,16 +272,22 @@ def run(units, t_start, t_end,
         print('scrape.download>> Local Target:', local_target)
     
     df = rudics_files(url_sources, local_target)
-    if verbose:
+    if plot:
         plt.plot(df.datetime64_ns)
+        plt.title('Data Indexes and Dates')
         plt.show()
     
     df = df[(df.datetime64_ns >= t_start) & (df.datetime64_ns <= t_end)]
     df.reset_index(inplace=True)
-    if verbose:
+    if plot:
         plt.plot(df.datetime64_ns)
+        plt.title('Data Indexes and Dates - filtered to date range')
         plt.show()
-    
+
+    df['skip_download'] = ''
+
+    # TODO: capture skip parameter and insert to df.skip_download
+
     df['download_success'] = df.apply(download_files, axis=1)
     return df
 
@@ -347,7 +354,6 @@ class Iridium(object):
         
         return 60 * 60 * (hours + (24 * days))
 
-
     def unit_num_filter(self):
         
         units_temp = []
@@ -404,7 +410,6 @@ class Iridium(object):
                     # non-timestamp rows in the page                    
                     pass
 
-    
     def download_files(self, oldest=None, refresh_days=False, download_delay=False):
         """Download files from Rudics to a local directory for processing
         
