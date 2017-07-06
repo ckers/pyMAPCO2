@@ -61,7 +61,7 @@ def plot_units(df, title=''):
     plot_plt.show()
 
 
-def collate(systems_tested,  t_start, t_end, plot=False, local_target=None):
+def collate(systems_tested,  t_start, t_end, local_target=None, plot=False, verbose=False):
     """Scrape and collate relevent rudics files and download them from the rudics server
 
     Parameters
@@ -93,6 +93,13 @@ def collate(systems_tested,  t_start, t_end, plot=False, local_target=None):
         f_list_system = glob.glob(local_target + '\\' + system + '\\*')
         f_list = f_list + f_list_system
         u_list = u_list + [system] * len(f_list_system)
+
+    if verbose:
+        print('File List to Load')
+        print('-'*20)
+        for _f in f_list:
+            print(_f)
+
     bf_list = [f.encode('utf-8') for f in f_list]
     dff = pd.DataFrame.from_dict({'filepath': bf_list,
                                   'unit': u_list})
@@ -189,7 +196,7 @@ def import_all(df, verbose=False):
     co2 : DataFrame, co2 measurement data
     """
 
-    h, g, e, co2 = iridium.batch_co2_list(df.co2_list, verbose=False)
+    h, g, e, co2 = iridium.batch_co2_list(df.co2_list, verbose=verbose)
 
     if verbose:
         print('lab_tests.import_all>> All systems loaded:')

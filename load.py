@@ -270,14 +270,17 @@ def load_file(f, unit=None, verbose=False):
 
     lc, errors, blanks = cleaner(data_list=l)
 
-    # acknowledgement record, i.e. SS =3 or rebot to fast
+    # acknowledgement record, i.e. SS =3 or reboot to fast
     if len(lc) < 10:
         return pd.DataFrame([])
 
     for line in lc[0:8]:
         # system status transmission
-        if 'SYSTEM STATUS' in line:
-            return pd.DataFrame([])
+        # removed due to some files having status AND data
+        # will likely break when there's a status in the MIDDLE of the file
+        # Thanks firmware!
+        #if 'SYSTEM STATUS' in line:
+        #    return pd.DataFrame([])
         # no data test transmission
         if line[0:4] == 'Each':
             return pd.DataFrame([])
@@ -336,12 +339,15 @@ def file_batch(f_list, verbose=False):
     Parameters
     ----------
     f_list : list of str, filepath to file to parse
+    verbose : bool, show debug statements
     
     Returns
     -------
     Pandas Dataframe, data of all identified data types
     """
-    
+
+    if verbose:
+        print('load.file_batch>>')
     _df_list = []
     for _f in f_list:
         _df = load_file(_f, verbose=verbose)
@@ -505,7 +511,7 @@ def repeat_stripper(s, min_count=16, verbose=False, limit=100):
             ixs = sorted(ixs)
             ixs = list(flatten(ixs))
             ixs = [0] + ixs + [len(ixs)+1]
-            new_s = ''
+            new_s = config.repeat_flag  # Repeat stripped placeholder
             for ix in range(0, len(ixs)-2, 2):
                 new_s = new_s + s[ixs[ix]:ixs[ix+1]]
             s = new_s

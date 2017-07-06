@@ -66,6 +66,16 @@ def frame_co2(sample, verbose=False):
         print(sample)
         print("="*10)
 
+    for line in sample:
+        if line == config.repeat_flag:
+            h = pd.DataFrame(data=None)
+            g = pd.DataFrame(data=None)
+            e = pd.DataFrame(data=None)
+            _co2 = pd.DataFrame(data=None)
+            if verbose:
+                print('iridium.frame_co2>> Repeat line found, skipping data =====')
+            return h, g, e, _co2
+
     h = parse.header(sample[0], verbose=verbose)
     g = parse.gps(sample[1], verbose=verbose)
     e = parse.engr(sample[2], verbose=verbose,

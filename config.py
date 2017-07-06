@@ -39,6 +39,8 @@ header_datetime_format = '%Y/%m/%d_%H:%M:%S'
 header_firmware_datetime_format = 'A.B_%m/%d/%Y'
 gps_datetime_format = '%Y/%m/%d_%H:%M:%S'  # converted from '%m/%d/%Y_%H:%M:%S' in datatypes.py
 
+# repeat flag inserted where '000000' etc is found in data
+repeat_flag = '<repeat flag>'
 
 # ranges of data considered possible/reality
 k_limits = {'datetime64_ns': [to_datetime('1980-01-01'), to_datetime('2020-01-01')],
