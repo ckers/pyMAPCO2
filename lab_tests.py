@@ -7,6 +7,7 @@ Created on Wed Dec  7 10:46:46 2016
 
 #import sys
 import glob
+from datetime import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -61,8 +62,65 @@ def plot_units(df, title=''):
     plot_plt.show()
 
 
-def collate(systems_tested,  t_start, t_end, local_target=None, plot=False, verbose=False):
-    """Scrape and collate relevent rudics files and download them from the rudics server
+def collate(systems_mapco2, t_start, t_end,
+            systems_waveglider=None, systems_asv=None, plot=False, verbose=False):
+    """Hack because we can't just use unique IDs on our systems.  Wraps _collate
+    to handle the 3 rudics directories co2 data is being savied WITH duplicate system IDs.
+    Appends ID string to unit number to keep things straight based on:
+        Allowed datatypes are:
+        'm' : mapco2
+        'w' : waveglider
+        'a' : asv
+    See iridium.frame_co2 for where these identifiers are applied.
+
+    Parameters
+    ----------
+    systems_mapco2 : list of str, id of each system i.e. '0179'
+    t_start : pd.Datetime, start time of data to collate
+    t_end : pd.Datetime, end time of data to collate
+    plot : bool, show datetime vs index plot
+    waveglider_system : same format as mapo2_system, for waveglider systems
+    systems_asv : same format as mapco2_system, for asv co2 systems
+
+    Returns
+    -------
+    dff :
+
+    """
+
+    dff_w = None
+    dff_a = None
+
+    dff = _collate(systems_tested=systems_mapco2, datatype='mapco2',
+                   t_start=t_start, t_end=t_end,
+                   plot=plot, verbose=verbose)
+    dff['datatype'] = 'm'
+
+    if systems_waveglider is not None:
+        dff_w = _collate(systems_tested=systems_waveglider, datatype='waveglider',
+                         t_start=t_start, t_end=t_end,
+                         plot=plot, verbose=verbose)
+        dff_w['datatype'] = 'w'
+        dff = pd.concat([dff, dff_w], axis=0, join='outer', ignore_index=True)
+
+    if systems_asv is not None:
+        dff_a = _collate(systems_tested=systems_asv, datatype='asv',
+                         t_start=t_start, t_end=t_end,
+                         plot=plot, verbose=verbose)
+        dff_a['datatype'] = 'a'
+        dff = pd.concat([dff, dff_a], axis=0, join='outer', ignore_index=True)
+
+    if plot:
+        plot_units(dff, title='Data Rows vs. Dates - Filtered to date range')
+
+    return dff
+
+
+def _collate(systems_tested,  datatype,
+             t_start, t_end,
+             plot=False, verbose=False):
+    """Scrape and collate relevent rudics files from one system type folder and download
+    from the rudics server.
 
     Parameters
     ----------
@@ -77,11 +135,25 @@ def collate(systems_tested,  t_start, t_end, local_target=None, plot=False, verb
     dff : pd.DataFrame, all information on files to load data from
     """
 
-    if local_target is None:
+    if (datatype is None) or (datatype == 'mapco2'):
         local_target = config.local_mapco2_data_directory
-    # TODO: handle ASV data
+        url_source = config.url_mapco2
+    if datatype == 'waveglider':
+        local_target = config.local_waveglider_data_directory
+        url_source = config.url_waveglider
+    if datatype == 'asv':
+        local_target = config.local_asv_data_directory
+        url_source = config.url_asv
+    #else:
+    #    local_target = config.local_mapco2_data_directory
+    #    url_source = config.url_mapco2
 
+    # downloads files based on t_start, t_end
+    # does NOT pass file info on, local files are filtered on again later
+    # to establish which files to load
     fdl = scrape.run(units=systems_tested,
+                     url_source=url_source,
+                     local_target=local_target,
                      t_start=t_start,
                      t_end=t_end,
                      plot=plot)
@@ -94,15 +166,19 @@ def collate(systems_tested,  t_start, t_end, local_target=None, plot=False, verb
         f_list = f_list + f_list_system
         u_list = u_list + [system] * len(f_list_system)
 
-    if verbose:
-        print('File List to Load')
-        print('-'*20)
-        for _f in f_list:
-            print(_f)
+    # if verbose:
+    #     print('File List to Load')
+    #     print('-'*20)
+    #     for _f in f_list:
+    #         print(_f)
 
     bf_list = [f.encode('utf-8') for f in f_list]
     dff = pd.DataFrame.from_dict({'filepath': bf_list,
                                   'unit': u_list})
+
+    # no data files where found for the input system
+    if len(dff) == 0:
+        return dff
 
     def get_date(bfp):
         """
@@ -129,9 +205,6 @@ def collate(systems_tested,  t_start, t_end, local_target=None, plot=False, verb
     dff['datetime_str'] = dff.filepath.apply(get_date)
     dff.filepath = dff.filepath.str.decode('utf-8')
     dff['datetime64_ns'] = pd.to_datetime(dff.datetime_str)
-
-    if plot:
-        plot_units(dff, title='Data Rows vs. Dates - Filtered to date range')
 
     return dff
 
@@ -174,7 +247,8 @@ def load_data(dffs, verbose=False):
     if verbose:
         print('lab_tests.load_data>> Files being loaded:')
     f_list = list(dffs.filepath)
-    df = load.file_batch(f_list, verbose=verbose)
+    f_type = list(dffs.datatype)
+    df = load.file_batch(f_list, datatype=f_type, verbose=verbose)
     df.reset_index(inplace=True, drop=True)
 
     return df
@@ -196,7 +270,7 @@ def import_all(df, verbose=False):
     co2 : DataFrame, co2 measurement data
     """
 
-    h, g, e, co2 = iridium.batch_co2_list(df.co2_list, verbose=verbose)
+    h, g, e, co2 = iridium.batch_co2(df, verbose=verbose)
 
     if verbose:
         print('lab_tests.import_all>> All systems loaded:')
@@ -219,3 +293,43 @@ def import_all(df, verbose=False):
 
     return h, g, e, co2
 
+
+def log_entry(systems):
+    mn = 300
+    wn = 30
+    an = 30
+
+    mh = ['m_{0:04d}'.format(n) for n in range(1, mn+1)]
+    wh = ['w_{0:05d}'.format(n) for n in range(1, wn+1)]
+    ah = ['a_{0:05d}'.format(n) for n in range(1, an+1)]
+    h = ['YYYY-MM-DDThh:mm:ssZ', 'YYYY/MM/DD hh:mm:ss'] + mh + wh + ah
+
+    m = [''] * mn
+    w = [''] * wn
+    a = [''] * an
+
+    #print(m)
+    #print(w)
+    #print(a)
+
+    #systems = ['m_0179', 'w_00004', 'w_00005']
+
+    for x in systems:
+        xtype, number = x.split('_')
+        #print(xtype, number)
+        if xtype == 'm':
+            m[int(number)-1] = 1
+        if xtype == 'w':
+            w[int(number)-1] = 1
+        if xtype == 'a':
+            w[int(number)-1] = 1
+
+    _d = m + w + a
+    _d = [str(n) for n in _d]
+
+    #print(m)
+    #print(w)
+    #print(a)
+    t = [datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S'), datetime.utcnow().strftime('%Y/%m/%d %H:%M:%S')]
+    d = t + _d
+    return h, d

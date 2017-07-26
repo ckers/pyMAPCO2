@@ -11,6 +11,7 @@ import pandas as pd
 from . import config
 from . import datatypes
 from . import parse
+from .algebra import common_key
 
 
 def concat(data, start, end, verbose=False):
@@ -59,8 +60,26 @@ def concat(data, start, end, verbose=False):
     return h, g, e, co2, aux, sbe16, ph
 
 
-def frame_co2(sample, verbose=False):
-    """CO2 data only"""
+def frame_co2(sample, system, verbose=False):
+    """Parse CO2 data into DataFrames.  Does not handle auxilary data.
+    Allowed datatypes are:
+        'm' : mapco2
+        'w' : waveglider
+        'a' : asv
+
+    Parameters
+    ----------
+    sample : list of string data containg frame of co2 data
+    system : str, type of data source and serial number for data identification
+    verbose : bool, print debug statements
+
+    Returns
+    -------
+    h : Pandas DataFrame, header data
+    g : Pandas DataFrame, GPS data
+    e : Pandas DataFrame, engineering data
+    _co2 : Pandas DataFrame, co2 data
+    """
     if verbose:
         print('iridium.frame>>')
         print(sample)
@@ -91,17 +110,19 @@ def frame_co2(sample, verbose=False):
         print('  >>', g.datetime_gps, h.system, h.datetime_mapco2)
         print('h>>', h, type(h), type(h.datetime_mapco2), type(h.system))
 
-    common_key = h.datetime_mapco2[0] + '_' + h.system[0]
 
-    if verbose:
-        print('h common_key>>', common_key, type(common_key))
-
-    h['common_key'] = common_key
-    g['common_key'] = common_key
-    e['common_key'] = common_key
 
     h['datetime64_ns_mapco2'] = pd.to_datetime(h.datetime_mapco2,
                                                format=config.header_datetime_format)
+
+    data_common_key = common_key(system, h.datetime64_ns_mapco2[0])
+
+    if verbose:
+        print('h common_key>>', data_common_key, type(data_common_key))
+
+    h['common_key'] = data_common_key
+    g['common_key'] = data_common_key
+    e['common_key'] = data_common_key
 
     def gps_time_fix(x):
         if x[0:4] == '0000':
@@ -150,25 +171,25 @@ def frame_co2(sample, verbose=False):
         _co2 = pd.DataFrame(data=[zpon, zpof, zpcl, spon, spof, spcl, epon, epof,
                                   apon, apof], columns=['cycle']+data_template.data_names)
 
-        _co2['common_key'] = common_key
-        _co2['system'] = str(h.system[0])
+        _co2['common_key'] = data_common_key
+        _co2['system'] = system
         _co2['datetime_str'] = h.datetime_mapco2[0]
-
-        _co2['datetime64_ns'] = pd.to_datetime(_co2.datetime_str,
-                                               format='%Y/%m/%d_%H:%M:%S')
+        _co2['datetime64_ns'] = h.datetime64_ns_mapco2[0]
 
     if verbose:
         print(_co2.head())
     return h, g, e, _co2
 
 
-def batch_co2_list(data_list, verbose=False):
-    """Batch process and concatenate data from a DataFrame column
-    that contains list data
+def batch_co2(df, verbose=False):
+    """Batch process and concatenate data from a DataFrame that contains list
+    data and datatype strings.
 
     Parameters
     ----------
-    data_list : list/itterable with sections of data
+    df : Pandas DataFrame, with list data and datatype columns
+        list_data : list of str, co2 data lines
+        datatype : str, datatype of co2 imported see irdium.frame_co2 for details
     verbose : bool, print debug statements
 
     Returns
@@ -176,15 +197,17 @@ def batch_co2_list(data_list, verbose=False):
     h, g, e, co2 : Pandas DataFrames
     """
 
+    data_list = df.co2_list
+    system = df.system
     if verbose:
         print(len(data_list[0]))
 
-    h, g, e, co2 = frame_co2(data_list[0], verbose=verbose)
+    h, g, e, co2 = frame_co2(data_list[0], system[0], verbose=verbose)
 
-    for n in data_list[1:]:
+    for n in range(1, len(data_list)):
         if verbose:
             print(len(n))
-        h_n, g_n, e_n, co2_n = frame_co2(n, verbose=verbose)
+        h_n, g_n, e_n, co2_n = frame_co2(data_list[n], system[n], verbose=verbose)
         h = pd.concat([h, h_n])
         g = pd.concat([g, g_n])
         e = pd.concat([e, e_n])

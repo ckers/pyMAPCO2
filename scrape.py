@@ -34,9 +34,20 @@ def apache_table_scraper(html_file):
 
     """
 
-    html = requests.get(html_file)
-    soup = BeautifulSoup(html.text, "html.parser")
-    table = soup.find_all('table')[0]  # first table is only one
+    r = requests.get(html_file)
+    if r.status_code != 200:
+        print('Error loading URL %s' % html_file)
+        return None
+
+    soup = BeautifulSoup(r.text, "html.parser")
+
+    try:
+        table = soup.find_all('table')[0]  # first table is only one
+    except IndexError:
+        print('Unable to parse HTML soup in %s' % html_file)
+        print('Soup was:')
+        print(soup)
+
     df_list = pd.read_html(io=str(table))
     return df_list[0]
 
@@ -57,8 +68,9 @@ def apache_concat(url_sources):
     df_list = []
     for _u in url_sources:
         df_n = apache_table_scraper(_u)
-        df_n['url_source'] = _u
-        df_list.append(df_n)
+        if df_n is not None:
+            df_n['url_source'] = _u
+            df_list.append(df_n)
     return pd.concat(df_list)
 
 
@@ -295,28 +307,30 @@ def run(units, t_start, t_end,
 
     # TIME FILTERED DATA
     df = df[(df.datetime64_ns >= t_start) & (df.datetime64_ns <= t_end)]
+    if len(df) == 0:
+        df = pd.DataFrame([])
+    else:
+        if plot:
+            us = df.unit.unique()
+            fig, ax = plt.subplots()
+            mc = 0
+            for u in df.unit.unique():
+                _fdl = df[df.unit == u].copy()
+                ax.plot(_fdl.index.astype(int), _fdl.datetime64_ns,
+                        marker=marks[mc], label=u)
+                mc += 1
+            ax.legend()
+            ax=plt.gca()
+            xfmt = mdates.DateFormatter('%Y-%m-%d %H:%M:%S')
+            ax.yaxis.set_major_formatter(xfmt)
+            plt.title('Data Dates - Filtered to date range')
+            plot_plt.show()
 
-    if plot:
-        us = df.unit.unique()
-        fig, ax = plt.subplots()
-        mc = 0
-        for u in df.unit.unique():
-            _fdl = df[df.unit == u].copy()
-            ax.plot(_fdl.index.astype(int), _fdl.datetime64_ns,
-                    marker=marks[mc], label=u)
-            mc += 1
-        ax.legend()
-        ax=plt.gca()
-        xfmt = mdates.DateFormatter('%Y-%m-%d %H:%M:%S')
-        ax.yaxis.set_major_formatter(xfmt)
-        plt.title('Data Dates - Filtered to date range')
-        plot_plt.show()
+        df['skip_download'] = ''
 
-    df['skip_download'] = ''
+        # TODO: capture skip parameter and insert to df.skip_download
 
-    # TODO: capture skip parameter and insert to df.skip_download
-
-    df['download_success'] = df.apply(download_files, axis=1)
+        df['download_success'] = df.apply(download_files, axis=1)
     return df
 
 

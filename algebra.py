@@ -195,7 +195,10 @@ def timestamp_sec_rounder(t):
     return t.replace(second=round(t.second))
 
 
-def common_key(row):
+def common_key(system, datetime64_ns):
+    return system + '_' + timestamp_rounder(datetime64_ns).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+def common_key_row(row):
     """Create a common key value.
 
     Parameters
@@ -209,6 +212,7 @@ def common_key(row):
         'xxxx_'%Y-%m-%dT%H:%M:%SZ'' with time rounded to the half hour
     """
 
-    ck = (row.unit + '_' +
-          timestamp_rounder(row.datetime64_ns).strftime('%Y-%m-%dT%H:%M:%SZ'))
+    #ck = (row.unit + '_' +
+    #      timestamp_rounder(row.datetime64_ns).strftime('%Y-%m-%dT%H:%M:%SZ'))
+    ck = common_key(system=row.system, datetime64_ns=row.datetime64_ns)
     return ck

@@ -7,13 +7,17 @@ Configuration values
 import os
 from pandas import to_datetime
 
-mapco2_rudics = 'http://eclipse.pmel.noaa.gov/rudics/pco2/'
-waveglider_rudics = 'http://eclipse.pmel.noaa.gov/rudics/PCWG/'
+
 dial_rudics = 'http://eclipse.pmel.noaa.gov/rudics/ALL_RUDICS/PLATFORM_CALL_SUMMARIES/'
+local_rudics_dial_data = os.path.normpath('C:\\Users\\dietrich\\data\\rudics\\dial\\')
+
+url_mapco2 = 'http://eclipse.pmel.noaa.gov/rudics/pco2/'
+url_waveglider = 'http://eclipse.pmel.noaa.gov/rudics/PCWG/'
+url_asv = 'http://eclipse.pmel.noaa.gov/rudics/PCAV/'
 
 local_mapco2_data_directory = os.path.normpath('C:\\Users\\dietrich\\data\\rudics\\mapco2\\')
 local_waveglider_data_directory = os.path.normpath('C:\\Users\\dietrich\\data\\rudics\\waveglider\\')
-local_rudics_dial_data = os.path.normpath('C:\\Users\\dietrich\\data\\rudics\\dial\\')
+local_asv_data_directory = os.path.normpath('C:\\Users\\dietrich\\data\\rudics\\asv\\')
 
 # final data .csv column names as published
 column_names = ['Mooring', 'Latitude', 'Longitude',
