@@ -35,7 +35,8 @@ precip_color = '#ede21e'  # yellowish
 general_color = '#7f808c'  # steel blue/grey
 
 
-def default_layout(xco2_sw_range=None,
+def default_layout(df=None,
+                   xco2_sw_range=None,
                    xco2_air_range=None,
                    sst_range=None,
                    sss_range=None,
@@ -50,6 +51,7 @@ def default_layout(xco2_sw_range=None,
 
     Parameters
     ----------
+    df : Pandas DataFrame, data to plot
     xco2_sw_range : array-like, two values - kmin & kmax
     xco2_air_range : array-like, two values - kmin & kmax
     sst_range : array-like, two values - kmin & kmax
@@ -73,7 +75,7 @@ def default_layout(xco2_sw_range=None,
         xco2_air_range = config.k_limits['xco2_air']
     if sst_range is None:
         sst_range = config.k_limits['sst']
-        if autoscale:
+        if autoscale & (df is not None):
             lcf_sst = stats.Linear2dCurveFit()
             lcf_sst.x = df.xCO2_SW_dry
             lcf_sst.y = df.SST
@@ -84,7 +86,7 @@ def default_layout(xco2_sw_range=None,
                          sst_max + sst_max * 0.05]
     if ph_range is None:
         ph_range = config.k_limits['ph']
-        if autoscale:
+        if autoscale & (df is not None):
             lcf_ph = stats.Linear2dCurveFit()
             lcf_ph.x = df.xCO2_SW_dry
             lcf_ph.y = df.pH
@@ -683,7 +685,7 @@ def my_data(df):
     return data_multi
 
 
-def ms_data(data):
+def ms_data(df_co2):
     """Define data dictionary to plot multi-system data
 
     Note: hardcoded trace name srings must match dataframe column
@@ -693,16 +695,29 @@ def ms_data(data):
 
     Parameters
     ----------
-    ddata : dict of Pandas DataFrame with columns:
-        xx
+    df_co2 : list of Pandas DataFrame with columns:
+        0 : str, system number
+        1 : str, co2 test cycle
+        2 : Pandas DataFrame of data for system and cycle
 
     Returns
     -------
     Plot.ly data list
     """
 
+    data = []
+    for system in df_co2.system.unique():
+        for cycle in df_co2.cycle.unique():
+            key = system + '_' + cycle
+            _df = df_co2[(df_co2.system == system) & (df_co2.cycle == cycle)].copy()
+            _df.sort_values(by='datetime64_ns', inplace=True)
+            _df.reset_index(inplace=True, drop=True)
+            data.append((system, cycle, _df))
+
     # create a dict system: number for color maps
-    sysc = {v: k for k, v in dict(enumerate(set([d[0] for d in data]))).items()}
+    systems = list(set([d[0] for d in data]))
+    systems.sort()
+    sysc = {v: k for k, v in dict(enumerate(systems)).items()}
 
     data_multi = []
 

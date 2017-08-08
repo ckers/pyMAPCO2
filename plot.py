@@ -7,8 +7,7 @@ Created on 2017-04-25
 
 import numpy as np
 from pandas import notnull
-import matplotlib.pyplot as plt
-from seaborn import color_palette, cubehelix_palette, palplot
+#from seaborn import color_palette, cubehelix_palette, palplot
 
 from . import config
 
@@ -17,7 +16,7 @@ from . import config
 years = np.linspace(config.y0, config.y1,
                     (config.y1 - config.y0) + 1,
                     dtype=int)
-
+"""
 generic_p = color_palette("cubehelix", 30)
 generic_pdict = dict(zip(years, generic_p))
 xco2_air_p = cubehelix_palette(30, start=2.5, rot=0)
@@ -46,7 +45,7 @@ def demo_palletes():
     palplot(ph_p)
     plt.title('pH', loc='right', fontsize=30)
     plt.show()
-
+"""
 
 def lim_finder(data, margin=0.1, data_type=None, verbose=False):
     """Set axis limits to something based on reality

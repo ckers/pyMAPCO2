@@ -12,7 +12,7 @@ import pandas as pd
 import xarray as xr
 
 from . import config
-from .algebra import float_year_to_datetime, common_key, timestamp_rounder
+from .algebra import float_year_to_datetime, common_key_row, timestamp_rounder
 from utils.main import flatten
 
 
@@ -246,7 +246,7 @@ def frames(lc, start, end, delimiters):
     return data
 
 
-def load_file(f, unit=None, verbose=False):
+def load_file(f, datatype, system=None, verbose=False):
     """Load all available data types in a file
     Note: data types are determined by delimiter definitions, which 
     are hardcoded below.
@@ -254,6 +254,8 @@ def load_file(f, unit=None, verbose=False):
     Parameters
     ----------
     f : str, filepath to file to parse
+    datatype : str, system type... all because we duplicated serial numbers between
+        mapco2, asv and waveglider... sigh.  A global reassignment might be better.
     unit : str, unit serial number.  Primarily used for single flash imports
         TODO: find another way?
 
@@ -270,14 +272,17 @@ def load_file(f, unit=None, verbose=False):
 
     lc, errors, blanks = cleaner(data_list=l)
 
-    # acknowledgement record, i.e. SS =3 or rebot to fast
+    # acknowledgement record, i.e. SS =3 or reboot to fast
     if len(lc) < 10:
         return pd.DataFrame([])
 
     for line in lc[0:8]:
         # system status transmission
-        if 'SYSTEM STATUS' in line:
-            return pd.DataFrame([])
+        # removed due to some files having status AND data
+        # will likely break when there's a status in the MIDDLE of the file
+        # Thanks firmware!
+        #if 'SYSTEM STATUS' in line:
+        #    return pd.DataFrame([])
         # no data test transmission
         if line[0:4] == 'Each':
             return pd.DataFrame([])
@@ -289,18 +294,18 @@ def load_file(f, unit=None, verbose=False):
         return pd.DataFrame([])
 
     df['source'] = os.path.normpath(f).split('\\')[-1]
-    if unit is None:
-        df['unit'] = df.source.str[1:5]
+    if system is None:
+        df['system'] = datatype + '_' + df.source.str[1:5]
     else:
-        df['unit'] = str(unit)
-    df['common_key'] = (df.unit.astype(str) +
-                        '_' +
-                        df.datetime.str.replace(':', '_').str.replace('/', '_'))
+        df['system'] = str(system)
+    #df['common_key'] = (df.unit.astype(str) +
+    #                    '_' +
+    #                    df.datetime.str.replace(':', '_').str.replace('/', '_'))
 
     # df['common_key'] = (df.unit.astype(str) +
     #                     '_' + timestamp_rounder(df.datetime64_ns).astype(str))
 
-    df['common_key'] = df.apply(common_key, axis=1)
+    df['common_key'] = df.apply(common_key_row, axis=1)
 
     df['sbe16_list'] = frames(lc,
                               start=df.sbe16_start,
@@ -326,25 +331,28 @@ def load_file(f, unit=None, verbose=False):
                             start=df.mapco2_start,
                             end=df.mapco2_end,
                             delimiters=['NORM', 'SW_xCO2(dry)'])
-    
+
     return df
 
 
-def file_batch(f_list, verbose=False):
+def file_batch(f_list, datatype, verbose=False):
     """Load multiple iridium files using frames_all
     
     Parameters
     ----------
     f_list : list of str, filepath to file to parse
+    verbose : bool, show debug statements
     
     Returns
     -------
     Pandas Dataframe, data of all identified data types
     """
-    
+
+    if verbose:
+        print('load.file_batch>>')
     _df_list = []
-    for _f in f_list:
-        _df = load_file(_f, verbose=verbose)
+    for n in range(0, len(f_list)):
+        _df = load_file(f=f_list[n], datatype=datatype[n], verbose=verbose)
         _df_list.append(_df)
         
     df = pd.concat(_df_list)
@@ -505,7 +513,7 @@ def repeat_stripper(s, min_count=16, verbose=False, limit=100):
             ixs = sorted(ixs)
             ixs = list(flatten(ixs))
             ixs = [0] + ixs + [len(ixs)+1]
-            new_s = ''
+            new_s = config.repeat_flag  # Repeat stripped placeholder
             for ix in range(0, len(ixs)-2, 2):
                 new_s = new_s + s[ixs[ix]:ixs[ix+1]]
             s = new_s
