@@ -35,7 +35,7 @@ precip_color = '#ede21e'  # yellowish
 general_color = '#7f808c'  # steel blue/grey
 
 
-def default_layout(df,
+def default_layout(df=None,
                    xco2_sw_range=None,
                    xco2_air_range=None,
                    sst_range=None,
@@ -75,7 +75,7 @@ def default_layout(df,
         xco2_air_range = config.k_limits['xco2_air']
     if sst_range is None:
         sst_range = config.k_limits['sst']
-        if autoscale:
+        if autoscale & (df is not None):
             lcf_sst = stats.Linear2dCurveFit()
             lcf_sst.x = df.xCO2_SW_dry
             lcf_sst.y = df.SST
@@ -86,7 +86,7 @@ def default_layout(df,
                          sst_max + sst_max * 0.05]
     if ph_range is None:
         ph_range = config.k_limits['ph']
-        if autoscale:
+        if autoscale & (df is not None):
             lcf_ph = stats.Linear2dCurveFit()
             lcf_ph.x = df.xCO2_SW_dry
             lcf_ph.y = df.pH

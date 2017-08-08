@@ -11,33 +11,36 @@ Reference:
 
 
 ## Folder Descriptions
-`\docs` :
-`\gserial` : generic serial package
-`\test_data` : data for testing code outputs
-`\test_out` : output target for testing code
-`\utils` : utility functions, a separate repo
+`\docs` : support documents  
+`\gserial` : generic serial package, a separate submodule  
+`\test_data` : data for testing code outputs  
+`\test_out` : output target for testing code  
+`\utils` : utility functions, a separate submodule
 
 ## File Descriptions  
+Basic contents of modules  
 `\__init\__.py` : empty, required for package  
-`cdiac.py` : parse the format the VBA QC process creates and we upload to CDIAC/NESDIS  
-`co2plot.py`  
+`algebra.py` : algebra for calculations  
 `co2sys.py` : import .csv data calculated from co2sys.xls  
 `config.py` : local configurations, static variables  
-`dashboard.py`  
+`dashboard.py` : dashboard for frontend qc work #TODO  
 `datatypes.py` : definitions of date formats used in parsing and processing  
 `fasteners.md` : list of fasteners used on parts of the MAPCO2  
 `flash.py` : load and parse recovered flash data  
 `iridium.py` : load and parse iridium transmitted data  
- <!---`Lab Testing 02 - 4_8_2017 A.ipynb`  
-`Lab Testing 02 - 4_8_2017 B.ipynb`  
-`Lab Testing Status.ipynb`  
-`lab_tests.py`  -->
-`LICENSE`  
-`load.py` : opens, indexes and cleans raw text data  
-`oxygen.py` : methods to convert, pressure and temperature compensate 02 data
-`parse.py`  
-`README.md` : this file
+`lab_tests.py` : multi system data, messy and used in separate Jupyter notebooks #TODO  
+`LICENSE` : GNU v3  
+`load.py` : open, index and clean raw text data  
+`oxygen.py` : convert and compensate oxygen data  
+`parse.py` : convert loaded data into data structures  
+`plot.py` : core co2 plotting  
+`plot_bokeh.py` : Bokeh plots, less used  
+`plot_plt.py` : Matplotlib plots  
+`plot_ply.py` : Plot.ly plots  
+`qc.py` : data quality control  #TODO along with co2sys  
+`README.md` : this file  
 `scrape.py`: scrapes the PMEL Rudics directory for Iridium data  
-<!--`Scratch.ipynb`  
-`snippets.py`  -->
+`sstc.py` : sea surface salinity and temperature  
+`stats.py` : statistical methods  
 `terminal.py` : serial terminal parser #TODO  
+`xls.py` : Microsoft Excel importer for .xls and .xlsx data  
