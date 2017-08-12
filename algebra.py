@@ -198,6 +198,7 @@ def timestamp_sec_rounder(t):
 def common_key(system, datetime64_ns):
     return system + '_' + timestamp_rounder(datetime64_ns).strftime('%Y-%m-%dT%H:%M:%SZ')
 
+
 def common_key_row(row):
     """Create a common key value.
 
@@ -212,7 +213,61 @@ def common_key_row(row):
         'xxxx_'%Y-%m-%dT%H:%M:%SZ'' with time rounded to the half hour
     """
 
-    #ck = (row.unit + '_' +
+    #ck = (row.unit + '_' + #TODO delete if old method
     #      timestamp_rounder(row.datetime64_ns).strftime('%Y-%m-%dT%H:%M:%SZ'))
     ck = common_key(system=row.system, datetime64_ns=row.datetime64_ns)
     return ck
+
+
+def m1_algebraic(x, y):
+    """Find the geometric center of data
+
+    Parameters
+    ----------
+    x : array-like, values
+    y : array-like, values same length as x
+
+    Returns
+    -------
+    xc : float, x center value
+    yc : float, y center value
+    Ri : array-like, distance from center for each (x, y)
+    R : float, mean value of Ri
+    res : float, residual sum of squares
+    res2 : float, sum of squared residual squares (better name?)
+    """
+
+    # coordinates of the barycenter
+    x_m = np.mean(x)
+    y_m = np.mean(y)
+
+    # calculation of the reduced coordinates
+    u = x - x_m
+    v = y - y_m
+
+    # linear system defining the center in reduced coordinates (uc, vc):
+    #    Suu * uc +  Suv * vc = (Suuu + Suvv)/2
+    #    Suv * uc +  Svv * vc = (Suuv + Svvv)/2
+    Suv  = sum(u*v)
+    Suu  = sum(u**2)
+    Svv  = sum(v**2)
+    Suuv = sum(u**2 * v)
+    Suvv = sum(u * v**2)
+    Suuu = sum(u**3)
+    Svvv = sum(v**3)
+
+    # Solving the linear system
+    A = np.array([ [ Suu, Suv ], [Suv, Svv]])
+    B = np.array([ Suuu + Suvv, Svvv + Suuv ])/2.0
+    uc, vc = np.linalg.solve(A, B)
+
+    xc = x_m + uc
+    yc = y_m + vc
+
+    # Calculation of all distances from the center (xc, yc)
+    Ri      = np.sqrt((x - xc)**2 + (y - yc)**2)
+    R       = np.mean(Ri)
+    residu  = np.sum((Ri-R)**2)
+    residu2 = np.sum((Ri**2-R**2)**2)
+
+    return xc, yc, Ri, R, residu, residu2

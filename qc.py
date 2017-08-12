@@ -342,3 +342,5 @@ def extracter(df, sheet, name, t_col, d_col):
                                      axis=1)
     _df = _df.drop(['index', 't'], axis=1)
     return _df
+
+

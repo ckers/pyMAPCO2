@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 from matplotlib.ticker import FormatStrFormatter
+import matplotlib.ticker as mtick
 
 from . import config, plot
 from .utils import utils
@@ -430,32 +431,21 @@ def plot_annual(co2, mbl, markers='.', lines='-', gtd=[]):
     plt.show()
 
 
-def plot_combined(co2, mbl, markers='.', lines='-', gtd=[]):
+def plot_combined(co2, mbl, markers='.', lines='-'):
     """Plot multiple timeseries on stacked twinx axis
     data columns must be present
+
+    Parameters
+    ----------
+    co2 :
+    mbl :
+    markers :
+    lines :
+
+    Returns
+    -------
+
     """
-    #                  date_time,
-    #                  xCO2_air_dry, xCO2_sw_dry,
-    #                  o2_percent,
-    #                  sss, sst,
-    #                  licor_temp, licor_press,
-    #                  gtd=[],
-    #                  mbl=None,
-    #                  overlay=False):
-    #
-    #        date_time=df3.datetime,
-    #                          xCO2_air_dry=df3.xCO2_Air_dry,
-    #                          xCO2_sw_dry=df3.xCO2_SW_dry,
-    #                          o2_percent=df3.Percent_O2,
-    #                          sss=df3.SSS,
-    #                          sst=df3.SST,
-    #                          licor_temp=df3.Licor_Temp,
-    #                          licor_press=df3.Licor_Atm_Pressure,
-    #                          mbl=mbl)
-
-
-
-    #        fig_title = ('Combined MAPCO2 Data')
 
     if markers == False:
         markers = 'None'
@@ -498,9 +488,6 @@ def plot_combined(co2, mbl, markers='.', lines='-', gtd=[]):
                                         axes=par5,
                                         offset=(offset * 4, 0))
     par5.axis['right'].toggle(all=True)
-
-    #    host.set_xlim(0, 2)
-    #    host.set_ylim(0, 2)
 
     host.set_xlabel('DateTime')
     host.set_ylabel('Seawater xCO2 (ppm)')
@@ -720,3 +707,93 @@ def plot_dtstd(df, dt_data, cols=None):
             plt.scatter(_df_plot.datetime64_ns.values, _df_plot[dt_data],
                         color=colors[c], marker=markers[c], s=20, label=n, zorder=c+2)
             c += 1
+
+
+def plot_gps(df, gps_fit=None, center=None, title_str=''):
+    """Plot GPS data
+    Note: Seaborn with reformat and break this plot
+
+    Parameters
+    ----------
+    df : Pandas Dataframe, with 'lon', 'lat' and 'flag' columns
+    gps_fit : tuple of array-like, x and y values of fit circle
+    center : 2 length array of float, x and y values of center
+    """
+
+    plt.plot(df.lon, df.lat,
+             color='black', marker='x', linestyle='', label='GPS Data')
+
+    if 'flag' in df:
+        gps4 = df[(df.flag >= 4.0) & (df.flag < 5.0)]
+
+        plt.plot(gps4.lon, gps4.lat,
+                 color='red', marker='s', alpha=0.3, linestyle='', label='GPS Data 4')
+
+    if gps_fit is not None:
+        x_fit, y_fit = gps_fit
+        plt.plot(x_fit, y_fit,
+                 color='orange', marker='None', label='LSQ Fit Circle', lw=2)
+
+    if center is not None:
+        xc, yc = center
+        plt.plot(xc, yc,
+                 color='green', marker='o', label='LSQ Fit Center')
+
+    plt.xlabel('Longitude')
+    plt.ylabel('Latitude')
+    plt.axis('equal')
+
+    ax = plt.gca()
+    ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
+    ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
+
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+    # Put a legend to the right of the current axis
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.title(title_str, loc='right')
+    plt.margins(0.05, 0.1)
+
+    plt.show()
+
+
+def plot_co2(df, width=12, height=6, style=None, **kwargs):
+    """Plot co2 data using the .plot method
+
+    Call with: plot_co2[['x', 'y']] to only plot x and y columns
+
+    Parameters
+    ----------
+    df : Pandas Dataframe, all columns will be plotted
+    width : float, width in inches of plot
+    height : float, height in inches of plot
+    style : array-like, plot styles for each column
+    """
+
+    ax = df.plot(**kwargs, figsize=(width, height), style=style)
+
+    ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+    # Put a legend to the right of the current axis
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+    plt.title('CO2 Response', loc='right')
+    plt.margins(0.05, 0.1)
+    plt.show()
+
+
+def plot_pressures(df, width=12, height=6, style=None):
+    df.plot(figsize=(width, height), style=style)
+    ax = plt.gca()
+    ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+    # Put a legend to the right of the current axis
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.title('Pressures (kPa)', loc='right')
+    plt.margins(0.05, 0.1)
+    plt.show()
