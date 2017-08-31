@@ -40,7 +40,7 @@ def timeseries_multiyear(df, df_mbl=None):
     plt.title('DataFrame Day of Year Check', loc='right')
     plt.show()
 
-    day_my, xco2_air_my, xco2_sw_my, sst_my, sss_my, ph_my = plot.pivot(df)
+    day_my, xco2_air_my, xco2_sw_my, sst_my, sss_my, ph_my = plot.pivot_year(df)
 
     # pivoted years, for data checking
     a = []
@@ -56,8 +56,8 @@ def timeseries_multiyear(df, df_mbl=None):
 
     for y in xco2_air_my:
         plt.plot(xco2_air_my[y],
-                 label='Air ' + str(y),
-                 color=plot.xco2_air_pdict[y])
+                 label='Air ' + str(y))  #,
+                 #color=plot.xco2_air_pdict[y])
 
     if df_mbl is not None:
         plt.plot(df_mbl.datetime64_ns, df_mbl.xCO2, color='black', label='MBL')
@@ -72,8 +72,8 @@ def timeseries_multiyear(df, df_mbl=None):
         notnull = _y.notnull()
         plt.plot(_x[notnull],
                  _y[notnull],
-                 label='Air ' + str(y),
-                 color=plot.xco2_air_pdict[y])
+                 label='Air ' + str(y))  #,
+                 #color=plot.xco2_air_pdict[y])
     plt.legend()
     plt.ylabel('CO2 ppm')
     plt.xlabel('Day of Year')

@@ -7,7 +7,7 @@ Created on 2017-04-25
 
 import numpy as np
 from pandas import notnull
-#from seaborn import color_palette, cubehelix_palette, palplot
+from seaborn import color_palette, cubehelix_palette, palplot
 
 from . import config
 
@@ -16,7 +16,7 @@ from . import config
 years = np.linspace(config.y0, config.y1,
                     (config.y1 - config.y0) + 1,
                     dtype=int)
-"""
+
 generic_p = color_palette("cubehelix", 30)
 generic_pdict = dict(zip(years, generic_p))
 xco2_air_p = cubehelix_palette(30, start=2.5, rot=0)
@@ -30,7 +30,7 @@ sss_pdict = dict(zip(years, sss_p))
 ph_p = cubehelix_palette(30, start=2.0, rot=0)
 ph_pdict = dict(zip(years, ph_p))
 
-
+"""
 def demo_palletes():
     palplot(generic_p)
     plt.title('Generic', loc='right', fontsize=30)
@@ -46,6 +46,7 @@ def demo_palletes():
     plt.title('pH', loc='right', fontsize=30)
     plt.show()
 """
+
 
 def lim_finder(data, margin=0.1, data_type=None, verbose=False):
     """Set axis limits to something based on reality
@@ -190,6 +191,7 @@ def pivot_co2_system(df):
     return day_my, xco2_air_my, xco2_sw_my, sst_my, sss_my, ph_my
     """
     return d_list
+
 
 def write_flag(x):
     """Return data if flag is type"""
