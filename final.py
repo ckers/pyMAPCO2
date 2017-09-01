@@ -11,7 +11,7 @@ from os import walk
 from datetime import datetime
 from io import StringIO
 
-from .config import column_names
+from .config import column_names, column_names_original
 from . import algebra
 from utils.general import pad_date
 
@@ -21,14 +21,15 @@ for _c in ['Date', 'Time', 'Mooring']:
     float_names.remove(_c)
 
 
-def load(all_files):
+def load(all_files, version='original', verbose=False):
     """Load all finalized .csv files into a Pandas DataFrame"""
-    _df = read_files(all_files)
-    _df = refactor(_df)
+    _df = read_files(all_files, version=version, verbose=verbose)
+    #_df.columns = column_names
+    #_df = refactor(_df, verbose=verbose)
     return _df
 
 
-def read_files(all_files, verbose=False):
+def read_files(all_files, verbose=False, version='original'):
     """Read all MAPCO2 files into a Pandas DataFrame
 
     Parameters
@@ -46,16 +47,19 @@ def read_files(all_files, verbose=False):
     for file in all_files:
         if verbose:
             print('Loading: ', str(file))
-        _df_n = read_file(file)
+        _df_n = read_file(file, version=version)
         df_list.append(_df_n)
+
     _df = pd.concat(df_list)
     _df.reset_index(drop=True, inplace=True)
-    _df = _df[column_names]
+
+
+    #_df = _df[cols[version]]
 
     return _df
 
 
-def read_file(file, verbose=True):
+def read_file(file, version='original', verbose=True):
     """Read one MAPCO2 file into a Pandas DataFrame
 
     Parameters
@@ -67,15 +71,20 @@ def read_file(file, verbose=True):
     -------
     Pandas DataFrame
     """
-    _df = pd.read_csv(file, index_col=None, sep=',', skiprows=0)
-    _units = _df.ix[0.:]
-    _df.drop(0, inplace=True)
+    _df = pd.read_csv(file, index_col=None, sep=',')
+    # _units = _df.ix[0.:]
+    # _df.drop(0, inplace=True)
     _df.reset_index(drop=True, inplace=True)
-    _df = _df[column_names]
+
+    cols = {'original': column_names_original, 'CRD': column_names}
+    cols = cols[version]
+    _df.columns = cols[:len(_df.columns)]
+
     return _df
 
 
-def reformat_final(file, name='', ph=False, verbose=True, inplace=True):
+def reformat_final(file, name='', version='original',
+                   ph=False, verbose=True, inplace=True):
     """Reformat a previously published .csv MAPCO2 file.
     Fixes historical formatting errors previously published.
 
@@ -83,6 +92,7 @@ def reformat_final(file, name='', ph=False, verbose=True, inplace=True):
     ----------
     file : list, absolute path to .csv source files
     name : str, rename mooring id if not ''
+    version : str, original header format or CRD clean version
     ph : bool or Pandas DataFrame,
         False: do nothing
         True: fill 'pH' = -999.0 and 'pH_QF' = 5
@@ -98,7 +108,12 @@ def reformat_final(file, name='', ph=False, verbose=True, inplace=True):
         inserted into filename
     """
 
-    header = extract_lines(file, n=2, verbose=verbose)
+    if version == 'original':
+        n = 1
+    else:
+        n = 2
+
+    header = extract_lines(file, n=n, verbose=verbose)
     _df = read_file(file, verbose=verbose)
     _df['new_date_1'] = pd.to_datetime(_df.Date)
     _df['new_date_2'] = _df.new_date_1.apply(lambda x: x.strftime('%m/%d/%Y'))
@@ -137,7 +152,8 @@ def reformat_final(file, name='', ph=False, verbose=True, inplace=True):
     for line in header:
         sio_all.write(line)
     sio_data = StringIO()
-    _df.to_csv(sio_data, header=False, index=False)
+    _df.to_csv(sio_data, header=False, index=False,
+               float_format="%.2f")
 
     sio_all.write(sio_data.getvalue())
 
@@ -207,13 +223,14 @@ def format_floats(_df):
     -------
     df : Pandas DataFrame, data converted to float and NaN replaced
     """
-
+    _df_cols = _df.columns
     for _f in float_names:
-        _df[_f] = _df[_f].astype(float)
+        if _f in _df_cols:
+            _df[_f] = _df[_f].astype(float)
     return _df
 
 
-def refactor(_df):
+def refactor(_df, verbose=False):
     """Refactor parts of the imported final data
     Applies make_datetime, format_floats, replaces -999.0 with np.nan,
     adds day of year columns for multiyear plotting
@@ -238,8 +255,12 @@ def refactor(_df):
                                                                        else np.nan, axis=1)
     _df['xCO2_SW_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 3.0
                                                                      else np.nan, axis=1)
-    _df['pH_flagged_3'] = _df.apply(lambda x: x.pH if x.pH_QF == 3.0
-                                                   else np.nan, axis=1)
+    try:
+        _df['pH_flagged_3'] = _df.apply(lambda x: x.pH if x.pH_QF == 3.0
+                                               else np.nan, axis=1)
+    except AttributeError:
+        pass
+
     return _df
 
 
