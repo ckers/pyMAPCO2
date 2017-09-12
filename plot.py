@@ -8,7 +8,8 @@ Created on 2017-04-25
 import numpy as np
 from pandas import notnull
 from seaborn import color_palette, cubehelix_palette, palplot
-
+import seaborn.apionly as sns
+sns.reset_orig()
 from . import config
 
 

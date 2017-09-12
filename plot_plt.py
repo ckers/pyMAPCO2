@@ -709,7 +709,7 @@ def plot_dtstd(df, dt_data, cols=None):
             c += 1
 
 
-def plot_gps(df, gps_fit=None, center=None, title_str=''):
+def plot_gps(df, gps_fit=None, center=None, title_str='', xlim=None, ylim=None):
     """Plot GPS data
     Note: Seaborn with reformat and break this plot
 
@@ -720,8 +720,8 @@ def plot_gps(df, gps_fit=None, center=None, title_str=''):
     center : 2 length array of float, x and y values of center
     """
 
-    plt.plot(df.lon, df.lat,
-             color='black', marker='x', linestyle='', label='GPS Data')
+    plt.scatter(df.lon, df.lat,
+                color='black', marker='x', label='GPS Data')
 
     if 'flag' in df:
         gps4 = df[(df.flag >= 4.0) & (df.flag < 5.0)]
@@ -749,6 +749,11 @@ def plot_gps(df, gps_fit=None, center=None, title_str=''):
 
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+    if xlim is not None:
+        plt.xlim(xlim)
+    if ylim is not None:
+        plt.ylim(ylim)
 
     # Put a legend to the right of the current axis
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))

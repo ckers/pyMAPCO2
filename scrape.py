@@ -49,7 +49,8 @@ def apache_table_scraper(html_file):
         print(soup)
 
     df_list = pd.read_html(io=str(table))
-    return df_list[0]
+    df_list = df_list[0]
+    return df_list
 
 
 def apache_concat(url_sources):
@@ -71,7 +72,10 @@ def apache_concat(url_sources):
         if df_n is not None:
             df_n['url_source'] = _u
             df_list.append(df_n)
-    return pd.concat(df_list)
+            df_out = pd.concat(df_list)
+        else:
+            df_out = None
+    return df_out
 
 
 def rudics_file_timestamp(filename):
@@ -162,6 +166,8 @@ def rudics_files(url_sources, local_target):
     """
 
     _df = apache_concat(url_sources)
+    if _df is None:
+        return None
     _df.columns = ['img',
                    'filename', 'modified', 'size',
                    'description', 'url_source']
@@ -286,6 +292,9 @@ def run(units, t_start, t_end,
 
     # ALL DATA
     df = rudics_files(url_sources, local_target)
+    if df is None:
+        return None
+
     df.reset_index(inplace=True)
 
     if plot:
