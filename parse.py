@@ -81,8 +81,13 @@ def engr(line, verbose=False, data_type='iridium', firmware='6.09'):
     e = datatypes.MAPCO2Engr(data_type=data_type)
     e.parse(line=line, verbose=verbose)
     e.update_names()
-    e.decode_flag()
-
+    try:
+        e.decode_flag()
+    # handle the never ending line inconsistencies
+    except ValueError:
+        print('Error with line:')
+        print(line)
+        return None
     return e
 
 

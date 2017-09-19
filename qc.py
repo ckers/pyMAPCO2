@@ -446,12 +446,14 @@ def slice_df_pressure(df_xlsx, t_start, t_end):
     """
 
     df_pressure = pd.DataFrame({'datetime_str': df_xlsx['Air Pump Off'].iloc[:, 2],
-                                'zpon': df_xlsx['Zero Pump On'].iloc[:, 5],   # Licor kPa
-                                'spon': df_xlsx['Span Pump On'].iloc[:, 5],   # Licor kPa
-                                'epon': df_xlsx['Equil Pump On'].iloc[:, 5],  # Licor kPa
-                                'apon': df_xlsx['Air Pump On'].iloc[:, 5],    # Licor kPa
-                                'apof': df_xlsx['Air Pump Off'].iloc[:, 5]},  # Licor kPa
-                               columns=['datetime_str', 'zpon', 'spon', 'epon', 'apon', 'apof'])
+                                'zpon': df_xlsx['Zero Pump On'].iloc[:, 5],          # Licor kPa
+                                'spon': df_xlsx['Span Pump On'].iloc[:, 5],          # Licor kPa
+                                'epon': df_xlsx['Equil Pump On'].iloc[:, 5],         # Licor kPa
+                                'apon': df_xlsx['Air Pump On'].iloc[:, 5],           # Licor kPa
+                                'apof': df_xlsx['Air Pump Off'].iloc[:, 5],          # Licor kPa
+                                'epof_xco2': df_xlsx['Equil Pump Off'].iloc[:, 25],  # xCO2 dry
+                                'apof_xco2': df_xlsx['Air Pump Off'].iloc[:, 25]},   # xCO2 dry
+                               columns=['datetime_str', 'zpon', 'spon', 'epon', 'apon', 'apof', 'epof_xco2', 'apof_xco2'])
     df_pressure = format_xlsx_import(df_pressure, t_start, t_end)
     return df_pressure
 

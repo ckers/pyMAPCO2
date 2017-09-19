@@ -21,15 +21,34 @@ for _c in ['Date', 'Time', 'Mooring']:
     float_names.remove(_c)
 
 
-def load(all_files, version='original', verbose=False):
+def load(all_files, version='CRD', verbose=False):
     """Load all finalized .csv files into a Pandas DataFrame"""
     _df = read_files(all_files, version=version, verbose=verbose)
-    #_df.columns = column_names
-    #_df = refactor(_df, verbose=verbose)
+
+    _datetime64_ns = (_df.Date.astype(str) + ' ' + _df.Time.astype(str))
+    _df['datetime64_ns'] = pd.to_datetime(_datetime64_ns)
+    _df['year'] = _df.datetime64_ns.dt.year
+    _df['dayofyear'] = _df.datetime64_ns.dt.dayofyear
+    _df['time'] = _df.datetime64_ns.dt.time
+    _df['day'] = _df.datetime64_ns.apply(algebra.day_of_year)
+
+    _df = format_floats(_df)
+    _df.replace(to_replace=-999.0, value=np.nan, inplace=True)
+
+    _df['xCO2_Air_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_Air_dry if x.xCO2_Air_QF == 3.0
+                                                        else np.nan, axis=1)
+    _df['xCO2_SW_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 3.0
+                                                       else np.nan, axis=1)
+    try:
+        _df['pH_flagged_3'] = _df.apply(lambda x: x.pH if x.pH_QF == 3.0
+                                               else np.nan, axis=1)
+    except AttributeError:
+        pass
+
     return _df
 
 
-def read_files(all_files, verbose=False, version='original'):
+def read_files(all_files, verbose=False, version='CRD'):
     """Read all MAPCO2 files into a Pandas DataFrame
 
     Parameters
@@ -53,13 +72,12 @@ def read_files(all_files, verbose=False, version='original'):
     _df = pd.concat(df_list)
     _df.reset_index(drop=True, inplace=True)
 
-
     #_df = _df[cols[version]]
 
     return _df
 
 
-def read_file(file, version='original', verbose=True):
+def read_file(file, version='CRD', verbose=True):
     """Read one MAPCO2 file into a Pandas DataFrame
 
     Parameters
@@ -83,7 +101,7 @@ def read_file(file, version='original', verbose=True):
     return _df
 
 
-def reformat_final(file, name='', version='original',
+def reformat_final(file, name='', version='CRD',
                    ph=False, verbose=True, inplace=True):
     """Reformat a previously published .csv MAPCO2 file.
     Fixes historical formatting errors previously published.
@@ -194,6 +212,7 @@ def extract_lines(file, n=2, verbose=True):
 
 
 def make_datetime(_df):
+    #TODO: moved to load, should be deleted
     """Create datetime column in Pandas DataFrame
 
     Parameters
@@ -231,6 +250,7 @@ def format_floats(_df):
 
 
 def refactor(_df, verbose=False):
+    # COPIED to load, should be deleted
     """Refactor parts of the imported final data
     Applies make_datetime, format_floats, replaces -999.0 with np.nan,
     adds day of year columns for multiyear plotting

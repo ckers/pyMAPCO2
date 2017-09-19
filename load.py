@@ -11,6 +11,8 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from io import StringIO
+
 from . import config
 from .algebra import float_year_to_datetime, common_key_row, timestamp_rounder
 from utils.main import flatten
@@ -714,3 +716,122 @@ def ftp_data(filepath):
 
     return pd.read_csv(filepath, header=5, sep=',')
 
+
+def ndbc_file(fp, verbose=False):
+    """Read in Generic NDBC Data from A FILE
+
+    Parameters
+    ----------
+    fp : str, filepath to .ascii formatted NDBC data
+
+    Returns
+    -------
+    data : list, nested lines of stripped, split data
+    header : list, header names
+    """
+
+    sf = open(fp).read()
+    a = sf.split('Deployment: ')
+    b = [StringIO(n) for n in a]
+
+    dfs_to_concat = []
+    for n in b[1:]:
+        _df = ndbc_df(n)
+        if verbose:
+            print(_df.head())
+        dfs_to_concat.append(_df)
+
+    df = pd.concat(dfs_to_concat, axis=0, join='outer')
+    return df
+
+
+def ndbc_list(itter):
+    """Read in Generic NDBC Data
+
+    Parameters
+    ----------
+    itter : itterable with .ascii formatted NDBC data
+        (file object or StringIO, etc)
+
+    Returns
+    -------
+    data : list, nested lines of stripped, split data
+    header : list, header names
+    """
+
+    header = ''
+    data = []
+    units = None
+
+    for line in itter:
+        if line[0:8] == 'YYYYMMDD':
+            header = line.split()
+        if line[0:5] == 'Depth':
+            units = line.split()
+        else:
+            try:
+                _ = int(line[0:8])
+                data.append(line.strip().split())
+            except:
+                continue
+
+    return data, header, units
+
+
+def ndbc_df(itter, units=None):
+    """Load NDBC file into Pandas DataFrame
+
+    Parameters
+    ----------
+    itter : itterable with .ascii formatted NDBC data
+        (file object or StringIO, etc)
+    units : bool, optional return units (depth, quality flags)
+
+    Returns
+    -------
+    _df : Pandas DataFrame with datetime64_ns index
+    units : list
+    """
+
+    d, h, u = ndbc_list(itter)
+
+    # all because NDBC uses 2 column variable names... sigh
+    if u is not None:
+        depth = []
+        for i in u:
+            try:
+                i = int(i)
+                depth.append(i)
+            except ValueError:
+                continue
+
+        new_columns = []
+        n = 0
+        for c in h:
+            if 'QQQQ' in c:
+                c = 'quality'
+            if 'MMMM' in c:
+                c = 'mode'
+            for label in ['SSS', 'SAL', 'SST', 'TEMP']:
+                if label in c:
+                    c = c + '_' + str(depth[n])
+                    n += 1
+            new_columns.append(c)
+        h = new_columns
+
+    # create DataFrame using header variable names
+    _df = pd.DataFrame(d, columns=h)
+
+    for col in _df.columns:
+        for sss in ['SSS', 'SAL', 'SST', 'TEMP']:
+            if sss in col:
+                _df[col] = _df[col].astype(float)
+
+    _df['datetime_str'] = _df.YYYYMMDD + ' ' + _df.HHMMSS
+    _df['datetime64_ns'] = pd.to_datetime(_df.datetime_str, format="%Y%m%d %H%M%S")
+    _df.index = _df.datetime64_ns
+    _df.index.name = 'datetime64_ns'
+    _df.replace(to_replace=-9.999, value=np.nan, inplace=True)
+    if units is not None:
+        return _df, u
+    return _df

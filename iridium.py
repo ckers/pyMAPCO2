@@ -99,6 +99,10 @@ def frame_co2(sample, system, verbose=False):
     g = parse.gps(sample[1], verbose=verbose)
     e = parse.engr(sample[2], verbose=verbose,
                    data_type='iridium', firmware=h.firmware)
+    # something inconsistent in the data output format
+    if e is None:
+        print('Engineering Line Parse Error')
+        e = []
 
     h = pd.DataFrame(data=[h.data], columns=h.data_names)
     g = pd.DataFrame(data=[g.data], columns=g.data_names)
@@ -109,8 +113,6 @@ def frame_co2(sample, system, verbose=False):
         print(g)
         print('  >>', g.datetime_gps, h.system, h.datetime_mapco2)
         print('h>>', h, type(h), type(h.datetime_mapco2), type(h.system))
-
-
 
     h['datetime64_ns_mapco2'] = pd.to_datetime(h.datetime_mapco2,
                                                format=config.header_datetime_format)

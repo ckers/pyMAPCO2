@@ -788,10 +788,28 @@ def plot_co2(df, width=12, height=6, style=None, **kwargs):
     plt.title('CO2 Response', loc='right')
     plt.margins(0.05, 0.1)
     plt.show()
+    return ax
 
 
-def plot_pressures(df, width=12, height=6, style=None):
-    df.plot(figsize=(width, height), style=style)
+def plot_pressures(df, width=12, height=6, title=None, style=None):
+    # df.plot(figsize=(width, height), style=style)
+    # ax = plt.gca()
+    # ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
+    # box = ax.get_position()
+    # ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    #
+    # # Put a legend to the right of the current axis
+    # ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    # if title=None:
+    # plt.title('Pressures (kPa)', loc='right')
+    # plt.margins(0.05, 0.1)
+    # plt.show()
+    ax = df_plot(df, width=width, height=height, title='Pressures (kPa)', style=style)
+    return ax
+
+
+def df_plot(df, width=12, height=6, title=None, style=None, **kwargs):
+    df.plot(figsize=(width, height), style=style, **kwargs)
     ax = plt.gca()
     ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
     box = ax.get_position()
@@ -799,6 +817,27 @@ def plot_pressures(df, width=12, height=6, style=None):
 
     # Put a legend to the right of the current axis
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.title('Pressures (kPa)', loc='right')
+    plt.title(title, loc='right')
     plt.margins(0.05, 0.1)
     plt.show()
+    return ax
+
+
+def reformat(title=None, width=12, height=6, ):
+    fig = plt.gcf()
+    fig.set_size_inches(width, height)
+
+    lines_all = []
+    for ax in fig.get_axes():
+        ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        lines = ax.lines
+        for line in lines:
+            lines_all.append(line)
+    labels_all = [l.get_label() for l in lines_all]
+    # Put a legend to the right of the current axis
+    plt.legend(lines_all, labels_all, loc='center left', bbox_to_anchor=(1.1, 0.5))
+    if title:
+        plt.title(title, loc='right')
+    plt.margins(0.05, 0.1)
