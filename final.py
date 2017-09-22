@@ -201,7 +201,7 @@ def reformat_final(file, name='', refactor=False, version='original',
         sio_all.write(line)
     sio_data = StringIO()
     _df.to_csv(sio_data, header=False, index=False,
-               float_format="%.4f")
+               float_format="%.3f")
 
     sio_all.write(sio_data.getvalue())
 
