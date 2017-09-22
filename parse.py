@@ -87,7 +87,7 @@ def engr(line, verbose=False, data_type='iridium', firmware='6.09'):
     except ValueError:
         print('Error with line:')
         print(line)
-        return None
+        return e
     return e
 
 

@@ -26,34 +26,52 @@ def load(all_files, version='CRD', verbose=False):
     _df = read_files(all_files, version=version, verbose=verbose)
 
     _datetime64_ns = (_df.Date.astype(str) + ' ' + _df.Time.astype(str))
-    _df['datetime64_ns'] = pd.to_datetime(_datetime64_ns)
-    _df['year'] = _df.datetime64_ns.dt.year
-    _df['dayofyear'] = _df.datetime64_ns.dt.dayofyear
-    _df['time'] = _df.datetime64_ns.dt.time
-    _df['day'] = _df.datetime64_ns.apply(algebra.day_of_year)
+
+    def add_time_cols():
+        _df['datetime64_ns'] = pd.to_datetime(_datetime64_ns)
+        _df['year'] = _df.datetime64_ns.dt.year
+        _df['dayofyear'] = _df.datetime64_ns.dt.dayofyear
+        _df['time'] = _df.datetime64_ns.dt.time
+        _df['day'] = _df.datetime64_ns.apply(algebra.day_of_year)
+
+    try:
+        add_time_cols()
+    except:
+        for t in _datetime64_ns:
+            print(t)
 
     _df = format_floats(_df)
     _df.replace(to_replace=-999.0, value=np.nan, inplace=True)
 
-    _df['xCO2_Air_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_Air_dry if x.xCO2_Air_QF == 3.0
-                                                        else np.nan, axis=1)
-    _df['xCO2_SW_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 3.0
-                                                       else np.nan, axis=1)
-    try:
-        _df['pH_flagged_3'] = _df.apply(lambda x: x.pH if x.pH_QF == 3.0
-                                               else np.nan, axis=1)
-    except AttributeError:
-        pass
-
     return _df
 
 
-def read_files(all_files, verbose=False, version='CRD'):
+def add_flagged_columns(_df):
+    """Add plot data for flagged points
+    Parameters
+    ----------
+    _df : Pandas DataFrame with 'xCO2_Air_dry', 'xCO2_SW_dry' and 'pH_QF' columns
+        note: these are CRD column headers, not originals...
+    """
+    _df['xCO2_Air_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_Air_dry if x.xCO2_Air_QF == 3.0
+                                          else np.nan,
+                                          axis=1)
+    _df['xCO2_SW_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 3.0
+                                         else np.nan,
+                                         axis=1)
+    _df['pH_flagged_3'] = _df.apply(lambda x: x.pH if x.pH_QF == 3.0
+                                       else np.nan, axis=1)
+    return _df
+
+def read_files(all_files, verbose=False, refactor=False, version='CRD'):
     """Read all MAPCO2 files into a Pandas DataFrame
 
     Parameters
     ----------
     all_files : list, absolute path to .csv source files
+    refactor : bool, reformat header variables to CRD format
+        useful for any further Python processing,
+        as the names are variable safe strings
     verbose : bool
 
     Returns
@@ -66,7 +84,7 @@ def read_files(all_files, verbose=False, version='CRD'):
     for file in all_files:
         if verbose:
             print('Loading: ', str(file))
-        _df_n = read_file(file, version=version)
+        _df_n = read_file(file, refactor=refactor, version=version)
         df_list.append(_df_n)
 
     _df = pd.concat(df_list)
@@ -77,12 +95,15 @@ def read_files(all_files, verbose=False, version='CRD'):
     return _df
 
 
-def read_file(file, version='CRD', verbose=True):
+def read_file(file, version='CRD', refactor=False, verbose=True):
     """Read one MAPCO2 file into a Pandas DataFrame
 
     Parameters
     ----------
     file : list, absolute path to .csv source files
+    refactor : bool, reformat header variables to CRD format
+        useful for any further Python processing,
+        as the names are variable safe strings
     verbose : bool
 
     Returns
@@ -94,17 +115,20 @@ def read_file(file, version='CRD', verbose=True):
     # _df.drop(0, inplace=True)
     _df.reset_index(drop=True, inplace=True)
 
-    cols = {'original': column_names_original, 'CRD': column_names}
-    cols = cols[version]
-    _df.columns = cols[:len(_df.columns)]
+    if version == 'original':
+        col_mapper = dict(zip(column_names_original, column_names))
+        _df.rename(columns=col_mapper)
+    #cols = {'original': column_names_original, 'CRD': column_names}
+    #cols = cols[version]
+    #_df.columns = cols[:len(_df.columns)]
 
     return _df
 
 
-def reformat_final(file, name='', version='CRD',
+def reformat_final(file, name='', refactor=False, version='original',
                    ph=False, verbose=True, inplace=True):
-    """Reformat a previously published .csv MAPCO2 file.
-    Fixes historical formatting errors previously published.
+    """Reformat a published .csv MAPCO2 file.
+    Fixes historical formatting errors.
 
     Parameters
     ----------
@@ -133,11 +157,16 @@ def reformat_final(file, name='', version='CRD',
 
     header = extract_lines(file, n=n, verbose=verbose)
     _df = read_file(file, verbose=verbose)
-    _df['new_date_1'] = pd.to_datetime(_df.Date)
-    _df['new_date_2'] = _df.new_date_1.apply(lambda x: x.strftime('%m/%d/%Y'))
+    try:
+        _df['new_date_1'] = pd.to_datetime(_df.Date)
+        _df['new_date_2'] = _df.new_date_1.apply(lambda x: x.strftime('%m/%d/%Y'))
 
-    _df['new_time_1'] = pd.to_datetime(_df.Time)
-    _df['new_time_2'] = _df.new_time_1.apply(lambda x: x.strftime('%H:%M'))
+        _df['new_time_1'] = pd.to_datetime(_df.Time)
+        _df['new_time_2'] = _df.new_time_1.apply(lambda x: x.strftime('%H:%M'))
+    except:
+        print(_df.Date)
+        print(_df.Time)
+        return
 
     _df.Date = _df.new_date_2
     _df.Time = _df.new_time_2
@@ -161,8 +190,9 @@ def reformat_final(file, name='', version='CRD',
 
     if not inplace:
         t_now = datetime.now().strftime('%Y-%m-%dT%H_%M_%S')
-        f_list = file.split('.')
-        f_out = f_list[0] + '_' + t_now + '.' + f_list[1]
+        f_name = file[:-4]
+        f_extension = file[-4:]
+        f_out = f_name + '_' + t_now + '_' + f_extension
     else:
         f_out = file
 
@@ -171,7 +201,7 @@ def reformat_final(file, name='', version='CRD',
         sio_all.write(line)
     sio_data = StringIO()
     _df.to_csv(sio_data, header=False, index=False,
-               float_format="%.2f")
+               float_format="%.4f")
 
     sio_all.write(sio_data.getvalue())
 
@@ -243,9 +273,16 @@ def format_floats(_df):
     df : Pandas DataFrame, data converted to float and NaN replaced
     """
     _df_cols = _df.columns
-    for _f in float_names:
-        if _f in _df_cols:
+    for _f in _df_cols:
+        try:
             _df[_f] = _df[_f].astype(float)
+        except ValueError:
+            continue
+        except TypeError:
+            continue
+    # for _f in float_names:
+    #     if _f in _df_cols:
+    #         _df[_f] = _df[_f].astype(float)
     return _df
 
 
@@ -271,10 +308,15 @@ def refactor(_df, verbose=False):
     _df['day'] = _df.datetime64_ns.apply(algebra.day_of_year)
     _df = format_floats(_df)
     _df.replace(to_replace=-999.0, value=np.nan, inplace=True)
-    _df['xCO2_Air_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_Air_dry if x.xCO2_Air_QF == 3.0
+
+    try:
+        _df['xCO2_Air_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_Air_dry if x.xCO2_Air_QF == 3.0
                                                                        else np.nan, axis=1)
-    _df['xCO2_SW_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 3.0
+        _df['xCO2_SW_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 3.0
                                                                      else np.nan, axis=1)
+    except AttributeError:
+        pass
+
     try:
         _df['pH_flagged_3'] = _df.apply(lambda x: x.pH if x.pH_QF == 3.0
                                                else np.nan, axis=1)
