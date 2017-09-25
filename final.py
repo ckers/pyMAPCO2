@@ -10,6 +10,7 @@ import pandas as pd
 from os import walk
 from datetime import datetime
 from io import StringIO
+from collections import OrderedDict
 
 from .config import column_names, column_names_original
 from . import algebra
@@ -23,25 +24,17 @@ for _c in ['Date', 'Time', 'Mooring']:
 
 def load(all_files, version='CRD', verbose=False):
     """Load all finalized .csv files into a Pandas DataFrame"""
-    _df = read_files(all_files, version=version, verbose=verbose)
+    return read_files(all_files, version=version, verbose=verbose)
 
+
+def format_time(_df):
     _datetime64_ns = (_df.Date.astype(str) + ' ' + _df.Time.astype(str))
 
-    def add_time_cols():
-        _df['datetime64_ns'] = pd.to_datetime(_datetime64_ns)
-        _df['year'] = _df.datetime64_ns.dt.year
-        _df['dayofyear'] = _df.datetime64_ns.dt.dayofyear
-        _df['time'] = _df.datetime64_ns.dt.time
-        _df['day'] = _df.datetime64_ns.apply(algebra.day_of_year)
-
-    try:
-        add_time_cols()
-    except:
-        for t in _datetime64_ns:
-            print(t)
-
-    _df = format_floats(_df)
-    _df.replace(to_replace=-999.0, value=np.nan, inplace=True)
+    _df['datetime64_ns'] = pd.to_datetime(_datetime64_ns)
+    _df['year'] = _df.datetime64_ns.dt.year
+    _df['dayofyear'] = _df.datetime64_ns.dt.dayofyear
+    _df['time'] = _df.datetime64_ns.dt.time
+    _df['day'] = _df.datetime64_ns.apply(algebra.day_of_year)
 
     return _df
 
@@ -53,17 +46,22 @@ def add_flagged_columns(_df):
     _df : Pandas DataFrame with 'xCO2_Air_dry', 'xCO2_SW_dry' and 'pH_QF' columns
         note: these are CRD column headers, not originals...
     """
-    _df['xCO2_Air_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_Air_dry if x.xCO2_Air_QF == 3.0
-                                          else np.nan,
-                                          axis=1)
-    _df['xCO2_SW_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 3.0
-                                         else np.nan,
-                                         axis=1)
-    _df['pH_flagged_3'] = _df.apply(lambda x: x.pH if x.pH_QF == 3.0
-                                       else np.nan, axis=1)
+
+    if 'xCO2_Air_QF' in _df.columns:
+        _df['xCO2_Air_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_Air_dry if x.xCO2_Air_QF == 3.0
+                                              else np.nan,
+                                              axis=1)
+    if 'xCO2_SW_QF' in _df.columns:
+        _df['xCO2_SW_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 3.0
+                                             else np.nan,
+                                             axis=1)
+    if 'pH_QF' in _df.columns:
+        _df['pH_flagged_3'] = _df.apply(lambda x: x.pH if x.pH_QF == 3.0
+                                           else np.nan, axis=1)
     return _df
 
-def read_files(all_files, verbose=False, refactor=False, version='CRD'):
+
+def read_files(all_files, verbose=False, version='CRD'):
     """Read all MAPCO2 files into a Pandas DataFrame
 
     Parameters
@@ -78,24 +76,32 @@ def read_files(all_files, verbose=False, refactor=False, version='CRD'):
     -------
     Pandas DataFrame
     """
+
     df_list = []
     if isinstance(all_files, str):
         all_files = [all_files]
     for file in all_files:
+        dp_n = 'dp number not in filename'
+        if 'dp' in file:
+            dpix = file.index('dp')
+            dp_n = file[dpix+2:dpix+4]
+            if verbose:
+                print('Deployment #:', dp_n)
         if verbose:
             print('Loading: ', str(file))
-        _df_n = read_file(file, refactor=refactor, version=version)
+        _df_n = read_file(file, version=version)
+        _df_n['dp_n'] = dp_n
         df_list.append(_df_n)
 
     _df = pd.concat(df_list)
     _df.reset_index(drop=True, inplace=True)
 
-    #_df = _df[cols[version]]
+    _df = _df[column_names[:len(_df.columns)]+['dp_n']]
 
     return _df
 
 
-def read_file(file, version='CRD', refactor=False, verbose=True):
+def read_file(file, version='CRD'):
     """Read one MAPCO2 file into a Pandas DataFrame
 
     Parameters
@@ -111,16 +117,16 @@ def read_file(file, version='CRD', refactor=False, verbose=True):
     Pandas DataFrame
     """
     _df = pd.read_csv(file, index_col=None, sep=',')
-    # _units = _df.ix[0.:]
-    # _df.drop(0, inplace=True)
     _df.reset_index(drop=True, inplace=True)
 
+    col_mapper = OrderedDict()
+    for _x in range(0, len(column_names_original)):
+        col_mapper[column_names_original[_x]] = column_names[_x]
+
     if version == 'original':
-        col_mapper = dict(zip(column_names_original, column_names))
         _df.rename(columns=col_mapper)
-    #cols = {'original': column_names_original, 'CRD': column_names}
-    #cols = cols[version]
-    #_df.columns = cols[:len(_df.columns)]
+
+    _df.columns = column_names[:len(_df.columns)]
 
     return _df
 
@@ -280,9 +286,9 @@ def format_floats(_df):
             continue
         except TypeError:
             continue
-    # for _f in float_names:
-    #     if _f in _df_cols:
-    #         _df[_f] = _df[_f].astype(float)
+
+    _df.replace(to_replace=-999.0, value=np.nan, inplace=True)
+
     return _df
 
 

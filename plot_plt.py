@@ -45,8 +45,9 @@ def timeseries_multiyear(df, df_mbl=None):
     # pivoted years, for data checking
     a = []
     for x in [day_my, xco2_air_my, xco2_sw_my, sst_my, sss_my, ph_my]:
-        for y in x:
-            a.append(y)
+        if x is not None:
+            for y in x:
+                a.append(y)
 
     plt.plot(a)
     plt.ylabel('Year')
@@ -102,34 +103,33 @@ def timeseries_multiyear(df, df_mbl=None):
     plt.title('xCO2 Air Multiyear', loc='right')
     plt.show()
 
-    if ph_my.notnull().sum().sum() > 0:
-        for y in ph_my:
-            plt.plot(ph_my[y],
-                     label='pH ' + str(y),
-                     color=plot.ph_pdict[y])
-        plt.legend()
-        plt.ylabel('pH')
-        plt.xlabel('Day of Year')
-        plt.title('pH Multiyear', loc='right')
-        plt.show()
-    else:
-        print('No pH timeseries data to plot')
+    if ph_my is not None:
+        if ph_my.notnull().sum().sum() > 0:
+            for y in ph_my:
+                plt.plot(ph_my[y],
+                         label='pH ' + str(y),
+                         color=plot.ph_pdict[y])
+            plt.legend()
+            plt.ylabel('pH')
+            plt.xlabel('Day of Year')
+            plt.title('pH Multiyear', loc='right')
+            plt.show()
 
-    if ph_my.notnull().sum().sum() > 0:
+        if ph_my.notnull().sum().sum() > 0:
 
-        for y in ph_my:
-            _x = day_my[y]
-            _y = ph_my[y]
-            notnull = _y.notnull()
-            plt.plot(_x[notnull],
-                     _y[notnull],
-                     label='pH ' + str(y),
-                     color=plot.ph_pdict[y])
-        plt.legend()
-        plt.ylabel('pH')
-        plt.xlabel('Day of Year')
-        plt.title('pH Multiyear', loc='right')
-        plt.show()
+            for y in ph_my:
+                _x = day_my[y]
+                _y = ph_my[y]
+                notnull = _y.notnull()
+                plt.plot(_x[notnull],
+                         _y[notnull],
+                         label='pH ' + str(y),
+                         color=plot.ph_pdict[y])
+            plt.legend()
+            plt.ylabel('pH')
+            plt.xlabel('Day of Year')
+            plt.title('pH Multiyear', loc='right')
+            plt.show()
     else:
         print('No pH multiyear data to plot')
 

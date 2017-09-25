@@ -131,9 +131,12 @@ def pivot_year(df):
                       columns='year',
                       values='SSS')
 
-    ph_my = df.pivot(index='datetime64_ns',
-                     columns='year',
-                     values='pH')
+    if 'pH' in df.columns:
+        ph_my = df.pivot(index='datetime64_ns',
+                         columns='year',
+                         values='pH')
+    else:
+        ph_my = None
 
     return day_my, xco2_air_my, xco2_sw_my, sst_my, sss_my, ph_my
 
