@@ -630,9 +630,12 @@ def mbl_site(mbl_file):
     """
 
     dfmbl = pd.read_csv(mbl_file, sep=',')
-    dfmbl['xCO2_low_uncert'] = dfmbl.xCO2 - dfmbl.xCO2_uncert
-    dfmbl['xCO2_high_uncert'] = dfmbl.xCO2 + dfmbl.xCO2_uncert
+    dfmbl.rename(columns={'xCO2': 'mbl_xCO2',
+                          'xCO2_uncert': 'mbl_xCO2_uncert'}, inplace=True)
+    dfmbl['mbl_xCO2_low_uncert'] = dfmbl.mbl_xCO2 - dfmbl.mbl_xCO2_uncert
+    dfmbl['mbl_xCO2_high_uncert'] = dfmbl.mbl_xCO2 + dfmbl.mbl_xCO2_uncert
     dfmbl['datetime64_ns'] = pd.to_datetime(dfmbl.datetime_mbl)
+
     return dfmbl
 
 

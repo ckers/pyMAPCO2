@@ -187,7 +187,7 @@ def subtropic_TA(sss, sst):
 
 def timestamp_rounder(t):
     """Round a DatetimeIndex to a 30 minute interval"""
-    return t.replace(minute=30 * (t.minute // 30), second=0)
+    return t.replace(minute=30 * (t.minute // 30), second=0, microsecond=0)
 
 
 def timestamp_sec_rounder(t):

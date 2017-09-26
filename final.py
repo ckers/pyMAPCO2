@@ -5,6 +5,7 @@ Created on Wed Sep 21 17:17:47 2016
 @author: Colin Dietrich
 """
 
+import sys
 import numpy as np
 import pandas as pd
 from os import walk
@@ -25,40 +26,6 @@ for _c in ['Date', 'Time', 'Mooring']:
 def load(all_files, version='CRD', verbose=False):
     """Load all finalized .csv files into a Pandas DataFrame"""
     return read_files(all_files, version=version, verbose=verbose)
-
-
-def format_time(_df):
-    _datetime64_ns = (_df.Date.astype(str) + ' ' + _df.Time.astype(str))
-
-    _df['datetime64_ns'] = pd.to_datetime(_datetime64_ns)
-    _df['year'] = _df.datetime64_ns.dt.year
-    _df['dayofyear'] = _df.datetime64_ns.dt.dayofyear
-    _df['time'] = _df.datetime64_ns.dt.time
-    _df['day'] = _df.datetime64_ns.apply(algebra.day_of_year)
-
-    return _df
-
-
-def add_flagged_columns(_df):
-    """Add plot data for flagged points
-    Parameters
-    ----------
-    _df : Pandas DataFrame with 'xCO2_Air_dry', 'xCO2_SW_dry' and 'pH_QF' columns
-        note: these are CRD column headers, not originals...
-    """
-
-    if 'xCO2_Air_QF' in _df.columns:
-        _df['xCO2_Air_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_Air_dry if x.xCO2_Air_QF == 3.0
-                                              else np.nan,
-                                              axis=1)
-    if 'xCO2_SW_QF' in _df.columns:
-        _df['xCO2_SW_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 3.0
-                                             else np.nan,
-                                             axis=1)
-    if 'pH_QF' in _df.columns:
-        _df['pH_flagged_3'] = _df.apply(lambda x: x.pH if x.pH_QF == 3.0
-                                           else np.nan, axis=1)
-    return _df
 
 
 def read_files(all_files, verbose=False, version='CRD'):
@@ -95,8 +62,7 @@ def read_files(all_files, verbose=False, version='CRD'):
 
     _df = pd.concat(df_list)
     _df.reset_index(drop=True, inplace=True)
-
-    _df = _df[column_names[:len(_df.columns)]+['dp_n']]
+    _df.columns = column_names[:len(_df.columns)]
 
     return _df
 
@@ -116,7 +82,7 @@ def read_file(file, version='CRD'):
     -------
     Pandas DataFrame
     """
-    _df = pd.read_csv(file, index_col=None, sep=',')
+    _df = pd.read_csv(file, index_col=None, dtype=str, sep=',')
     _df.reset_index(drop=True, inplace=True)
 
     col_mapper = OrderedDict()
@@ -128,6 +94,40 @@ def read_file(file, version='CRD'):
 
     _df.columns = column_names[:len(_df.columns)]
 
+    return _df
+
+
+def format_time(_df):
+    _datetime64_ns = (_df.Date.astype(str) + ' ' + _df.Time.astype(str))
+
+    _df['datetime64_ns'] = pd.to_datetime(_datetime64_ns)
+    _df['year'] = _df.datetime64_ns.dt.year
+    _df['dayofyear'] = _df.datetime64_ns.dt.dayofyear
+    _df['time'] = _df.datetime64_ns.dt.time
+    _df['day'] = _df.datetime64_ns.apply(algebra.day_of_year)
+
+    return _df
+
+
+def add_flagged_columns(_df):
+    """Add plot data for flagged points
+    Parameters
+    ----------
+    _df : Pandas DataFrame with 'xCO2_Air_dry', 'xCO2_SW_dry' and 'pH_QF' columns
+        note: these are CRD column headers, not originals...
+    """
+
+    if 'xCO2_Air_QF' in _df.columns:
+        _df['xCO2_Air_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_Air_dry if x.xCO2_Air_QF == 3.0
+                                              else np.nan,
+                                              axis=1)
+    if 'xCO2_SW_QF' in _df.columns:
+        _df['xCO2_SW_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 3.0
+                                             else np.nan,
+                                             axis=1)
+    if 'pH_QF' in _df.columns:
+        _df['pH_flagged_3'] = _df.apply(lambda x: x.pH if x.pH_QF == 3.0
+                                           else np.nan, axis=1)
     return _df
 
 
@@ -162,17 +162,28 @@ def reformat_final(file, name='', refactor=False, version='original',
         n = 2
 
     header = extract_lines(file, n=n, verbose=verbose)
-    _df = read_file(file, verbose=verbose)
-    try:
-        _df['new_date_1'] = pd.to_datetime(_df.Date)
-        _df['new_date_2'] = _df.new_date_1.apply(lambda x: x.strftime('%m/%d/%Y'))
+    _df = read_file(file)
 
-        _df['new_time_1'] = pd.to_datetime(_df.Time)
-        _df['new_time_2'] = _df.new_time_1.apply(lambda x: x.strftime('%H:%M'))
-    except:
-        print(_df.Date)
-        print(_df.Time)
+    try:
+        _df['new_date_1'] = pd.to_datetime(_df.Date, errors='coerce')
+        _df['new_date_2'] = _df.new_date_1.apply(lambda x: x.strftime('%m/%d/%Y') if pd.notnull(x) else '')
+    except ValueError:
+        _type, value, traceback = sys.exc_info()
+        print('Date reformat error %s: %s' % (str(_type), value))
         return
+
+    try:
+        _df['new_time_1'] = pd.to_datetime(_df.Time, errors='coerce')
+        _df['new_time_2'] = _df.new_time_1.apply(lambda x: x.strftime('%H:%M') if pd.notnull(x) else '')
+    except ValueError:
+        _type, value, traceback = sys.exc_info()
+        print('Time reformat error %s: %s' % (str(_type), value))
+        return
+    #except:
+    #print('Trouble reformatting times in file ', file)
+    #print(_df.Date)
+    #print(_df.Time)
+        #return
 
     _df.Date = _df.new_date_2
     _df.Time = _df.new_time_2
