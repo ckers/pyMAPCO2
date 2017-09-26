@@ -13,7 +13,7 @@ from datetime import datetime
 from io import StringIO
 from collections import OrderedDict
 
-from .config import column_names, column_names_original
+from .config import column_names, column_names_original, column_mapper
 from . import algebra
 from utils.general import pad_date
 
@@ -60,10 +60,13 @@ def read_files(all_files, verbose=False, version='CRD'):
         _df_n['dp_n'] = dp_n
         df_list.append(_df_n)
 
-    _df = pd.concat(df_list)
+    _df = pd.concat(df_list, axis=0, )
     _df.reset_index(drop=True, inplace=True)
-    _df.columns = column_names[:len(_df.columns)]
 
+    _df.rename(columns=column_mapper, inplace=True)
+
+    # reorder to original state... consequence of dict basis of DataFrames
+    _df = _df[column_names[:len(_df.columns)-1] + ['dp_n']]  # adjust for dp_n addition
     return _df
 
 
@@ -92,7 +95,12 @@ def read_file(file, version='CRD'):
     if version == 'original':
         _df.rename(columns=col_mapper)
 
-    _df.columns = column_names[:len(_df.columns)]
+    #if 'dp_n' in _df.columns:
+    #    i_adjust = 1
+    #else:
+    #    i_adjust = 0
+
+    #_df.columns = column_names[:len(_df.columns)-i_adjust]
 
     return _df
 

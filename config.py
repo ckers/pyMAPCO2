@@ -37,6 +37,9 @@ column_names_original = ['Mooring Name', 'Latitude', 'Longitude', 'Date', 'Time'
                          'pCO2 SW (sat) uatm', 'pCO2 Air (sat) uatm', 'dpCO2',
                          'pH (total scale)', 'pH QF']
 
+column_mapper = dict(zip(column_names_original, column_names))
+column_mapper['dp_n'] = 'dp_n'
+
 # merged data in .xlsx workbooks, before being output to .csv
 xlsx_merged_header = column_names[3:-2]  # just pCO2 data
 xlsx_merged_header_ph = column_names[3:]  # pCo2 and pH data
