@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 from matplotlib.ticker import FormatStrFormatter
+import matplotlib.ticker as mtick
 
 from . import config, plot
 from .utils import utils
@@ -37,32 +38,36 @@ def timeseries_multiyear(df, df_mbl=None):
     plt.ylabel('Day of Year')
     plt.xlabel('DataFrame Index')
     plt.title('DataFrame Day of Year Check', loc='right')
+    reformat()
     plt.show()
 
-    day_my, xco2_air_my, xco2_sw_my, sst_my, sss_my, ph_my = plot.pivot(df)
+    day_my, xco2_air_my, xco2_sw_my, sst_my, sss_my, ph_my = plot.pivot_year(df)
 
     # pivoted years, for data checking
     a = []
     for x in [day_my, xco2_air_my, xco2_sw_my, sst_my, sss_my, ph_my]:
-        for y in x:
-            a.append(y)
+        if x is not None:
+            for y in x:
+                a.append(y)
 
     plt.plot(a)
     plt.ylabel('Year')
     plt.xlabel('Pivoted Columns')
     plt.title('Pivot Year Check', loc='right')
+    reformat()
     plt.show()
 
     for y in xco2_air_my:
         plt.plot(xco2_air_my[y],
-                 label='Air ' + str(y),
-                 color=plot.xco2_air_pdict[y])
+                 label='Air ' + str(y))  #,
+                 #color=plot.xco2_air_pdict[y])
 
     if df_mbl is not None:
-        plt.plot(df_mbl.datetime64_ns, df_mbl.xCO2, color='black', label='MBL')
+        plt.plot(df_mbl.datetime64_ns, df_mbl.mbl_xCO2, color='black', label='MBL')
 
     plt.legend()
     plt.title('xCO2 Air Multiyear', loc='right')
+    reformat()
     plt.show()
 
     for y in xco2_air_my:
@@ -71,12 +76,13 @@ def timeseries_multiyear(df, df_mbl=None):
         notnull = _y.notnull()
         plt.plot(_x[notnull],
                  _y[notnull],
-                 label='Air ' + str(y),
-                 color=plot.xco2_air_pdict[y])
+                 label='Air ' + str(y))  #,
+                 #color=plot.xco2_air_pdict[y])
     plt.legend()
     plt.ylabel('CO2 ppm')
     plt.xlabel('Day of Year')
     plt.title('xCO2 Air Multiyear', loc='right')
+    reformat()
     plt.show()
 
     for y in xco2_sw_my:
@@ -85,6 +91,7 @@ def timeseries_multiyear(df, df_mbl=None):
                  color=plot.xco2_sw_pdict[y])
     plt.legend()
     plt.title('xCO2 Seawater Multiyear', loc='right')
+    reformat()
     plt.show()
 
     for y in xco2_sw_my:
@@ -99,36 +106,38 @@ def timeseries_multiyear(df, df_mbl=None):
     plt.ylabel('CO2 ppm')
     plt.xlabel('Day of Year')
     plt.title('xCO2 Air Multiyear', loc='right')
+    reformat()
     plt.show()
 
-    if ph_my.notnull().sum().sum() > 0:
-        for y in ph_my:
-            plt.plot(ph_my[y],
-                     label='pH ' + str(y),
-                     color=plot.ph_pdict[y])
-        plt.legend()
-        plt.ylabel('pH')
-        plt.xlabel('Day of Year')
-        plt.title('pH Multiyear', loc='right')
-        plt.show()
-    else:
-        print('No pH timeseries data to plot')
+    if ph_my is not None:
+        if ph_my.notnull().sum().sum() > 0:
+            for y in ph_my:
+                plt.plot(ph_my[y],
+                         label='pH ' + str(y),
+                         color=plot.ph_pdict[y])
+            plt.legend()
+            plt.ylabel('pH')
+            plt.xlabel('Day of Year')
+            plt.title('pH Multiyear', loc='right')
+            reformat()
+            plt.show()
 
-    if ph_my.notnull().sum().sum() > 0:
+        if ph_my.notnull().sum().sum() > 0:
 
-        for y in ph_my:
-            _x = day_my[y]
-            _y = ph_my[y]
-            notnull = _y.notnull()
-            plt.plot(_x[notnull],
-                     _y[notnull],
-                     label='pH ' + str(y),
-                     color=plot.ph_pdict[y])
-        plt.legend()
-        plt.ylabel('pH')
-        plt.xlabel('Day of Year')
-        plt.title('pH Multiyear', loc='right')
-        plt.show()
+            for y in ph_my:
+                _x = day_my[y]
+                _y = ph_my[y]
+                notnull = _y.notnull()
+                plt.plot(_x[notnull],
+                         _y[notnull],
+                         label='pH ' + str(y),
+                         color=plot.ph_pdict[y])
+            plt.legend()
+            plt.ylabel('pH')
+            plt.xlabel('Day of Year')
+            plt.title('pH Multiyear', loc='right')
+            reformat()
+            plt.show()
     else:
         print('No pH multiyear data to plot')
 
@@ -430,32 +439,21 @@ def plot_annual(co2, mbl, markers='.', lines='-', gtd=[]):
     plt.show()
 
 
-def plot_combined(co2, mbl, markers='.', lines='-', gtd=[]):
+def plot_combined(co2, mbl, markers='.', lines='-'):
     """Plot multiple timeseries on stacked twinx axis
     data columns must be present
+
+    Parameters
+    ----------
+    co2 :
+    mbl :
+    markers :
+    lines :
+
+    Returns
+    -------
+
     """
-    #                  date_time,
-    #                  xCO2_air_dry, xCO2_sw_dry,
-    #                  o2_percent,
-    #                  sss, sst,
-    #                  licor_temp, licor_press,
-    #                  gtd=[],
-    #                  mbl=None,
-    #                  overlay=False):
-    #
-    #        date_time=df3.datetime,
-    #                          xCO2_air_dry=df3.xCO2_Air_dry,
-    #                          xCO2_sw_dry=df3.xCO2_SW_dry,
-    #                          o2_percent=df3.Percent_O2,
-    #                          sss=df3.SSS,
-    #                          sst=df3.SST,
-    #                          licor_temp=df3.Licor_Temp,
-    #                          licor_press=df3.Licor_Atm_Pressure,
-    #                          mbl=mbl)
-
-
-
-    #        fig_title = ('Combined MAPCO2 Data')
 
     if markers == False:
         markers = 'None'
@@ -498,9 +496,6 @@ def plot_combined(co2, mbl, markers='.', lines='-', gtd=[]):
                                         axes=par5,
                                         offset=(offset * 4, 0))
     par5.axis['right'].toggle(all=True)
-
-    #    host.set_xlim(0, 2)
-    #    host.set_ylim(0, 2)
 
     host.set_xlabel('DateTime')
     host.set_ylabel('Seawater xCO2 (ppm)')
@@ -720,3 +715,137 @@ def plot_dtstd(df, dt_data, cols=None):
             plt.scatter(_df_plot.datetime64_ns.values, _df_plot[dt_data],
                         color=colors[c], marker=markers[c], s=20, label=n, zorder=c+2)
             c += 1
+
+
+def plot_gps(df, gps_fit=None, center=None, title_str='', xlim=None, ylim=None):
+    """Plot GPS data
+    Note: Seaborn with reformat and break this plot
+
+    Parameters
+    ----------
+    df : Pandas Dataframe, with 'lon', 'lat' and 'flag' columns
+    gps_fit : tuple of array-like, x and y values of fit circle
+    center : 2 length array of float, x and y values of center
+    """
+
+    plt.scatter(df.lon, df.lat,
+                color='black', marker='x', label='GPS Data')
+
+    if 'flag' in df:
+        gps4 = df[(df.flag >= 4.0) & (df.flag < 5.0)]
+
+        plt.plot(gps4.lon, gps4.lat,
+                 color='red', marker='s', alpha=0.3, linestyle='', label='GPS Data 4')
+
+    if gps_fit is not None:
+        x_fit, y_fit = gps_fit
+        plt.plot(x_fit, y_fit,
+                 color='orange', marker='None', label='LSQ Fit Circle', lw=2)
+
+    if center is not None:
+        xc, yc = center
+        plt.plot(xc, yc,
+                 color='green', marker='o', label='LSQ Fit Center')
+
+    plt.xlabel('Longitude')
+    plt.ylabel('Latitude')
+    plt.axis('equal')
+
+    ax = plt.gca()
+    ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
+    ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
+
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+    if xlim is not None:
+        plt.xlim(xlim)
+    if ylim is not None:
+        plt.ylim(ylim)
+
+    # Put a legend to the right of the current axis
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.title(title_str, loc='right')
+    plt.margins(0.05, 0.1)
+
+    plt.show()
+
+
+def plot_co2(df, width=12, height=6, style=None, **kwargs):
+    """Plot co2 data using the .plot method
+
+    Call with: plot_co2[['x', 'y']] to only plot x and y columns
+
+    Parameters
+    ----------
+    df : Pandas Dataframe, all columns will be plotted
+    width : float, width in inches of plot
+    height : float, height in inches of plot
+    style : array-like, plot styles for each column
+    """
+
+    ax = df.plot(**kwargs, figsize=(width, height), style=style)
+
+    ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+    # Put a legend to the right of the current axis
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+    plt.title('CO2 Response', loc='right')
+    plt.margins(0.05, 0.1)
+    plt.show()
+    return ax
+
+
+def plot_pressures(df, width=12, height=6, title=None, style=None):
+    # df.plot(figsize=(width, height), style=style)
+    # ax = plt.gca()
+    # ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
+    # box = ax.get_position()
+    # ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    #
+    # # Put a legend to the right of the current axis
+    # ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    # if title=None:
+    # plt.title('Pressures (kPa)', loc='right')
+    # plt.margins(0.05, 0.1)
+    # plt.show()
+    ax = df_plot(df, width=width, height=height, title='Pressures (kPa)', style=style)
+    return ax
+
+
+def df_plot(df, width=12, height=6, title=None, style=None, **kwargs):
+    df.plot(figsize=(width, height), style=style, **kwargs)
+    ax = plt.gca()
+    ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+    # Put a legend to the right of the current axis
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.title(title, loc='right')
+    plt.margins(0.05, 0.1)
+    plt.show()
+    return ax
+
+
+def reformat(title=None, width=12, height=6, ):
+    fig = plt.gcf()
+    fig.set_size_inches(width, height)
+
+    lines_all = []
+    for ax in fig.get_axes():
+        ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        lines = ax.lines
+        for line in lines:
+            lines_all.append(line)
+    labels_all = [l.get_label() for l in lines_all]
+    # Put a legend to the right of the current axis
+    plt.legend(lines_all, labels_all, loc='center left', bbox_to_anchor=(1.1, 0.5))
+    if title:
+        plt.title(title, loc='right')
+    plt.margins(0.05, 0.1)

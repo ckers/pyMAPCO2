@@ -5,13 +5,16 @@ Created on Wed Sep 21 17:17:47 2016
 @author: Colin Dietrich
 """
 
+import sys
 import numpy as np
 import pandas as pd
 from os import walk
 from datetime import datetime
 from io import StringIO
+from collections import OrderedDict
 
-from .config import column_names
+from . import config
+from .config import column_names, column_names_original, column_mapper
 from . import algebra
 from utils.general import pad_date
 
@@ -21,68 +24,128 @@ for _c in ['Date', 'Time', 'Mooring']:
     float_names.remove(_c)
 
 
-def load(all_files):
+def load(all_files, version='CRD', verbose=False):
     """Load all finalized .csv files into a Pandas DataFrame"""
-    _df = read_files(all_files)
-    _df = refactor(_df)
-    return _df
+    return read_files(all_files, version=version, verbose=verbose)
 
 
-def read_files(all_files, verbose=False):
+def read_files(all_files, verbose=False, version='CRD'):
     """Read all MAPCO2 files into a Pandas DataFrame
 
     Parameters
     ----------
     all_files : list, absolute path to .csv source files
+    refactor : bool, reformat header variables to CRD format
+        useful for any further Python processing,
+        as the names are variable safe strings
     verbose : bool
 
     Returns
     -------
     Pandas DataFrame
     """
+
     df_list = []
     if isinstance(all_files, str):
         all_files = [all_files]
     for file in all_files:
+        print(file)
+        dp_n = 'dp number not in filename'
+        if 'dp' in file:
+            dpix = file.index('dp')
+            dp_n = file[dpix+2:dpix+4]
+            if verbose:
+                print('Deployment #:', dp_n)
         if verbose:
             print('Loading: ', str(file))
-        _df_n = read_file(file)
+        _df_n = read_file(file, version=version)
+        _df_n['dp_n'] = dp_n
         df_list.append(_df_n)
-    _df = pd.concat(df_list)
+
+    _df = df_list[0]
+    for dfi in df_list[1:]:
+        _df = pd.concat([_df, dfi], axis=0)
+
     _df.reset_index(drop=True, inplace=True)
-    _df = _df[column_names]
 
     return _df
 
 
-def read_file(file, verbose=True):
+def read_file(file, version='CRD'):
     """Read one MAPCO2 file into a Pandas DataFrame
 
     Parameters
     ----------
     file : list, absolute path to .csv source files
+    refactor : bool, reformat header variables to CRD format
+        useful for any further Python processing,
+        as the names are variable safe strings
     verbose : bool
 
     Returns
     -------
     Pandas DataFrame
     """
-    _df = pd.read_csv(file, index_col=None, sep=',', skiprows=0)
-    _units = _df.ix[0.:]
-    _df.drop(0, inplace=True)
+    _df = pd.read_csv(file, index_col=None, dtype=str, sep=',', comment='#')
     _df.reset_index(drop=True, inplace=True)
-    _df = _df[column_names]
+
+    if 'Mooring Name' in _df.columns:
+        _df.rename(columns=column_mapper, inplace=True)
+
+        new_column_order = []
+        for col in _df.columns:
+            if col in config.column_names:
+                new_column_order.append(col)
+
+        _df = _df[new_column_order]
+
     return _df
 
 
-def reformat_final(file, name='', ph=False, verbose=True, inplace=True):
-    """Reformat a previously published .csv MAPCO2 file.
-    Fixes historical formatting errors previously published.
+def format_time(_df):
+    _datetime64_ns = (_df.Date.astype(str) + ' ' + _df.Time.astype(str))
+
+    _df['datetime64_ns'] = pd.to_datetime(_datetime64_ns)
+    _df['year'] = _df.datetime64_ns.dt.year
+    _df['dayofyear'] = _df.datetime64_ns.dt.dayofyear
+    _df['time'] = _df.datetime64_ns.dt.time
+    _df['day'] = _df.datetime64_ns.apply(algebra.day_of_year)
+
+    return _df
+
+
+def add_flagged_columns(_df):
+    """Add plot data for flagged points
+    Parameters
+    ----------
+    _df : Pandas DataFrame with 'xCO2_Air_dry', 'xCO2_SW_dry' and 'pH_QF' columns
+        note: these are CRD column headers, not originals...
+    """
+
+    if 'xCO2_Air_QF' in _df.columns:
+        _df['xCO2_Air_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_Air_dry if x.xCO2_Air_QF == 3.0
+                                              else np.nan,
+                                              axis=1)
+    if 'xCO2_SW_QF' in _df.columns:
+        _df['xCO2_SW_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 3.0
+                                             else np.nan,
+                                             axis=1)
+    if 'pH_QF' in _df.columns:
+        _df['pH_flagged_3'] = _df.apply(lambda x: x.pH if x.pH_QF == 3.0
+                                           else np.nan, axis=1)
+    return _df
+
+
+def reformat_final(file, name='', refactor=False, version='original',
+                   ph=False, verbose=True, inplace=True):
+    """Reformat a published .csv MAPCO2 file.
+    Fixes historical formatting errors.
 
     Parameters
     ----------
     file : list, absolute path to .csv source files
     name : str, rename mooring id if not ''
+    version : str, original header format or CRD clean version
     ph : bool or Pandas DataFrame,
         False: do nothing
         True: fill 'pH' = -999.0 and 'pH_QF' = 5
@@ -98,13 +161,34 @@ def reformat_final(file, name='', ph=False, verbose=True, inplace=True):
         inserted into filename
     """
 
-    header = extract_lines(file, n=2, verbose=verbose)
-    _df = read_file(file, verbose=verbose)
-    _df['new_date_1'] = pd.to_datetime(_df.Date)
-    _df['new_date_2'] = _df.new_date_1.apply(lambda x: x.strftime('%m/%d/%Y'))
+    if version == 'original':
+        n = 1
+    else:
+        n = 2
 
-    _df['new_time_1'] = pd.to_datetime(_df.Time)
-    _df['new_time_2'] = _df.new_time_1.apply(lambda x: x.strftime('%H:%M'))
+    header = extract_lines(file, n=n, verbose=verbose)
+    _df = read_file(file)
+
+    try:
+        _df['new_date_1'] = pd.to_datetime(_df.Date, errors='coerce')
+        _df['new_date_2'] = _df.new_date_1.apply(lambda x: x.strftime('%m/%d/%Y') if pd.notnull(x) else '')
+    except ValueError:
+        _type, value, traceback = sys.exc_info()
+        print('Date reformat error %s: %s' % (str(_type), value))
+        return
+
+    try:
+        _df['new_time_1'] = pd.to_datetime(_df.Time, errors='coerce')
+        _df['new_time_2'] = _df.new_time_1.apply(lambda x: x.strftime('%H:%M') if pd.notnull(x) else '')
+    except ValueError:
+        _type, value, traceback = sys.exc_info()
+        print('Time reformat error %s: %s' % (str(_type), value))
+        return
+    #except:
+    #print('Trouble reformatting times in file ', file)
+    #print(_df.Date)
+    #print(_df.Time)
+        #return
 
     _df.Date = _df.new_date_2
     _df.Time = _df.new_time_2
@@ -128,8 +212,9 @@ def reformat_final(file, name='', ph=False, verbose=True, inplace=True):
 
     if not inplace:
         t_now = datetime.now().strftime('%Y-%m-%dT%H_%M_%S')
-        f_list = file.split('.')
-        f_out = f_list[0] + '_' + t_now + '.' + f_list[1]
+        f_name = file[:-4]
+        f_extension = file[-4:]
+        f_out = f_name + '_' + t_now + '_' + f_extension
     else:
         f_out = file
 
@@ -137,7 +222,8 @@ def reformat_final(file, name='', ph=False, verbose=True, inplace=True):
     for line in header:
         sio_all.write(line)
     sio_data = StringIO()
-    _df.to_csv(sio_data, header=False, index=False)
+    _df.to_csv(sio_data, header=False, index=False,
+               float_format="%.3f")
 
     sio_all.write(sio_data.getvalue())
 
@@ -178,6 +264,7 @@ def extract_lines(file, n=2, verbose=True):
 
 
 def make_datetime(_df):
+    #TODO: moved to load, should be deleted
     """Create datetime column in Pandas DataFrame
 
     Parameters
@@ -207,13 +294,22 @@ def format_floats(_df):
     -------
     df : Pandas DataFrame, data converted to float and NaN replaced
     """
+    _df_cols = _df.columns
+    for _f in _df_cols:
+        try:
+            _df[_f] = _df[_f].astype(float)
+        except ValueError:
+            continue
+        except TypeError:
+            continue
 
-    for _f in float_names:
-        _df[_f] = _df[_f].astype(float)
+    _df.replace(to_replace=-999.0, value=np.nan, inplace=True)
+
     return _df
 
 
-def refactor(_df):
+def refactor(_df, verbose=False):
+    # COPIED to load, should be deleted
     """Refactor parts of the imported final data
     Applies make_datetime, format_floats, replaces -999.0 with np.nan,
     adds day of year columns for multiyear plotting
@@ -227,19 +323,45 @@ def refactor(_df):
     df : Pandas DataFrame
     """
 
-    _df = make_datetime(_df)
+    # HEADER
+    if 'MM/DD/YYYY' in _df.Date.any():
+        _df = _df[_df.Date != 'MM/DD/YYYY'].copy()
+
+    _datetime64_ns = (_df.Date + ' ' + _df.Time)
+
+    dt64_ns = []
+    for t in _datetime64_ns:
+        try:
+            dt = pd.to_datetime(t)
+        except:
+            print('Trouble with:', t)
+            dt = pd.NaT
+        dt64_ns.append(dt)
+
+    #_df['datetime64_ns'] = pd.to_datetime(_datetime64_ns)
+    _df['datetime64_ns'] = dt64_ns
+
     _df['year'] = _df.datetime64_ns.dt.year
     _df['dayofyear'] = _df.datetime64_ns.dt.dayofyear
     _df['time'] = _df.datetime64_ns.dt.time
     _df['day'] = _df.datetime64_ns.apply(algebra.day_of_year)
     _df = format_floats(_df)
     _df.replace(to_replace=-999.0, value=np.nan, inplace=True)
-    _df['xCO2_Air_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_Air_dry if x.xCO2_Air_QF == 3.0
+
+    try:
+        _df['xCO2_Air_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_Air_dry if x.xCO2_Air_QF == 3.0
                                                                        else np.nan, axis=1)
-    _df['xCO2_SW_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 3.0
+        _df['xCO2_SW_dry_flagged_3'] = _df.apply(lambda x: x.xCO2_SW_dry if x.xCO2_SW_QF == 3.0
                                                                      else np.nan, axis=1)
-    _df['pH_flagged_3'] = _df.apply(lambda x: x.pH if x.pH_QF == 3.0
-                                                   else np.nan, axis=1)
+    except AttributeError:
+        pass
+
+    try:
+        _df['pH_flagged_3'] = _df.apply(lambda x: x.pH if x.pH_QF == 3.0
+                                               else np.nan, axis=1)
+    except AttributeError:
+        pass
+
     return _df
 
 

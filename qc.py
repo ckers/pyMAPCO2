@@ -342,3 +342,154 @@ def extracter(df, sheet, name, t_col, d_col):
                                      axis=1)
     _df = _df.drop(['index', 't'], axis=1)
     return _df
+
+
+##### All Below are used together to import data FROM .xlsx files #####
+
+def mapco2_xlsx_extractor(path_in):
+    """Load a previously compiled (in VBA) Excel workbook of mapco2 data
+
+    Parameters
+    ----------
+    path_in : str, path to .xlsx file
+
+    Returns
+    -------
+    dict, of Pandas DataFrames
+    """
+
+    worksheets = ['Zero Pump On',
+                  'Zero Pump Off',
+                  'Zero Post Cal',
+                  'Span Pump On',
+                  'Span Pump Off',
+                  'Span Post Cal',
+                  'Equil Pump On',
+                  'Equil Pump Off',
+                  'Air Pump On',
+                  'Air Pump Off']
+
+    df_xlsx = pd.read_excel(io=path_in,
+                            sheetname=worksheets,
+                            header=0,
+                            skiprows=1)
+    return df_xlsx
+
+
+def format_xlsx_import(_df, t_start, t_end):
+    _df['datetime64_ns'] = pd.to_datetime(_df.datetime_str)
+    _df.datetime64_ns = _df.datetime64_ns.apply(timestamp_rounder)
+    _df.index = _df.datetime64_ns
+    _df.index.name = 'datetime64_ns'
+    _df = _df[(_df.datetime64_ns >= t_start) & (_df.datetime64_ns <= t_end)]
+    _df = _df[pd.notnull(_df.index)]
+    return _df
+
+
+def slice_df_co2(df_xlsx, t_start, t_end):
+    """Slice co2 data from entire dictionary of DataFrames from the .xlsx file
+
+    Parameters
+    ----------
+    df_xlsx : dict, of Pandas DataFrames containing worksheets from xlsx source file
+    t_start : datetime, start time of deployment
+    t_end : datetime, end time of deployment
+
+    Returns
+    -------
+    Pandas DataFrame, co2 specific data
+    """
+
+    df_co2 = pd.DataFrame({'datetime_str': df_xlsx['Air Pump Off'].iloc[:, 2],
+                           'zpcl': df_xlsx['Zero Post Cal'].iloc[:, 23],   # xCO2 dry
+                           'spcl': df_xlsx['Span Post Cal'].iloc[:, 23],   # xCO2 dry
+                           'epof': df_xlsx['Equil Pump Off'].iloc[:, 25],  # xCO2 dry
+                           'apof': df_xlsx['Air Pump Off'].iloc[:, 25]},   # xCO2 dry
+                          columns=['datetime_str', 'zpcl', 'spcl', 'epof', 'apof'])
+    df_co2 = format_xlsx_import(df_co2, t_start, t_end)
+    return df_co2
+
+
+def slice_df_gps(df_xlsx, t_start, t_end):
+    """Slice gps data from entire dictionary of DataFrames from the .xlsx file
+
+    Parameters
+    ----------
+    df_xlsx : dict, of Pandas DataFrames containing worksheets from xlsx source file
+    t_start : datetime, start time of deployment
+    t_end : datetime, end time of deployment
+
+    Returns
+    -------
+    Pandas DataFrame, co2 specific data
+    """
+
+    df_gps = pd.DataFrame({'datetime_str': df_xlsx['Zero Pump On'].iloc[:, 36],  # AJ
+                           'lat': df_xlsx['Zero Pump On'].iloc[:, 37],           # AK
+                           'lon': df_xlsx['Zero Pump On'].iloc[:, 38]})          # AL
+    df_gps = format_xlsx_import(df_gps, t_start, t_end)
+    return df_gps
+
+
+def slice_df_pressure(df_xlsx, t_start, t_end):
+    """Slice pressure data from entire dictionary of DataFrames from the .xlsx file
+
+    Parameters
+    ----------
+    df_xlsx : dict, of Pandas DataFrames containing worksheets from xlsx source file
+    t_start : datetime, start time of deployment
+    t_end : datetime, end time of deployment
+
+    Returns
+    -------
+    Pandas DataFrame, co2 specific data
+    """
+
+    df_pressure = pd.DataFrame({'datetime_str': df_xlsx['Air Pump Off'].iloc[:, 2],
+                                'zpon': df_xlsx['Zero Pump On'].iloc[:, 5],          # Licor kPa
+                                'spon': df_xlsx['Span Pump On'].iloc[:, 5],          # Licor kPa
+                                'epon': df_xlsx['Equil Pump On'].iloc[:, 5],         # Licor kPa
+                                'apon': df_xlsx['Air Pump On'].iloc[:, 5],           # Licor kPa
+                                'apof': df_xlsx['Air Pump Off'].iloc[:, 5],          # Licor kPa
+                                'epof_xco2': df_xlsx['Equil Pump Off'].iloc[:, 25],  # xCO2 dry
+                                'apof_xco2': df_xlsx['Air Pump Off'].iloc[:, 25]},   # xCO2 dry
+                               columns=['datetime_str', 'zpon', 'spon', 'epon', 'apon', 'apof', 'epof_xco2', 'apof_xco2'])
+    df_pressure = format_xlsx_import(df_pressure, t_start, t_end)
+    return df_pressure
+
+
+def slice_df_cal(df_xlsx, t_start, t_end):
+    """Slice calibration data from entire dictionary of DataFrames from the .xlsx file
+
+    Parameters
+    ----------
+    df_xlsx : dict, of Pandas DataFrames containing worksheets from xlsx source file
+    t_start : datetime, start time of deployment
+    t_end : datetime, end time of deployment
+
+    Returns
+    -------
+    Pandas DataFrame, co2 specific data
+    """
+
+    df_cal = pd.DataFrame({'datetime_str': df_xlsx['Air Pump Off'].iloc[:, 2],
+                           'zpof': df_xlsx['Zero Pump Off'].iloc[:, 8],
+                           'zpcal': df_xlsx['Zero Post Cal'].iloc[:, 8],
+                           'zpcal_raw1' : df_xlsx['Zero Post Cal'].iloc[:, 17],
+                           'zpcal_raw2' : df_xlsx['Zero Post Cal'].iloc[:, 19],
+
+                           'spof': df_xlsx['Span Pump Off'].iloc[:, 8],
+                           'spcal': df_xlsx['Span Post Cal'].iloc[:, 8],
+                           'spcal_raw1' : df_xlsx['Span Post Cal'].iloc[:, 17],
+                           'spcal_raw2' : df_xlsx['Span Post Cal'].iloc[:, 19],
+
+                           'epof': df_xlsx['Equil Pump Off'].iloc[:, 8],
+                           'apof': df_xlsx['Air Pump Off'].iloc[:, 8]
+                           },
+                          columns=['datetime_str', 'zpof', 'zpcal', 'spof', 'spcal',
+                                   'zpcal_raw1', 'zpcal_raw2', 'spcal_raw1', 'spcal_raw2',
+                                   'epof', 'apof'])
+    df_cal = format_xlsx_import(df_cal, t_start, t_end)
+    return df_cal
+
+##### see note above #####

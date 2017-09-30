@@ -199,22 +199,35 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
 
     connect_gaps = connectgaps
 
+    def gen_plot(_x, _y, _name, _visible):
+
+        data.append(go.Scatter(
+            x=_x, y=_y,
+            name=_name,
+            yaxis='y7',
+            visible=_visible,
+            mode='lines',
+            line=dict(width=2, color=general_color),
+            connectgaps=connect_gaps)
+            )
+
     for key, value in kwargs.items():
         # General Plotting Axis
         if key in df_columns:
-            if value:
-                visible = True
-            else:
-                visible = 'legendonly'
-            data.append(go.Scatter(
-                x=x, y=df[key],
-                name=key,
-                yaxis='y7',
-                visible=visible,
-                mode='lines',
-                line=dict(width=2, color=general_color),
-                connectgaps=connect_gaps)
-            )
+            # if value:
+            #     visible = True
+            # else:
+            #     visible = 'legendonly'
+            gen_x = x
+            gen_y = df[key]
+            gen_vis = True
+            gen_plot(gen_x, gen_y, key, gen_vis)
+
+        if isinstance(value, list):
+            gen_x = value[0]
+            gen_y = value[1]
+            gen_vis = value[2]
+            gen_plot(gen_x, gen_y, key, gen_vis)
 
     # xCO2 Seawater WET
     if 'xCO2_SW_wet' in df_columns:
@@ -258,7 +271,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
     # MBL Air data if available
     if isinstance(df_mbl, DataFrame):
         data.append(go.Scatter(
-            x=df_mbl.datetime64_ns, y=df_mbl.xCO2,
+            x=df_mbl.datetime64_ns, y=df_mbl.mbl_xCO2,
             name='MBL xCO2',
             opacity=0.75,
             visible='legendonly',
@@ -641,18 +654,19 @@ def my_data(df):
         )
 
     # Sea Surface pH
-    for y in ph_my:
-        _x = day_my[y].values
-        _y = ph_my[y].values
-        keep = notnull(_y)
-        data_multi.append(go.Scatter(
-            x=_x[keep], y=_y[keep],
-            name=str(y) + ' pH',
-            yaxis='y6',
-            mode='line',
-            # visible='legendonly',
-            line=dict(width=2, color=ph_color))
-        )
+    if ph_my is not None:
+        for y in ph_my:
+            _x = day_my[y].values
+            _y = ph_my[y].values
+            keep = notnull(_y)
+            data_multi.append(go.Scatter(
+                x=_x[keep], y=_y[keep],
+                name=str(y) + ' pH',
+                yaxis='y6',
+                mode='line',
+                # visible='legendonly',
+                line=dict(width=2, color=ph_color))
+            )
 
     # Sea Surface Temperature
     for y in sst_my:

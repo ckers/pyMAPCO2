@@ -110,8 +110,6 @@ def frame_co2(sample, system, verbose=False):
         print('  >>', g.datetime_gps, h.system, h.datetime_mapco2)
         print('h>>', h, type(h), type(h.datetime_mapco2), type(h.system))
 
-
-
     h['datetime64_ns_mapco2'] = pd.to_datetime(h.datetime_mapco2,
                                                format=config.header_datetime_format)
 
