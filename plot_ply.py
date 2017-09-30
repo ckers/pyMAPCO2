@@ -271,7 +271,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
     # MBL Air data if available
     if isinstance(df_mbl, DataFrame):
         data.append(go.Scatter(
-            x=df_mbl.datetime64_ns, y=df_mbl.xCO2,
+            x=df_mbl.datetime64_ns, y=df_mbl.mbl_xCO2,
             name='MBL xCO2',
             opacity=0.75,
             visible='legendonly',

@@ -38,6 +38,7 @@ def timeseries_multiyear(df, df_mbl=None):
     plt.ylabel('Day of Year')
     plt.xlabel('DataFrame Index')
     plt.title('DataFrame Day of Year Check', loc='right')
+    reformat()
     plt.show()
 
     day_my, xco2_air_my, xco2_sw_my, sst_my, sss_my, ph_my = plot.pivot_year(df)
@@ -53,6 +54,7 @@ def timeseries_multiyear(df, df_mbl=None):
     plt.ylabel('Year')
     plt.xlabel('Pivoted Columns')
     plt.title('Pivot Year Check', loc='right')
+    reformat()
     plt.show()
 
     for y in xco2_air_my:
@@ -61,10 +63,11 @@ def timeseries_multiyear(df, df_mbl=None):
                  #color=plot.xco2_air_pdict[y])
 
     if df_mbl is not None:
-        plt.plot(df_mbl.datetime64_ns, df_mbl.xCO2, color='black', label='MBL')
+        plt.plot(df_mbl.datetime64_ns, df_mbl.mbl_xCO2, color='black', label='MBL')
 
     plt.legend()
     plt.title('xCO2 Air Multiyear', loc='right')
+    reformat()
     plt.show()
 
     for y in xco2_air_my:
@@ -79,6 +82,7 @@ def timeseries_multiyear(df, df_mbl=None):
     plt.ylabel('CO2 ppm')
     plt.xlabel('Day of Year')
     plt.title('xCO2 Air Multiyear', loc='right')
+    reformat()
     plt.show()
 
     for y in xco2_sw_my:
@@ -87,6 +91,7 @@ def timeseries_multiyear(df, df_mbl=None):
                  color=plot.xco2_sw_pdict[y])
     plt.legend()
     plt.title('xCO2 Seawater Multiyear', loc='right')
+    reformat()
     plt.show()
 
     for y in xco2_sw_my:
@@ -101,6 +106,7 @@ def timeseries_multiyear(df, df_mbl=None):
     plt.ylabel('CO2 ppm')
     plt.xlabel('Day of Year')
     plt.title('xCO2 Air Multiyear', loc='right')
+    reformat()
     plt.show()
 
     if ph_my is not None:
@@ -113,6 +119,7 @@ def timeseries_multiyear(df, df_mbl=None):
             plt.ylabel('pH')
             plt.xlabel('Day of Year')
             plt.title('pH Multiyear', loc='right')
+            reformat()
             plt.show()
 
         if ph_my.notnull().sum().sum() > 0:
@@ -129,6 +136,7 @@ def timeseries_multiyear(df, df_mbl=None):
             plt.ylabel('pH')
             plt.xlabel('Day of Year')
             plt.title('pH Multiyear', loc='right')
+            reformat()
             plt.show()
     else:
         print('No pH multiyear data to plot')

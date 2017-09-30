@@ -13,6 +13,7 @@ from datetime import datetime
 from io import StringIO
 from collections import OrderedDict
 
+from . import config
 from .config import column_names, column_names_original, column_mapper
 from . import algebra
 from utils.general import pad_date
@@ -48,6 +49,7 @@ def read_files(all_files, verbose=False, version='CRD'):
     if isinstance(all_files, str):
         all_files = [all_files]
     for file in all_files:
+        print(file)
         dp_n = 'dp number not in filename'
         if 'dp' in file:
             dpix = file.index('dp')
@@ -60,13 +62,12 @@ def read_files(all_files, verbose=False, version='CRD'):
         _df_n['dp_n'] = dp_n
         df_list.append(_df_n)
 
-    _df = pd.concat(df_list, axis=0, )
+    _df = df_list[0]
+    for dfi in df_list[1:]:
+        _df = pd.concat([_df, dfi], axis=0)
+
     _df.reset_index(drop=True, inplace=True)
 
-    _df.rename(columns=column_mapper, inplace=True)
-
-    # reorder to original state... consequence of dict basis of DataFrames
-    _df = _df[column_names[:len(_df.columns)-1] + ['dp_n']]  # adjust for dp_n addition
     return _df
 
 
@@ -85,22 +86,18 @@ def read_file(file, version='CRD'):
     -------
     Pandas DataFrame
     """
-    _df = pd.read_csv(file, index_col=None, dtype=str, sep=',')
+    _df = pd.read_csv(file, index_col=None, dtype=str, sep=',', comment='#')
     _df.reset_index(drop=True, inplace=True)
 
-    col_mapper = OrderedDict()
-    for _x in range(0, len(column_names_original)):
-        col_mapper[column_names_original[_x]] = column_names[_x]
+    if 'Mooring Name' in _df.columns:
+        _df.rename(columns=column_mapper, inplace=True)
 
-    if version == 'original':
-        _df.rename(columns=col_mapper)
+        new_column_order = []
+        for col in _df.columns:
+            if col in config.column_names:
+                new_column_order.append(col)
 
-    #if 'dp_n' in _df.columns:
-    #    i_adjust = 1
-    #else:
-    #    i_adjust = 0
-
-    #_df.columns = column_names[:len(_df.columns)-i_adjust]
+        _df = _df[new_column_order]
 
     return _df
 
@@ -326,7 +323,24 @@ def refactor(_df, verbose=False):
     df : Pandas DataFrame
     """
 
-    _df = make_datetime(_df)
+    # HEADER
+    if 'MM/DD/YYYY' in _df.Date.any():
+        _df = _df[_df.Date != 'MM/DD/YYYY'].copy()
+
+    _datetime64_ns = (_df.Date + ' ' + _df.Time)
+
+    dt64_ns = []
+    for t in _datetime64_ns:
+        try:
+            dt = pd.to_datetime(t)
+        except:
+            print('Trouble with:', t)
+            dt = pd.NaT
+        dt64_ns.append(dt)
+
+    #_df['datetime64_ns'] = pd.to_datetime(_datetime64_ns)
+    _df['datetime64_ns'] = dt64_ns
+
     _df['year'] = _df.datetime64_ns.dt.year
     _df['dayofyear'] = _df.datetime64_ns.dt.dayofyear
     _df['time'] = _df.datetime64_ns.dt.time
