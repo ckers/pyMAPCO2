@@ -3,12 +3,13 @@
 Colin Dietrich 2017
 colin.dietrich@noaa.gov
 """
-
+from .utils import file_ops
 import pandas as pd
 
-
+# TODO: add to config.py
 keepers = ['ATM', 'EQU', 'STD5z', 'STD1', 'STD2', 'STD3', 'STD4']
 keeper_colors = dict(zip(keepers, ['cyan', 'blue', 'red', 'orange', 'green', 'purple', 'black']))
+go_data_path = 'C:\\Users\\dietrich\\code\\mapco2_tests\\go_data\\'
 
 
 def rename_and_format(_df):
@@ -31,17 +32,31 @@ def rename_and_format(_df):
     return _df
 
 
-def load_files(_f_list, verbose=False):
+def load_files(sys_ids, verbose=False):
     """
     Parameters
     ----------
-    _f_list : list of str, absolute paths to tab delimited files to load
+    sys_ids : list of str, id of each system to be used for abs path to data
+    #_f_list : list of str, absolute paths to tab delimited files to load
 
     Returns
     -------
     Pandas Dataframe
     """
 
+    _df = load_system(sys_ids[0], verbose=verbose)
+    if len(sys_ids) > 1:
+        for sys_id in sys_ids[1:]:
+            _dfi = load_system(sys_id, verbose=verbose)
+            _df = pd.concat([_df, _dfi], axis=0)
+        _df.reset_index(drop=True, inplace=True)
+    return _df
+
+
+def load_system(sys_id, verbose=False):
+    abs_dir = go_data_path + sys_id + '\\'
+    files = file_ops.files_in_directory(abs_dir, hint='dat', skip=None)
+    _f_list = [abs_dir + f for f in files]
     if verbose:
         print('Working on file:', _f_list[0])
     _df = pd.read_csv(_f_list[0], sep='\t')
@@ -53,6 +68,7 @@ def load_files(_f_list, verbose=False):
         _dfi = rename_and_format(_dfi)
         _df = pd.concat([_df, _dfi], axis=0)
     _df.reset_index(drop=True, inplace=True)
+    _df['system'] = sys_id
     return _df
 
 
@@ -62,7 +78,6 @@ def mapco2_format(df, hours_offset=0):
 
     dfgo = df.copy()
     dfgo['xCO2'] = dfgo['co2_um/m']
-    dfgo['system'] = 'GO5'
     dfgo = dfgo[['datetime64_ns', 'xCO2', 'type', 'system']]
     dfgo = dfgo[(dfgo['type'] == 'EQU') | (dfgo['type'] == 'ATM')]
     dfgo['cycle'] = dfgo['type'].apply(lambda x: {'ATM': 'apof', 'EQU': 'epof'}[x])
