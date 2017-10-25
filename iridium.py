@@ -153,21 +153,21 @@ def frame_co2(sample, system, verbose=False):
         apon = parse.co2_line(sample[11], verbose=verbose)
         apof = parse.co2_line(sample[12], verbose=verbose)
 
-        zpon = ['zpon'] + zpon.data
-        zpof = ['zpof'] + zpof.data
-        zpcl = ['zpcl'] + zpcl.data
-        spon = ['spon'] + spon.data
-        spof = ['spof'] + spof.data
-        spcl = ['spcl'] + spcl.data
-        epon = ['epon'] + epon.data
-        epof = ['epof'] + epof.data
-        apon = ['apon'] + apon.data
-        apof = ['apof'] + apof.data
+        zpon = [0, 'zpon'] + zpon.data
+        zpof = [1, 'zpof'] + zpof.data
+        zpcl = [2, 'zpcl'] + zpcl.data
+        spon = [3, 'spon'] + spon.data
+        spof = [4, 'spof'] + spof.data
+        spcl = [5, 'spcl'] + spcl.data
+        epon = [6, 'epon'] + epon.data
+        epof = [7, 'epof'] + epof.data
+        apon = [8, 'apon'] + apon.data
+        apof = [9, 'apof'] + apof.data
 
         data_template = datatypes.MAPCO2Data()
 
         _co2 = pd.DataFrame(data=[zpon, zpof, zpcl, spon, spof, spcl, epon, epof,
-                                  apon, apof], columns=['cycle']+data_template.data_names)
+                                  apon, apof], columns=['cycle_n', 'cycle']+data_template.data_names)
 
         _co2['common_key'] = data_common_key
         _co2['system'] = system
