@@ -63,7 +63,9 @@ def plot_units(df, title=''):
 
 
 def collate(systems_mapco2, t_start, t_end,
-            systems_waveglider=None, systems_asv=None, plot=False, verbose=False):
+            systems_waveglider=None, systems_asv=None,
+            update=False,
+            plot=False, verbose=False):
     """Hack because we can't just use unique IDs on our systems.  Wraps _collate
     to handle the 3 rudics directories co2 data is being savied WITH duplicate system IDs.
     Appends ID string to unit number to keep things straight based on:
@@ -78,6 +80,7 @@ def collate(systems_mapco2, t_start, t_end,
     systems_mapco2 : list of str, id of each system i.e. '0179'
     t_start : pd.Datetime, start time of data to collate
     t_end : pd.Datetime, end time of data to collate
+    update : bool, scrape new data from the Iridium server
     plot : bool, show datetime vs index plot
     waveglider_system : same format as mapo2_system, for waveglider systems
     systems_asv : same format as mapco2_system, for asv co2 systems
@@ -93,12 +96,14 @@ def collate(systems_mapco2, t_start, t_end,
 
     dff = _collate(systems_tested=systems_mapco2, datatype='mapco2',
                    t_start=t_start, t_end=t_end,
+                   update=update,
                    plot=plot, verbose=verbose)
     dff['datatype'] = 'm'
 
     if systems_waveglider is not None:
         dff_w = _collate(systems_tested=systems_waveglider, datatype='waveglider',
                          t_start=t_start, t_end=t_end,
+                         update=update,
                          plot=plot, verbose=verbose)
         dff_w['datatype'] = 'w'
         dff = pd.concat([dff, dff_w], axis=0, join='outer', ignore_index=True)
@@ -106,6 +111,7 @@ def collate(systems_mapco2, t_start, t_end,
     if systems_asv is not None:
         dff_a = _collate(systems_tested=systems_asv, datatype='asv',
                          t_start=t_start, t_end=t_end,
+                         update=update,
                          plot=plot, verbose=verbose)
         dff_a['datatype'] = 'a'
         dff = pd.concat([dff, dff_a], axis=0, join='outer', ignore_index=True)
@@ -118,6 +124,7 @@ def collate(systems_mapco2, t_start, t_end,
 
 def _collate(systems_tested,  datatype,
              t_start, t_end,
+             update=False,
              plot=False, verbose=False):
     """Scrape and collate relevent rudics files from one system type folder and download
     from the rudics server.
@@ -127,6 +134,7 @@ def _collate(systems_tested,  datatype,
     systems_tested : list of str, system serial numbers, i.e. '0120', to collect data for
     t_start : pd.Datetime, start time of data to collate
     t_end : pd.Datetime, end time of data to collate
+    update : bool, scrape new data from the Iridium server
     plot : bool, show datetime vs index plot
 
     Returns
@@ -148,16 +156,18 @@ def _collate(systems_tested,  datatype,
     #    local_target = config.local_mapco2_data_directory
     #    url_source = config.url_mapco2
 
-    # downloads files based on t_start, t_end
-    # does NOT pass file info on, local files are filtered on again later
-    # to establish which files to load
-    fdl = scrape.run(units=systems_tested,
-                     url_source=url_source,
-                     local_target=local_target,
-                     t_start=t_start,
-                     t_end=t_end,
-                     plot=plot)
+    if update:
+        # downloads files based on t_start, t_end
+        # does NOT pass file info on, local files are filtered on again later
+        # to establish which files to load
+        fdl = scrape.run(units=systems_tested,
+                         url_source=url_source,
+                         local_target=local_target,
+                         t_start=t_start,
+                         t_end=t_end,
+                         plot=plot)
 
+    # begin local collection of available data files
     f_list = []
     u_list = []
     for system in systems_tested:
