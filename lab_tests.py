@@ -5,17 +5,11 @@ Created on Wed Dec  7 10:46:46 2016
 @author: Colin Dietrich
 """
 
-#import sys
 import glob
 from datetime import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-
-#import plotly.offline as ply
-#import plotly.graph_objs as go
-
-#from bs4 import BeautifulSoup
 
 from . import scrape, load, iridium, config, plot_plt
 
@@ -45,7 +39,7 @@ def t_range(t_start, t_end, days_in_past):
 
 def plot_units(df, title=''):
     us = df.unit.unique()
-    marks = config.mpl_obvious_markers * ((len(config.mpl_obvious_markers)%len(us))+1)
+    marks = config.mpl_obvious_markers * ((len(config.mpl_obvious_markers) % len(us))+1)
     us = df.unit.unique()
     fig, ax = plt.subplots()
     mc = 0
@@ -63,7 +57,9 @@ def plot_units(df, title=''):
 
 
 def collate(systems_mapco2, t_start, t_end,
-            systems_waveglider=None, systems_asv=None, plot=False, verbose=False):
+            systems_waveglider=None, systems_asv=None,
+            update=False,
+            plot=False, verbose=False):
     """Hack because we can't just use unique IDs on our systems.  Wraps _collate
     to handle the 3 rudics directories co2 data is being savied WITH duplicate system IDs.
     Appends ID string to unit number to keep things straight based on:
@@ -78,6 +74,7 @@ def collate(systems_mapco2, t_start, t_end,
     systems_mapco2 : list of str, id of each system i.e. '0179'
     t_start : pd.Datetime, start time of data to collate
     t_end : pd.Datetime, end time of data to collate
+    update : bool, scrape new data from the Iridium server
     plot : bool, show datetime vs index plot
     waveglider_system : same format as mapo2_system, for waveglider systems
     systems_asv : same format as mapco2_system, for asv co2 systems
@@ -93,12 +90,14 @@ def collate(systems_mapco2, t_start, t_end,
 
     dff = _collate(systems_tested=systems_mapco2, datatype='mapco2',
                    t_start=t_start, t_end=t_end,
+                   update=update,
                    plot=plot, verbose=verbose)
     dff['datatype'] = 'm'
 
     if systems_waveglider is not None:
         dff_w = _collate(systems_tested=systems_waveglider, datatype='waveglider',
                          t_start=t_start, t_end=t_end,
+                         update=update,
                          plot=plot, verbose=verbose)
         dff_w['datatype'] = 'w'
         dff = pd.concat([dff, dff_w], axis=0, join='outer', ignore_index=True)
@@ -106,6 +105,7 @@ def collate(systems_mapco2, t_start, t_end,
     if systems_asv is not None:
         dff_a = _collate(systems_tested=systems_asv, datatype='asv',
                          t_start=t_start, t_end=t_end,
+                         update=update,
                          plot=plot, verbose=verbose)
         dff_a['datatype'] = 'a'
         dff = pd.concat([dff, dff_a], axis=0, join='outer', ignore_index=True)
@@ -118,6 +118,7 @@ def collate(systems_mapco2, t_start, t_end,
 
 def _collate(systems_tested,  datatype,
              t_start, t_end,
+             update=False,
              plot=False, verbose=False):
     """Scrape and collate relevent rudics files from one system type folder and download
     from the rudics server.
@@ -127,6 +128,7 @@ def _collate(systems_tested,  datatype,
     systems_tested : list of str, system serial numbers, i.e. '0120', to collect data for
     t_start : pd.Datetime, start time of data to collate
     t_end : pd.Datetime, end time of data to collate
+    update : bool, scrape new data from the Iridium server
     plot : bool, show datetime vs index plot
 
     Returns
@@ -148,19 +150,23 @@ def _collate(systems_tested,  datatype,
     #    local_target = config.local_mapco2_data_directory
     #    url_source = config.url_mapco2
 
-    # downloads files based on t_start, t_end
-    # does NOT pass file info on, local files are filtered on again later
-    # to establish which files to load
-    fdl = scrape.run(units=systems_tested,
-                     url_source=url_source,
-                     local_target=local_target,
-                     t_start=t_start,
-                     t_end=t_end,
-                     plot=plot)
+    if update:
+        # downloads files based on t_start, t_end
+        # does NOT pass file info on, local files are filtered on again later
+        # to establish which files to load
+        fdl = scrape.run(units=systems_tested,
+                         url_source=url_source,
+                         local_target=local_target,
+                         t_start=t_start,
+                         t_end=t_end,
+                         plot=plot)
 
+    # begin local collection of available data files
     f_list = []
     u_list = []
     for system in systems_tested:
+        if verbose:
+            print('lab_tests._collate>> system local data being loaded: {}'.format(system))
         # print(system)
         f_list_system = glob.glob(local_target + '\\' + system + '\\*')
         f_list = f_list + f_list_system
@@ -226,7 +232,7 @@ def time_filter(dff, t_start, t_end, plot=False):
 
     dffs = dff[(dff.datetime64_ns >= t_start) & (dff.datetime64_ns <= t_end)]
 
-    if plot:
+    if plot & len(dffs) > 0:
         plot_units(dffs, title='Date of Each File Being Loaded')
 
     return dffs
@@ -278,6 +284,8 @@ def import_all(df, verbose=False):
 
     co2.drop_duplicates(subset=['cycle', 'datetime64_ns', 'system'], inplace=True)
 
+    co2 = co2[co2.xCO2.apply(lambda x: False if isinstance(x, list) else True)]
+
     if verbose:
         print('lab_tests.import_all>> Systems being parsed:')
         print(co2.system.unique())
@@ -308,15 +316,8 @@ def log_entry(systems):
     w = [''] * wn
     a = [''] * an
 
-    #print(m)
-    #print(w)
-    #print(a)
-
-    #systems = ['m_0179', 'w_00004', 'w_00005']
-
     for x in systems:
         xtype, number = x.split('_')
-        #print(xtype, number)
         if xtype == 'm':
             m[int(number)-1] = 1
         if xtype == 'w':
@@ -327,9 +328,6 @@ def log_entry(systems):
     _d = m + w + a
     _d = [str(n) for n in _d]
 
-    #print(m)
-    #print(w)
-    #print(a)
     t = [datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S'), datetime.utcnow().strftime('%Y/%m/%d %H:%M:%S')]
     d = t + _d
     return h, d

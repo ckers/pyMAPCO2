@@ -86,7 +86,33 @@ def read_file(file, version='CRD'):
     -------
     Pandas DataFrame
     """
-    _df = pd.read_csv(file, index_col=None, dtype=str, sep=',', comment='#')
+
+    # open file once to find if SOCAT header is there
+    line_number_of_header = 0
+    with open(file, 'r') as _f:
+        for line in _f:
+            if line[0:7] == 'Mooring':
+                break
+            else:
+                line_number_of_header += 1
+
+    # open file a second time to find if two column header is present
+    line_number_of_units = 1
+    with open(file, 'r') as _f:
+        for line in _f:
+            try:
+                line = line.split(',')
+                if line[1] == 'Dec_Deg':
+                    break
+                else:
+                    line_number_of_units += 1
+            except:
+                continue
+
+    _df = pd.read_csv(file, index_col=None, dtype=str,
+                      header=line_number_of_header,
+                      #skiprows=line_number_of_units,
+                      sep=',', comment='#')
     _df.reset_index(drop=True, inplace=True)
 
     if 'Mooring Name' in _df.columns:
@@ -334,7 +360,7 @@ def refactor(_df, verbose=False):
         try:
             dt = pd.to_datetime(t)
         except:
-            print('Trouble with:', t)
+            print('Trouble converting to datetime:', t)
             dt = pd.NaT
         dt64_ns.append(dt)
 
