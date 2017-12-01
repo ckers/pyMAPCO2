@@ -5,17 +5,11 @@ Created on Wed Dec  7 10:46:46 2016
 @author: Colin Dietrich
 """
 
-#import sys
 import glob
 from datetime import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-
-#import plotly.offline as ply
-#import plotly.graph_objs as go
-
-#from bs4 import BeautifulSoup
 
 from . import scrape, load, iridium, config, plot_plt
 
@@ -45,7 +39,7 @@ def t_range(t_start, t_end, days_in_past):
 
 def plot_units(df, title=''):
     us = df.unit.unique()
-    marks = config.mpl_obvious_markers * ((len(config.mpl_obvious_markers)%len(us))+1)
+    marks = config.mpl_obvious_markers * ((len(config.mpl_obvious_markers) % len(us))+1)
     us = df.unit.unique()
     fig, ax = plt.subplots()
     mc = 0
@@ -171,6 +165,8 @@ def _collate(systems_tested,  datatype,
     f_list = []
     u_list = []
     for system in systems_tested:
+        if verbose:
+            print('lab_tests._collate>> system local data being loaded: {}'.format(system))
         # print(system)
         f_list_system = glob.glob(local_target + '\\' + system + '\\*')
         f_list = f_list + f_list_system
@@ -236,7 +232,7 @@ def time_filter(dff, t_start, t_end, plot=False):
 
     dffs = dff[(dff.datetime64_ns >= t_start) & (dff.datetime64_ns <= t_end)]
 
-    if plot:
+    if plot & len(dffs) > 0:
         plot_units(dffs, title='Date of Each File Being Loaded')
 
     return dffs
@@ -288,6 +284,8 @@ def import_all(df, verbose=False):
 
     co2.drop_duplicates(subset=['cycle', 'datetime64_ns', 'system'], inplace=True)
 
+    co2 = co2[co2.xCO2.apply(lambda x: False if isinstance(x, list) else True)]
+
     if verbose:
         print('lab_tests.import_all>> Systems being parsed:')
         print(co2.system.unique())
@@ -318,15 +316,8 @@ def log_entry(systems):
     w = [''] * wn
     a = [''] * an
 
-    #print(m)
-    #print(w)
-    #print(a)
-
-    #systems = ['m_0179', 'w_00004', 'w_00005']
-
     for x in systems:
         xtype, number = x.split('_')
-        #print(xtype, number)
         if xtype == 'm':
             m[int(number)-1] = 1
         if xtype == 'w':
@@ -337,9 +328,6 @@ def log_entry(systems):
     _d = m + w + a
     _d = [str(n) for n in _d]
 
-    #print(m)
-    #print(w)
-    #print(a)
     t = [datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S'), datetime.utcnow().strftime('%Y/%m/%d %H:%M:%S')]
     d = t + _d
     return h, d

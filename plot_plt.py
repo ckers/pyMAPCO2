@@ -669,7 +669,6 @@ def show(title=None, legend=True, xformat=False, yformat=False):
     if yformat:
         ax.yaxis.set_major_formatter(FormatStrFormatter(xformat))
 
-
     plt.margins(0.05, 0.1)
     plt.xticks(rotation='vertical')
     plt.show()

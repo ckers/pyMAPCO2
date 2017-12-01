@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-Algebra for CO2 data processing
+"""Algebra for CO2 data processing
 
-@author: Colin Dietrich
+Colin Dietrich 2017
+colin.dietrich@noaa.gov
 """
 
 
@@ -67,7 +67,7 @@ def day_of_year(date_time):
 
     Parameters
     ----------
-    datetime : DateTime object
+    date_time : DateTime object
 
     Returns
     -------
@@ -271,3 +271,19 @@ def m1_algebraic(x, y):
     residu2 = np.sum((Ri**2-R**2)**2)
 
     return xc, yc, Ri, R, residu, residu2
+
+
+def lsq_circle(x, y):
+    """Fit a circle to x,y data
+    TODO: more docstring
+
+    Parameters
+    ----------
+    x : array of float
+    y : array of float
+    """
+    xc, yc, ri, r, residu, residu2 = m1_algebraic(x, y)
+    theta_fit = np.linspace(-np.pi, np.pi, 180)
+    x_fit = xc + r * np.cos(theta_fit)
+    y_fit = yc + r * np.sin(theta_fit)
+    return xc, yc, x_fit, y_fit, ri, r, residu, residu2
