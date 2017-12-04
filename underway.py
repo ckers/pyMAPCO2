@@ -13,9 +13,6 @@ keeper_colors = dict(zip(keepers, ['cyan', 'blue', 'red', 'orange', 'green', 'pu
 go_data_path = 'C:\\Users\\dietrich\\code\\mapco2_tests\\go_data\\'
 
 
-
-
-
 def rename_and_format(_df):
     """Rename columns in GO data files and insert datetime column.
     Assumes str format and that 'pc_date' and 'pc_time' are valid column names
@@ -61,8 +58,39 @@ def load_files(sys_ids, verbose=False):
     return _df
 
 
+def concat_txt(sys_id, verbose=False):
+
+    # build list of files to load
+    abs_dir = go_data_path + sys_id + '\\'
+    files = file_ops.files_in_directory(abs_dir, hint='dat.txt', skip=None)
+    _f_list = [abs_dir + f for f in files]
+
+    if verbose:
+        print('Working on file:', _f_list[0])
+
+    lines_out = []
+    # load the first, or only file
+    with open(_f_list[0]) as f:
+        for line in f:
+            lines_out.append(line)
+
+    for fn in _f_list[1:]:
+        with open(fn) as f:
+            for line in f:
+                if line[0:4] == 'Type':
+                    continue
+                if ('DRAIN' in line[0:10]) or ('DOWN' in line[0:10]):
+                    continue
+                else:
+                    lines_out.append(line)
+
+    with open(abs_dir + 'compiled_GO_data.txt', 'w') as f:
+        for i in lines_out:
+            f.write(i)
+
+
 def load_system(sys_id, verbose=False):
-    """Load all files for one Underway pCO2 system
+    """Load all files for one Underway pCO2 system into a DataFrame
 
     Parameters
     ----------
