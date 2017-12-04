@@ -287,7 +287,8 @@ def frame(sample, verbose=False, ph=False):
     data_template = datatypes.MAPCO2Data()
 
     _co2 = pd.DataFrame(data=[zpon, zpof, zpcl, spon, spof, spcl, epon, epof,
-                              apon, apof], columns=['cycle']+data_template.data_names)
+                              apon, apof], columns=['cycle']+data_template.data_names,
+                        dtype=float)
 
     _co2['common_key'] = common_key
     _co2['system'] = h.system[0]

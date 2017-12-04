@@ -5,6 +5,7 @@ Created on Wed Dec 14 09:41:25 2016
 @author: dietrich
 """
 
+import numpy as np
 import pandas as pd
 
 from . import config
@@ -668,24 +669,24 @@ class MAPCO2Data(MAPCO2Base):
         super(MAPCO2Base, self).__init__()
         self.df = None
 
-        self.cycle = []
-        self.minute = []
-        self.licor_temp = []
-        self.licor_temp_std = []
-        self.licor_press = []
-        self.licor_press_std = []
-        self.xCO2 = []
-        self.xCO2_std = []
-        self.O2 = []
-        self.O2_std = []
-        self.RH = []
-        self.RH_std = []
-        self.RH_temp = []
-        self.RH_temp_std = []
-        self.xCO2_raw1 = []
-        self.xCO2_raw1_std = []
-        self.xCO2_raw2 = []
-        self.xCO2_raw2_std = []
+        self.cycle =            np.nan
+        self.minute =           np.nan
+        self.licor_temp =       np.nan
+        self.licor_temp_std =   np.nan
+        self.licor_press =      np.nan
+        self.licor_press_std =  np.nan
+        self.xCO2 =             np.nan
+        self.xCO2_std =         np.nan
+        self.O2 =               np.nan
+        self.O2_std =           np.nan
+        self.RH =               np.nan
+        self.RH_std =           np.nan
+        self.RH_temp =          np.nan
+        self.RH_temp_std =      np.nan
+        self.xCO2_raw1 =        np.nan
+        self.xCO2_raw1_std =    np.nan
+        self.xCO2_raw2 =        np.nan
+        self.xCO2_raw2_std =    np.nan
 
         self.data_names = ["minute",
                            "licor_temp",
