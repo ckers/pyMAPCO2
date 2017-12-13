@@ -58,6 +58,24 @@ def load_files(sys_ids, verbose=False):
     return _df
 
 
+def time_reformat(line):
+    """Reformat to consistent dates"""
+    line = line.split('\t')
+    #print(line)
+    date = line[2]
+    date = date.split('/')
+    d = date[0]
+    m = date[1]
+    y = date[2]
+
+    if len(y) == 2:
+        y = '20' + y
+
+    date = y + '/' + m + '/' + d
+    line[2] = date
+    return ','.join(line)
+
+
 def concat_txt(sys_id, verbose=False):
 
     # build list of files to load
@@ -71,10 +89,15 @@ def concat_txt(sys_id, verbose=False):
     lines_out = []
     # load the first, or only file
     with open(_f_list[0]) as f:
-        for line in f:
-            lines_out.append(line)
+        h = f.readline()
 
-    for fn in _f_list[1:]:
+    if 'tank T' in h:
+        h = h.replace('tank T', 'SST')
+        h = h.replace('\t', ',')
+
+    lines_out.append(h)
+
+    for fn in _f_list:
         with open(fn) as f:
             for line in f:
                 if line[0:4] == 'Type':
@@ -82,9 +105,9 @@ def concat_txt(sys_id, verbose=False):
                 if ('DRAIN' in line[0:10]) or ('DOWN' in line[0:10]):
                     continue
                 else:
-                    lines_out.append(line)
+                    lines_out.append(time_reformat(line))
 
-    with open(abs_dir + 'compiled_GO_data.txt', 'w') as f:
+    with open(abs_dir + 'compiled_GO_data.csv', 'w') as f:
         for i in lines_out:
             f.write(i)
 
