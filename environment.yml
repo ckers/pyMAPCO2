@@ -1,0 +1,25 @@
+name: scratch2
+
+channels:
+  - defaults
+  - conda-forge
+  - plotly
+
+dependencies:
+  - python=3.6
+  - numpy
+  - scipy
+  - pandas
+  - scikit-learn
+  - xarray
+  - geojson
+  - matplotlib
+  - seaborn
+  - plotly
+  - spyder
+  - jupyter
+  - beautifulsoup4
+  - pip
+
+  - pip:
+    - cufflinks
