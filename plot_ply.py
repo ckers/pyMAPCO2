@@ -758,12 +758,30 @@ def ms_data(df_co2):
             _y = _d.xCO2.values
             data_multi.append(go.Scatter(
                 x=_x, y=_y,
-                name=d[0] + ' ' + d[1] + ' ' + 'xCO2',
+                name=d[0] + ' ' + d[1] + ' ' + 'xCO2_wet',
                 yaxis='y',
-                # visible='legendonly',
+                visible='legendonly',
                 mode='lines+markers',
                 line=dict(width=2, color=xco2_sw_color))
             )
+
+        # EPOF
+        if d[1] == 'epof':
+            try:
+                _d = d[2]
+                _x = _d.datetime64_ns
+                _y = _d.xCO2_dry.values
+                data_multi.append(go.Scatter(
+                    x=_x, y=_y,
+                    name=d[0] + ' ' + d[1] + ' ' + 'xCO2_dry',
+                    yaxis='y',
+                    # visible='legendonly',
+                    mode='lines+markers',
+                    line=dict(width=2, color=xco2_sw_color))
+                )
+            except AttributeError:
+                # no dry data in this DataFrame
+                pass
 
         # APON
         if d[1] == 'apon':
@@ -788,12 +806,32 @@ def ms_data(df_co2):
             data_multi.append(go.Scatter(
                 #x=_x[keep], y=_y[keep],
                 x=_x, y=_y,
-                name=d[0] + ' ' + d[1] + ' ' + 'xCO2',
+                name=d[0] + ' ' + d[1] + ' ' + 'xCO2_wet',
                 yaxis='y',
-                # visible='legendonly',
+                visible='legendonly',
                 mode='lines+markers',
                 line=dict(width=2, color=xco2_air_color))
             )
+
+        # APOF
+        if d[1] == 'apof':
+            try:
+                _d = d[2]
+                _x = _d.datetime64_ns
+                _y = _d.xCO2_dry.values
+                #keep = notnull(_y)
+                data_multi.append(go.Scatter(
+                    #x=_x[keep], y=_y[keep],
+                    x=_x, y=_y,
+                    name=d[0] + ' ' + d[1] + ' ' + 'xCO2_dry',
+                    yaxis='y',
+                    # visible='legendonly',
+                    mode='lines+markers',
+                    line=dict(width=2, color=xco2_air_color))
+                )
+            except AttributeError:
+                # no dry data in this DataFrame
+                pass
 
         """
         # Air xCO2 Dry
