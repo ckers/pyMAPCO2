@@ -121,6 +121,22 @@ samiph_header = ('location_code', 'system_code',
                  'unit_time', 'unit_unix_time', 'gps_time',
                  'lat', 'lon', 'firmware', 'mode', 'hex1', 'hex2')
 
+sbe16_columns_short = ['sst', 'sst_std',
+                       'ssc', 'ssc_std',
+                       'press', 'press_std',
+                       'v1', 'v1_std', 'v2', 'v2_std', 'v3', 'v3_std',
+                       'v4', 'v4_std', 'v5', 'v5_std', 'v6', 'v6_std',
+                       'gtd_temp', 'gtd_temp_std', 'gtd_press', 'gtd_press_std',
+                       'temp1_serial', 'temp1_serial_std',
+                       'press1_serial', 'press1_serial_std',
+                       'o2_serial', 'o2_serial_std',
+                       'a', 'b', 'c', 'd', 'e', 'f',
+                       'sbe63_phase', 'sbe63_phase_std', 'sbe63_temp', 'sbe63_temp_std',
+                       'salinity', 'salinity_std',
+                       'soundv', 'soundv_std',
+                       'density', 'density_std',
+                       'battery_v', 'current_i']
+
 # different length data need different headers.  keys == list length/columns
 sbe16_header = {43: ['location_code', 'system_code',  # deployment did not startnow
                      'unit_time', 'unit_unix_time', 'gps_time',
