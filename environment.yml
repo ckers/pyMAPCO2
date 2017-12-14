@@ -1,4 +1,4 @@
-name: scratch2
+name: scratch
 
 channels:
   - defaults
@@ -9,6 +9,7 @@ dependencies:
   - python=3.6
   - numpy
   - scipy
+  - lxml
   - pandas
   - scikit-learn
   - xarray
@@ -23,3 +24,4 @@ dependencies:
 
   - pip:
     - cufflinks
+    - gmplot
