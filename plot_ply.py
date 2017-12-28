@@ -43,7 +43,7 @@ def default_layout(df=None,
                    ph_range=None,
                    sso2_range=None,
                    atm_press_range=None,
-                   general_range=[0,100],
+                   general_range=[0, 100],
                    autoscale=False,
                    title=None,
                    ):

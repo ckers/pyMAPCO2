@@ -83,7 +83,7 @@ def frame_co2(sample, system, verbose=False):
     if verbose:
         print('iridium.frame>>')
         print(sample)
-        print("="*10)
+        print("=" * 10)
 
     for line in sample:
         if line == config.repeat_flag:
