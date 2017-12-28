@@ -59,7 +59,8 @@ def plot_units(df, title=''):
 def collate(systems_mapco2, t_start, t_end,
             systems_waveglider=None, systems_asv=None,
             update=False,
-            plot=False, verbose=False):
+            #plot=False,
+            verbose=False):
     """Hack because we can't just use unique IDs on our systems.  Wraps _collate
     to handle the 3 rudics directories co2 data is being savied WITH duplicate system IDs.
     Appends ID string to unit number to keep things straight based on:
@@ -91,14 +92,16 @@ def collate(systems_mapco2, t_start, t_end,
     dff = _collate(systems_tested=systems_mapco2, datatype='mapco2',
                    t_start=t_start, t_end=t_end,
                    update=update,
-                   plot=plot, verbose=verbose)
+                   #plot=plot,
+                   verbose=verbose)
     dff['datatype'] = 'm'
 
     if systems_waveglider is not None:
         dff_w = _collate(systems_tested=systems_waveglider, datatype='waveglider',
                          t_start=t_start, t_end=t_end,
                          update=update,
-                         plot=plot, verbose=verbose)
+                         #plot=plot,
+                         verbose=verbose)
         dff_w['datatype'] = 'w'
         dff = pd.concat([dff, dff_w], axis=0, join='outer', ignore_index=True)
 
@@ -106,12 +109,13 @@ def collate(systems_mapco2, t_start, t_end,
         dff_a = _collate(systems_tested=systems_asv, datatype='asv',
                          t_start=t_start, t_end=t_end,
                          update=update,
-                         plot=plot, verbose=verbose)
+                         #plot=plot,
+                         verbose=verbose)
         dff_a['datatype'] = 'a'
         dff = pd.concat([dff, dff_a], axis=0, join='outer', ignore_index=True)
 
-    if plot:
-        plot_units(dff, title='Data Rows vs. Dates - Filtered to date range')
+    #if plot:
+    #    plot_units(dff, title='Data Rows vs. Dates - Filtered to date range')
 
     return dff
 
@@ -119,7 +123,8 @@ def collate(systems_mapco2, t_start, t_end,
 def _collate(systems_tested,  datatype,
              t_start, t_end,
              update=False,
-             plot=False, verbose=False):
+             #plot=False,
+             verbose=False):
     """Scrape and collate relevent rudics files from one system type folder and download
     from the rudics server.
 
@@ -159,7 +164,8 @@ def _collate(systems_tested,  datatype,
                          local_target=local_target,
                          t_start=t_start,
                          t_end=t_end,
-                         plot=plot)
+                         #plot=plot
+                         )
 
     # begin local collection of available data files
     f_list = []
