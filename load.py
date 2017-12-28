@@ -635,7 +635,7 @@ def mbl_site(mbl_file):
     dfmbl['mbl_xCO2_low_uncert'] = dfmbl.mbl_xCO2 - dfmbl.mbl_xCO2_uncert
     dfmbl['mbl_xCO2_high_uncert'] = dfmbl.mbl_xCO2 + dfmbl.mbl_xCO2_uncert
     dfmbl['datetime64_ns'] = pd.to_datetime(dfmbl.datetime_mbl)
-
+    dfmbl.datetime64_ns = dfmbl.datetime64_ns.dt.round('1 min')
     return dfmbl
 
 
