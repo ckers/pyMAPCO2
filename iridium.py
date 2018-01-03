@@ -203,8 +203,6 @@ def batch_co2(df, verbose=False):
     h, g, e, co2 = frame_co2(data_list[0], system[0], verbose=verbose)
 
     for n in range(1, len(data_list)):
-        if verbose:
-            print(len(n))
         h_n, g_n, e_n, co2_n = frame_co2(data_list[n], system[n], verbose=verbose)
         h = pd.concat([h, h_n])
         g = pd.concat([g, g_n])

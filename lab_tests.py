@@ -120,7 +120,7 @@ def collate(systems_mapco2, t_start, t_end,
     return dff
 
 
-def _collate(systems_tested,  datatype,
+def _collate(systems_tested, datatype,
              t_start, t_end,
              update=False,
              #plot=False,
