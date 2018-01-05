@@ -118,6 +118,9 @@ cycles = ['zero_pump_on', 'zero_pump_off', 'zero_post_cal', 'span_pump_on',
 # times to ignore, these are default fillers
 time_ignore = ('0000/00/00 00:00:00', '00/00/0000_00:00:00')
 
+# the set of all 999 fill values observed from the MAPCO2 firmware
+nan_9s = ['99.999', '99.9999', '99.999999', '9999.999', '9999.99999', '99999.']
+
 engr_header = {27: ['location_code', 'system_code',
                     'unit_time', 'unit_unix_time',
                     'gps_time', 'lat', 'lon', 'firmware', 'mode',
@@ -161,6 +164,7 @@ samiph_header = ('location_code', 'system_code',
                  'unit_time', 'unit_unix_time', 'gps_time',
                  'lat', 'lon', 'firmware', 'mode', 'hex1', 'hex2')
 
+# This works with iridium data... imagine a place where there was ONE data spec...
 sbe16_columns_short = ['sst', 'sst_std',
                        'ssc', 'ssc_std',
                        'press', 'press_std',
@@ -178,6 +182,8 @@ sbe16_columns_short = ['sst', 'sst_std',
                        'battery_v', 'current_i']
 
 # different length data need different headers.  keys == list length/columns
+# V0 is start value of voltage channels!
+# TODO: fix
 sbe16_header = {43: ['location_code', 'system_code',  # deployment did not startnow
                      'unit_time', 'unit_unix_time', 'gps_time',
                      'lat', 'lon', 'firmware', 'mode',

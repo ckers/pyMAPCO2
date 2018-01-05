@@ -255,6 +255,8 @@ def import_all(df, verbose=False):
     co2 : DataFrame, co2 measurement data
     """
 
+    print('UPDATE call to iridium.batch_co2!')
+
     h, g, e, co2 = iridium.batch_co2(df, verbose=verbose)
 
     if verbose:
@@ -269,14 +271,14 @@ def import_all(df, verbose=False):
         print('lab_tests.import_all>> Systems being parsed:')
         print(co2.system.unique())
 
-    co2_list = []
-    for system in co2.system.unique():
-        for cycle in co2.cycle.unique():
-            key = system + '_' + cycle
-            _df = co2[(co2.system == system) & (co2.cycle == cycle)].copy()
-            _df.sort_values(by='datetime64_ns', inplace=True)
-            _df.reset_index(inplace=True, drop=True)
-            co2_list.append((system, cycle, _df))
+    #co2_list = []
+    #for system in co2.system.unique():
+    #    for cycle in co2.cycle.unique():
+    #        key = system + '_' + cycle
+    #        _df = co2[(co2.system == system) & (co2.cycle == cycle)].copy()
+    #        _df.sort_values(by='datetime64_ns', inplace=True)
+    #        _df.reset_index(inplace=True, drop=True)
+    #        co2_list.append((system, cycle, _df))
 
     return h, g, e, co2
 

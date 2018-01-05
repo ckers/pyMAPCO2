@@ -6,6 +6,7 @@ Reindex TAO SSTC data to 3hr or arbitrary interval
 @author: Colin Dietrich
 """
 
+import numpy as np
 import pandas as pd
 from time import strftime
 from io import StringIO
@@ -230,3 +231,29 @@ def daily_to_3h(filepath, f_sst, f_ssc, t0, t1,
         plt.show()
 
     return df_sal, df_sst
+
+
+def clean_sbe16(list_data):
+    """Clean list data in an iridium frame of SBE16 data
+
+    Parameters
+    ----------
+    list_data : list
+
+    """
+
+    ld = [x for x in list_data if 'SBE' not in x]
+    ld = ' '.join(ld)
+    ld = ld.split(' ')
+    ld = [x for x in ld if x != '']
+
+    # deal with uneven nan fill 9 characters
+    # rather than .replace_nan with floats of varying decimals later...
+    _ld = []
+    for x in ld:
+        if x in config.nan_9s:
+            x = np.nan
+        else:
+            x = np.float64(x)
+        _ld.append(x)
+    return _ld

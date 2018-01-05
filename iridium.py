@@ -209,6 +209,10 @@ def batch_co2(df, verbose=False):
         e = pd.concat([e, e_n])
         co2 = pd.concat([co2, co2_n])
 
+    co2.drop_duplicates(subset=['cycle', 'datetime64_ns', 'system'], inplace=True)
+
+    co2 = co2[co2.xCO2.apply(lambda x: False if isinstance(x, list) else True)]
+
     return h, g, e, co2
 
 
@@ -364,9 +368,15 @@ def index_frame(data, verbose=False):
     return sbe16, ph
 
 
-def batch_list(data_list, verbose=False):
+def batch_aux(data_list, verbose=False):
     """Batch process and concatenate data from a DataFrame column
-    that contains list data"""
+    that contains list data
+
+    data_list :
+    verbose : bool, print debug statements
+
+    Superceeds batch_co2, same function with ph aux sbe16
+    """
 
     h, g, e, co2, aux, sbe16, phdf = frame(data_list[0], verbose=verbose)
 
