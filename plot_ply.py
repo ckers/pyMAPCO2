@@ -43,7 +43,7 @@ def default_layout(df=None,
                    ph_range=None,
                    sso2_range=None,
                    atm_press_range=None,
-                   general_range=[0,100],
+                   general_range=[0, 100],
                    autoscale=False,
                    title=None,
                    ):
@@ -116,16 +116,16 @@ def default_layout(df=None,
 
         yaxis2=dict(
             title='SST (C)',
-            titlefont=dict(color=sst_color),
-            tickfont=dict(color=sst_color),
+            titlefont=dict(color=config.data_colors['SST']),
+            tickfont=dict(color=config.data_colors['SST']),
             overlaying='y',
             side='right',
             range=sst_range
         ),
         yaxis3=dict(
             title='SSS',
-            titlefont=dict(color=sss_color),
-            tickfont=dict(color=sss_color),
+            titlefont=dict(color=config.data_colors['SSS']),
+            tickfont=dict(color=config.data_colors['SSS']),
             overlaying='y',
             side='right',
             range=sss_range,
@@ -134,8 +134,8 @@ def default_layout(df=None,
 
         yaxis4=dict(
             title='Pressure (kPa)',
-            titlefont=dict(color=ntu_color),
-            tickfont=dict(color=ntu_color),
+            titlefont=dict(color=config.data_colors['NTU']),
+            tickfont=dict(color=config.data_colors['NTU']),
             overlaying='y',
             side='right',
             range=atm_press_range,
@@ -143,8 +143,8 @@ def default_layout(df=None,
         ),
         yaxis5=dict(
             title='NTU (NTU) | CHL (μM) | SSO2 (μM)',
-            titlefont=dict(color=sso2_color),
-            tickfont=dict(color=sso2_color),
+            titlefont=dict(color=config.data_colors['O2']),
+            tickfont=dict(color=config.data_colors['O2']),
             overlaying='y',
             side='right',
             position=0.94,
@@ -152,8 +152,8 @@ def default_layout(df=None,
         ),
         yaxis6=dict(
             title='pH',
-            titlefont=dict(color=ph_color),
-            tickfont=dict(color=ph_color),
+            titlefont=dict(color=config.data_colors['pH']),
+            tickfont=dict(color=config.data_colors['pH']),
             overlaying='y',
             side='right',
             position=0.97,
@@ -161,8 +161,8 @@ def default_layout(df=None,
         ),
         yaxis7=dict(
             title='General',
-            titlefont=dict(color=general_color),
-            tickfont=dict(color=general_color),
+            titlefont=dict(color=config.data_colors['general']),
+            tickfont=dict(color=config.data_colors['general']),
             overlaying='y',
             side='right',
             position=1.0,
@@ -207,17 +207,13 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             yaxis='y7',
             visible=_visible,
             mode='lines',
-            line=dict(width=2, color=general_color),
+            line=dict(width=2, color=config.data_colors['general']),
             connectgaps=connect_gaps)
             )
 
     for key, value in kwargs.items():
         # General Plotting Axis
         if key in df_columns:
-            # if value:
-            #     visible = True
-            # else:
-            #     visible = 'legendonly'
             gen_x = x
             gen_y = df[key]
             gen_vis = True
@@ -237,7 +233,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             opacity=0.5,
             visible='legendonly',
             mode='lines',
-            line=dict(width=2, color=xco2_sw_color, dash='dash'))
+            line=dict(width=2, color=config.data_colors['xCO2_SW_wet'], dash='dash'))
         )
 
     # xCO2 Seawater DRY
@@ -246,7 +242,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             x=x, y=df.xCO2_SW_dry,
             name='xCO2_SW_dry' + suffix,
             mode='lines',
-            line=dict(width=2, color=xco2_sw_color),
+            line=dict(width=2, color=config.data_colors['xCO2_SW_dry']),
             connectgaps=connect_gaps)
         )
 
@@ -256,7 +252,8 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             x=x, y=df.xCO2_SW_dry_flagged_3,
             name='xCO2 SW Dry Flag 3' + suffix,
             mode='markers',
-            marker=dict(size=10, symbol='square-open', color='orange'))
+            marker=dict(size=10, symbol='square-open',
+                        color=config.data_colors['xCO2_SW_QF']))
         )
 
     # xCO2 Seawater DRY flagged 4
@@ -265,7 +262,8 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             x=x, y=df.xCO2_SW_dry_flagged_4,
             name='xCO2 SW Dry Flag 4' + suffix,
             mode='markers',
-            marker=dict(size=10, symbol='circle-open', color='red'))
+            marker=dict(size=10, symbol='circle-open',
+                        color=config.data_colors['xCO2_SW_QF']))
         )
 
     # MBL Air data if available
@@ -276,7 +274,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             opacity=0.75,
             visible='legendonly',
             mode='lines',
-            line=dict(width=2, color=mbl_color),
+            line=dict(width=2, color=config.data_colors['MBL']),
             connectgaps=connect_gaps)
         )
 
@@ -288,7 +286,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             opacity=0.5,
             visible='legendonly',
             mode='lines',
-            line=dict(width=2, color=xco2_air_color, dash='dash'),
+            line=dict(width=2, color=config.data_colors['xCO2_Air_wet'], dash='dash'),
             connectgaps=connect_gaps)
         )
 
@@ -298,7 +296,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             x=x, y=df.xCO2_Air_dry,
             name='xCO2_Air_dry' + suffix,
             mode='lines',
-            line=dict(width=2, color=xco2_air_color),
+            line=dict(width=2, color=config.data_colors['xCO2_Air_dry']),
             connectgaps=connect_gaps)
         )
 
@@ -308,7 +306,8 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             x=x, y=df.xCO2_Air_dry_flagged_3,
             name='xCO2 Air Dry Flag 3' + suffix,
             mode='markers',
-            marker=dict(size=10, symbol='square-open', color='orange'))
+            marker=dict(size=10, symbol='square-open',
+                        color=config.data_colors['xCO2_Air_QF']))
         )
 
     # xCO2 Air DRY flagged 4
@@ -317,7 +316,8 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             x=x, y=df.xCO2_Air_dry_flagged_4,
             name='xCO2 Air Dry Flag 4' + suffix,
             mode='markers',
-            marker=dict(size=10, symbol='circle-open', color='red'))
+            marker=dict(size=10, symbol='circle-open',
+                        color=config.data_colors['xCO2_Air_QF']))
         )
 
     # MAPCO2 sea surface temperature (from final data)
@@ -327,7 +327,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='SST' + suffix,
             yaxis='y2',
             mode='lines',
-            line=dict(width=2, color=sst_color),
+            line=dict(width=2, color=config.data_colors['SST']),
             connectgaps=connect_gaps)
         )
 
@@ -338,7 +338,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='SST SSO2' + suffix,
             yaxis='y2',
             mode='lines',
-            line=dict(width=2, color=sst_sso2_color),
+            line=dict(width=2, color=config.data_colors['O2']),
             connectgaps=connect_gaps)
         )
 
@@ -349,7 +349,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='SST MAPCO2' + suffix,
             yaxis='y2',
             mode='lines',
-            line=dict(width=2, color=sst_mapco2_color),
+            line=dict(width=2, color=config.data_colors['SST']),
             connectgaps=connect_gaps)
         )
 
@@ -360,7 +360,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='SST pH' + suffix,
             yaxis='y2',
             mode='lines',
-            line=dict(width=2, color=sst_ph_color),
+            line=dict(width=2, color=config.data_colors['pH']),
             connectgaps=connect_gaps)
         )
 
@@ -371,7 +371,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='SST MAPCO2 & Partner' + suffix,
             yaxis='y2',
             mode='lines',
-            line=dict(width=2, color=sst_partner_color),
+            line=dict(width=2, color=config.data_colors['SST']),
             connectgaps=connect_gaps)
         )
 
@@ -382,7 +382,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='pH' + suffix,
             yaxis='y6',
             mode='lines',
-            line=dict(width=2, color=ph_color),
+            line=dict(width=2, color=config.data_colors['pH']),
             connectgaps=connect_gaps)
         )
 
@@ -393,7 +393,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='pH Final' + suffix,
             yaxis='y6',
             mode='lines',
-            line=dict(width=2, color=ph_color),
+            line=dict(width=2, color=config.data_colors['pH']),
             connectgaps=connect_gaps)
         )
 
@@ -404,7 +404,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='TApH' + suffix,
             yaxis='y6',
             mode='lines',
-            line=dict(width=2, color=ph_ta_color),
+            line=dict(width=2, color=config.data_colors['pH']),
             connectgaps=connect_gaps)
         )
 
@@ -414,7 +414,8 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             x=x, y=df.pH_flagged_3,
             name='pH Flag 3' + suffix,
             yaxis='y6',
-            marker=dict(size=10, symbol='square-open', color='orange'))
+            marker=dict(size=10, symbol='square-open',
+                        color=config.data_colors['pH_flagged_3']))
         )
 
     # sea surface pH flagged 4
@@ -423,7 +424,8 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             x=x, y=df.pH_flagged_4,
             name='pH Flag 4' + suffix,
             yaxis='y6',
-            marker=dict(size=10, symbol='circle-open', color='red'))
+            marker=dict(size=10, symbol='circle-open',
+                        color=config.data_colors['pH_flagged_4']))
         )
 
     # sea surface salinity from MAPCO2 SBE16
@@ -433,7 +435,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='SSS' + suffix,
             yaxis='y3',
             mode='markers+lines',
-            line=dict(width=2, color=sss_color),
+            line=dict(width=2, color=config.data_colors['SSS']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
@@ -445,7 +447,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='SSS MAPCO2 SBE16' + suffix,
             yaxis='y3',
             mode='markers+lines',
-            line=dict(width=2, color=sss_color),
+            line=dict(width=2, color=config.data_colors['SSS']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
@@ -457,7 +459,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='SSS Partner' + suffix,
             yaxis='y3',
             mode='markers+lines',
-            line=dict(width=2, color=sss_color),
+            line=dict(width=2, color=config.data_colors['SSS']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
@@ -469,7 +471,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='SSS MAPCO2 & Partner Merged' + suffix,
             yaxis='y3',
             mode='markers+lines',
-            line=dict(width=2, color=sss_color),
+            line=dict(width=2, color=config.data_colors['SSS']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
@@ -481,7 +483,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='SSO2 MAPCO2 SBE16' + suffix,
             yaxis='y3',
             mode='markers+lines',
-            line=dict(width=2, color=sso2_color),
+            line=dict(width=2, color=config.data_colors['O2']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
@@ -492,7 +494,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='ABS(diff) Air EQ Pump On Pressure (kPa)' + suffix,
             yaxis='y4',
             mode='lines',
-            line=dict(width=2, color=apon_press_color),
+            line=dict(width=2, color=config.data_colors['general']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
@@ -503,7 +505,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='Equilibrator Pump On Pressure (kPa)' + suffix,
             yaxis='y4',
             mode='lines',
-            line=dict(width=2, color=epon_press_color),
+            line=dict(width=2, color=config.data_colors['epon_press']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
@@ -514,7 +516,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='Air Pump On Pressure (kPa)' + suffix,
             yaxis='y4',
             mode='markers+lines',
-            line=dict(width=2, color=apon_press_color),
+            line=dict(width=2, color=config.data_colors['apon_press']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
@@ -525,7 +527,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='Precipitation' + suffix,
             yaxis='y7',
             mode='markers+lines',
-            line=dict(width=2, color=precip_color),
+            line=dict(width=2, color=config.data_colors['precip']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
@@ -536,7 +538,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             name='Wind Speed MAG (m/s)' + suffix,
             yaxis='y7',
             mode='markers+lines',
-            line=dict(width=2, color=precip_color),
+            line=dict(width=2, color=config.data_colors['general']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
@@ -556,7 +558,7 @@ def ph_data(df):
             x=x, y=df.pH,
             name='pH Initial',
             yaxis='y6',
-            line=dict(width=2, color=ph_color))
+            line=dict(width=2, color=config.data_colors['pH']))
         )
 
     # sea surface pH INITIAL
@@ -565,7 +567,7 @@ def ph_data(df):
             x=x, y=df.ph_int,
             name='pH Internal',
             yaxis='y6',
-            line=dict(width=2, color=ph_int_color))
+            line=dict(width=2, color=config.data_colors['pH_int']))
         )
 
     # sea surface pH INITIAL
@@ -574,7 +576,7 @@ def ph_data(df):
             x=x, y=df.ph_ext,
             name='pH External',
             yaxis='y6',
-            line=dict(width=2, color=ph_ext_color))
+            line=dict(width=2, color=config.data_colors['pH_ext']))
         )
 
     # sea surface pH FINAL
@@ -583,7 +585,7 @@ def ph_data(df):
             x=x, y=df.pH_final,
             name='pH Final',
             yaxis='y6',
-            line=dict(width=2, color=ph_color))
+            line=dict(width=2, color=config.data_colors['pH']))
         )
 
     # sea surface pH flagged 3
@@ -592,7 +594,8 @@ def ph_data(df):
             x=x, y=df.pH_flagged_3,
             name='pH Flag 3',
             yaxis='y6',
-            marker=dict(size=10, symbol='square-open', color='orange'))
+            marker=dict(size=10, symbol='square-open',
+                        color=config.data_colors['pH_flagged_3']))
         )
 
     # sea surface pH flagged 4
@@ -601,7 +604,8 @@ def ph_data(df):
             x=x, y=df.pH_flagged_4,
             name='pH Flag 4',
             yaxis='y6',
-            marker=dict(size=10, symbol='circle-open', color='red'))
+            marker=dict(size=10, symbol='circle-open',
+                        color=config.data_colors['pH_flagged_4']))
         )
 
     return data
@@ -637,7 +641,7 @@ def my_data(df):
             name=str(y) + ' xCO2_SW_dry',
             yaxis='y',
             mode='line',
-            line=dict(width=2, color=xco2_sw_color))
+            line=dict(width=2, color=config.data_colors['xCO2_SW_dry']))
         )
 
     # Air xCO2 Dry
@@ -650,7 +654,7 @@ def my_data(df):
             name=str(y) + ' xCO2_Air_dry',
             yaxis='y',
             mode='line',
-            line=dict(width=2, color=xco2_air_color))
+            line=dict(width=2, color=config.data_colors['xCO2_Air_dry']))
         )
 
     # Sea Surface pH
@@ -665,7 +669,7 @@ def my_data(df):
                 yaxis='y6',
                 mode='line',
                 # visible='legendonly',
-                line=dict(width=2, color=ph_color))
+                line=dict(width=2, color=config.data_colors['pH']))
             )
 
     # Sea Surface Temperature
@@ -679,7 +683,7 @@ def my_data(df):
             yaxis='y2',
             visible='legendonly',
             mode='line',
-            line=dict(width=2, color=sst_color))
+            line=dict(width=2, color=config.data_colors['SST']))
         )
 
     # Sea Surface Salinity
@@ -693,7 +697,7 @@ def my_data(df):
             yaxis='y3',
             visible='legendonly',
             mode='line',
-            line=dict(width=2, color=sss_color))
+            line=dict(width=2, color=config.data_colors['SSS']))
         )
 
     return data_multi
@@ -748,7 +752,7 @@ def ms_data(df_co2):
                 yaxis='y',
                 visible='legendonly',
                 mode='line',
-                line=dict(width=2, color=xco2_sw_color))
+                line=dict(width=2, color=config.data_colors['xCO2_SW_dry']))
             )
 
         # EPOF
@@ -758,12 +762,30 @@ def ms_data(df_co2):
             _y = _d.xCO2.values
             data_multi.append(go.Scatter(
                 x=_x, y=_y,
-                name=d[0] + ' ' + d[1] + ' ' + 'xCO2',
+                name=d[0] + ' ' + d[1] + ' ' + 'xCO2_wet',
                 yaxis='y',
-                # visible='legendonly',
+                visible='legendonly',
                 mode='lines+markers',
-                line=dict(width=2, color=xco2_sw_color))
+                line=dict(width=2, color=config.data_colors['xCO2_SW_dry']))
             )
+
+        # EPOF
+        if d[1] == 'epof':
+            try:
+                _d = d[2]
+                _x = _d.datetime64_ns
+                _y = _d.xCO2_dry.values
+                data_multi.append(go.Scatter(
+                    x=_x, y=_y,
+                    name=d[0] + ' ' + d[1] + ' ' + 'xCO2_dry',
+                    yaxis='y',
+                    # visible='legendonly',
+                    mode='lines+markers',
+                    line=dict(width=2, color=config.data_colors['xCO2_SW_dry']))
+                )
+            except AttributeError:
+                # no dry data in this DataFrame
+                pass
 
         # APON
         if d[1] == 'apon':
@@ -776,7 +798,7 @@ def ms_data(df_co2):
                 yaxis='y',
                 visible='legendonly',
                 mode='line',
-                line=dict(width=2, color=xco2_air_color))
+                line=dict(width=2, color=config.data_colors['xCO2_Air_dry']))
             )
 
         # APOF
@@ -788,12 +810,32 @@ def ms_data(df_co2):
             data_multi.append(go.Scatter(
                 #x=_x[keep], y=_y[keep],
                 x=_x, y=_y,
-                name=d[0] + ' ' + d[1] + ' ' + 'xCO2',
+                name=d[0] + ' ' + d[1] + ' ' + 'xCO2_wet',
                 yaxis='y',
-                # visible='legendonly',
+                visible='legendonly',
                 mode='lines+markers',
-                line=dict(width=2, color=xco2_air_color))
+                line=dict(width=2, color=config.data_colors['xCO2_Air_dry']))
             )
+
+        # APOF
+        if d[1] == 'apof':
+            try:
+                _d = d[2]
+                _x = _d.datetime64_ns
+                _y = _d.xCO2_dry.values
+                #keep = notnull(_y)
+                data_multi.append(go.Scatter(
+                    #x=_x[keep], y=_y[keep],
+                    x=_x, y=_y,
+                    name=d[0] + ' ' + d[1] + ' ' + 'xCO2_dry',
+                    yaxis='y',
+                    # visible='legendonly',
+                    mode='lines+markers',
+                    line=dict(width=2, color=config.data_colors['xCO2_Air_dry']))
+                )
+            except AttributeError:
+                # no dry data in this DataFrame
+                pass
 
         """
         # Air xCO2 Dry

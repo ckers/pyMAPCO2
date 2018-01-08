@@ -19,6 +19,18 @@ local_mapco2_data_directory = os.path.normpath('C:\\Users\\dietrich\\data\\rudic
 local_waveglider_data_directory = os.path.normpath('C:\\Users\\dietrich\\data\\rudics\\waveglider\\')
 local_asv_data_directory = os.path.normpath('C:\\Users\\dietrich\\data\\rudics\\asv\\')
 
+cm = {'red':            'ff0000',
+      'blue':           '0000ff',
+      'green':          '00c800',
+      'brown':          '8B4513',
+      'purple':         'A01FF0',
+      'dk blue gray':   '314F4F',
+      'Magenta':        'ff00ff',
+      'dk green':       '006400',
+      'dk yellow':      'FFD700',
+      'dk red':         'B22222',
+      'black':          '000000'}
+
 # final data .csv column names as published
 column_names = ['Mooring', 'Latitude', 'Longitude',
                 'Date', 'Time', 'xCO2_SW_wet', 'xCO2_SW_QF',
@@ -27,6 +39,34 @@ column_names = ['Mooring', 'Latitude', 'Longitude',
                 'SST', 'SSS', 'xCO2_SW_dry', 'xCO2_Air_dry',
                 'fCO2_SW_sat', 'fCO2_Air_sat', 'dfCO2',
                 'pCO2_SW_sat', 'pCO2_Air_sat', 'dpCO2', 'pH', 'pH_QF']
+
+column_names_colors = ['black', 'black', 'black',
+                       'black', 'black', '314F4F', 'orange',
+                       cm['purple'], cm['blue'], 'orange', 'pink',
+                       'grey', 'red', 'green',
+                       'orange', 'purple', 'blue', 'cyan',
+                       'blue', 'cyan', 'grey',
+                       'blue', 'cyan', 'grey', 'red', 'orange']
+data_colors = dict(zip(column_names, column_names_colors))
+
+# data not included in published data
+data_colors['NTU'] = 'grey'
+data_colors['O2'] = 'magenta'
+data_colors['TA'] = '#53f442'
+data_colors['pH_int'] = '#9ff22b'
+data_colors['pH_ext'] = '#2bf2bd'
+data_colors['MBL'] = 'black'
+data_colors['epon_press'] = '#f442f4'  # purple-ish
+data_colors['apon_press'] = '#f47141'  # salmon/orange-ish
+data_colors['precipt'] = '#ede21e'  # yellowish
+data_colors['general'] = '#7f808c'  # steel blue/grey
+
+data_colors['xCO2_Air_dry_flagged_3'] = 'orange'
+data_colors['xCO2_Air_dry_flagged_4'] = 'red'
+data_colors['xCO2_SW_dry_flagged_3'] = 'orange'
+data_colors['xCO2_SW_dry_flagged_4'] = 'red'
+data_colors['pH_flagged_3'] = 'orange'
+data_colors['pH_flagged_4'] = 'red'
 
 column_names_original = ['Mooring Name', 'Latitude', 'Longitude', 'Date', 'Time',
                          'xCO2 SW (wet) (umol/mol)', 'CO2 SW QF', 'H2O SW (mmol/mol)',
@@ -78,6 +118,9 @@ cycles = ['zero_pump_on', 'zero_pump_off', 'zero_post_cal', 'span_pump_on',
 # times to ignore, these are default fillers
 time_ignore = ('0000/00/00 00:00:00', '00/00/0000_00:00:00')
 
+# the set of all 999 fill values observed from the MAPCO2 firmware
+nan_9s = ['99.999', '99.9999', '99.999999', '9999.999', '9999.99999', '99999.']
+
 engr_header = {27: ['location_code', 'system_code',
                     'unit_time', 'unit_unix_time',
                     'gps_time', 'lat', 'lon', 'firmware', 'mode',
@@ -121,7 +164,26 @@ samiph_header = ('location_code', 'system_code',
                  'unit_time', 'unit_unix_time', 'gps_time',
                  'lat', 'lon', 'firmware', 'mode', 'hex1', 'hex2')
 
+# This works with iridium data... imagine a place where there was ONE data spec...
+sbe16_columns_short = ['sst', 'sst_std',
+                       'ssc', 'ssc_std',
+                       'press', 'press_std',
+                       'v0', 'v0_std', 'v1', 'v1_std', 'v2', 'v2_std',
+                       'v3', 'v3_std', 'v4', 'v4_std', 'v5', 'v5_std',
+                       'gtd_temp', 'gtd_temp_std', 'gtd_press', 'gtd_press_std',
+                       'temp1_serial', 'temp1_serial_std',
+                       'press1_serial', 'press1_serial_std',
+                       'o2_serial', 'o2_serial_std',
+                       'a', 'b', 'c', 'd', 'e', 'f',
+                       'sbe63_phase', 'sbe63_phase_std', 'sbe63_temp', 'sbe63_temp_std',
+                       'salinity', 'salinity_std',
+                       'soundv', 'soundv_std',
+                       'density', 'density_std',
+                       'battery_v', 'current_i']
+
 # different length data need different headers.  keys == list length/columns
+# V0 is start value of voltage channels!
+# TODO: fix
 sbe16_header = {43: ['location_code', 'system_code',  # deployment did not startnow
                      'unit_time', 'unit_unix_time', 'gps_time',
                      'lat', 'lon', 'firmware', 'mode',

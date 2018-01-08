@@ -13,9 +13,6 @@ keeper_colors = dict(zip(keepers, ['cyan', 'blue', 'red', 'orange', 'green', 'pu
 go_data_path = 'C:\\Users\\dietrich\\code\\mapco2_tests\\go_data\\'
 
 
-
-
-
 def rename_and_format(_df):
     """Rename columns in GO data files and insert datetime column.
     Assumes str format and that 'pc_date' and 'pc_time' are valid column names
@@ -61,8 +58,62 @@ def load_files(sys_ids, verbose=False):
     return _df
 
 
+def time_reformat(line):
+    """Reformat to consistent dates"""
+    line = line.split('\t')
+    #print(line)
+    date = line[2]
+    date = date.split('/')
+    d = date[0]
+    m = date[1]
+    y = date[2]
+
+    if len(y) == 2:
+        y = '20' + y
+
+    date = y + '/' + m + '/' + d
+    line[2] = date
+    return ','.join(line)
+
+
+def concat_txt(sys_id, verbose=False):
+
+    # build list of files to load
+    abs_dir = go_data_path + sys_id + '\\'
+    files = file_ops.files_in_directory(abs_dir, hint='dat.txt', skip=None)
+    _f_list = [abs_dir + f for f in files]
+
+    if verbose:
+        print('Working on file:', _f_list[0])
+
+    lines_out = []
+    # load the first, or only file
+    with open(_f_list[0]) as f:
+        h = f.readline()
+
+    if 'tank T' in h:
+        h = h.replace('tank T', 'SST')
+        h = h.replace('\t', ',')
+
+    lines_out.append(h)
+
+    for fn in _f_list:
+        with open(fn) as f:
+            for line in f:
+                if line[0:4] == 'Type':
+                    continue
+                if ('DRAIN' in line[0:10]) or ('DOWN' in line[0:10]):
+                    continue
+                else:
+                    lines_out.append(time_reformat(line))
+
+    with open(abs_dir + 'compiled_GO_data.csv', 'w') as f:
+        for i in lines_out:
+            f.write(i)
+
+
 def load_system(sys_id, verbose=False):
-    """Load all files for one Underway pCO2 system
+    """Load all files for one Underway pCO2 system into a DataFrame
 
     Parameters
     ----------

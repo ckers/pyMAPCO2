@@ -58,8 +58,7 @@ def plot_units(df, title=''):
 
 def collate(systems_mapco2, t_start, t_end,
             systems_waveglider=None, systems_asv=None,
-            update=False,
-            plot=False, verbose=False):
+            update=False, verbose=False):
     """Hack because we can't just use unique IDs on our systems.  Wraps _collate
     to handle the 3 rudics directories co2 data is being savied WITH duplicate system IDs.
     Appends ID string to unit number to keep things straight based on:
@@ -75,9 +74,9 @@ def collate(systems_mapco2, t_start, t_end,
     t_start : pd.Datetime, start time of data to collate
     t_end : pd.Datetime, end time of data to collate
     update : bool, scrape new data from the Iridium server
-    plot : bool, show datetime vs index plot
-    waveglider_system : same format as mapo2_system, for waveglider systems
+    systems_waveglider : same format as mapo2_system, for waveglider systems
     systems_asv : same format as mapco2_system, for asv co2 systems
+    verbose : bool, print debug statements
 
     Returns
     -------
@@ -85,20 +84,17 @@ def collate(systems_mapco2, t_start, t_end,
 
     """
 
-    dff_w = None
-    dff_a = None
-
     dff = _collate(systems_tested=systems_mapco2, datatype='mapco2',
                    t_start=t_start, t_end=t_end,
                    update=update,
-                   plot=plot, verbose=verbose)
+                   verbose=verbose)
     dff['datatype'] = 'm'
 
     if systems_waveglider is not None:
         dff_w = _collate(systems_tested=systems_waveglider, datatype='waveglider',
                          t_start=t_start, t_end=t_end,
                          update=update,
-                         plot=plot, verbose=verbose)
+                         verbose=verbose)
         dff_w['datatype'] = 'w'
         dff = pd.concat([dff, dff_w], axis=0, join='outer', ignore_index=True)
 
@@ -106,20 +102,16 @@ def collate(systems_mapco2, t_start, t_end,
         dff_a = _collate(systems_tested=systems_asv, datatype='asv',
                          t_start=t_start, t_end=t_end,
                          update=update,
-                         plot=plot, verbose=verbose)
+                         verbose=verbose)
         dff_a['datatype'] = 'a'
         dff = pd.concat([dff, dff_a], axis=0, join='outer', ignore_index=True)
-
-    if plot:
-        plot_units(dff, title='Data Rows vs. Dates - Filtered to date range')
 
     return dff
 
 
-def _collate(systems_tested,  datatype,
+def _collate(systems_tested, datatype,
              t_start, t_end,
-             update=False,
-             plot=False, verbose=False):
+             update=False, verbose=False):
     """Scrape and collate relevent rudics files from one system type folder and download
     from the rudics server.
 
@@ -129,7 +121,6 @@ def _collate(systems_tested,  datatype,
     t_start : pd.Datetime, start time of data to collate
     t_end : pd.Datetime, end time of data to collate
     update : bool, scrape new data from the Iridium server
-    plot : bool, show datetime vs index plot
 
     Returns
     -------
@@ -146,20 +137,14 @@ def _collate(systems_tested,  datatype,
     if datatype == 'asv':
         local_target = config.local_asv_data_directory
         url_source = config.url_asv
-    #else:
-    #    local_target = config.local_mapco2_data_directory
-    #    url_source = config.url_mapco2
 
     if update:
         # downloads files based on t_start, t_end
         # does NOT pass file info on, local files are filtered on again later
         # to establish which files to load
-        fdl = scrape.run(units=systems_tested,
-                         url_source=url_source,
-                         local_target=local_target,
-                         t_start=t_start,
-                         t_end=t_end,
-                         plot=plot)
+        scrape.run(units=systems_tested, url_source=url_source,
+                   local_target=local_target,
+                   t_start=t_start, t_end=t_end)
 
     # begin local collection of available data files
     f_list = []
@@ -171,12 +156,6 @@ def _collate(systems_tested,  datatype,
         f_list_system = glob.glob(local_target + '\\' + system + '\\*')
         f_list = f_list + f_list_system
         u_list = u_list + [system] * len(f_list_system)
-
-    # if verbose:
-    #     print('File List to Load')
-    #     print('-'*20)
-    #     for _f in f_list:
-    #         print(_f)
 
     bf_list = [f.encode('utf-8') for f in f_list]
     dff = pd.DataFrame.from_dict({'filepath': bf_list,
@@ -218,7 +197,7 @@ def _collate(systems_tested,  datatype,
 def time_filter(dff, t_start, t_end, plot=False):
     """Filter DataFrame of files to time range of interest
 
-    Parametres
+    Parameters
     ----------
     dff : DataFrame, data file information
     t_start : pd.Datetime, start time of data to collate
@@ -276,6 +255,8 @@ def import_all(df, verbose=False):
     co2 : DataFrame, co2 measurement data
     """
 
+    print('UPDATE call to iridium.batch_co2!')
+
     h, g, e, co2 = iridium.batch_co2(df, verbose=verbose)
 
     if verbose:
@@ -290,14 +271,14 @@ def import_all(df, verbose=False):
         print('lab_tests.import_all>> Systems being parsed:')
         print(co2.system.unique())
 
-    co2_list = []
-    for system in co2.system.unique():
-        for cycle in co2.cycle.unique():
-            key = system + '_' + cycle
-            _df = co2[(co2.system == system) & (co2.cycle == cycle)].copy()
-            _df.sort_values(by='datetime64_ns', inplace=True)
-            _df.reset_index(inplace=True, drop=True)
-            co2_list.append((system, cycle, _df))
+    #co2_list = []
+    #for system in co2.system.unique():
+    #    for cycle in co2.cycle.unique():
+    #        key = system + '_' + cycle
+    #        _df = co2[(co2.system == system) & (co2.cycle == cycle)].copy()
+    #        _df.sort_values(by='datetime64_ns', inplace=True)
+    #        _df.reset_index(inplace=True, drop=True)
+    #        co2_list.append((system, cycle, _df))
 
     return h, g, e, co2
 

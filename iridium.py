@@ -83,7 +83,7 @@ def frame_co2(sample, system, verbose=False):
     if verbose:
         print('iridium.frame>>')
         print(sample)
-        print("="*10)
+        print("=" * 10)
 
     for line in sample:
         if line == config.repeat_flag:
@@ -203,13 +203,15 @@ def batch_co2(df, verbose=False):
     h, g, e, co2 = frame_co2(data_list[0], system[0], verbose=verbose)
 
     for n in range(1, len(data_list)):
-        if verbose:
-            print(len(n))
         h_n, g_n, e_n, co2_n = frame_co2(data_list[n], system[n], verbose=verbose)
         h = pd.concat([h, h_n])
         g = pd.concat([g, g_n])
         e = pd.concat([e, e_n])
         co2 = pd.concat([co2, co2_n])
+
+    co2.drop_duplicates(subset=['cycle', 'datetime64_ns', 'system'], inplace=True)
+
+    co2 = co2[co2.xCO2.apply(lambda x: False if isinstance(x, list) else True)]
 
     return h, g, e, co2
 
@@ -287,7 +289,8 @@ def frame(sample, verbose=False, ph=False):
     data_template = datatypes.MAPCO2Data()
 
     _co2 = pd.DataFrame(data=[zpon, zpof, zpcl, spon, spof, spcl, epon, epof,
-                              apon, apof], columns=['cycle']+data_template.data_names)
+                              apon, apof], columns=['cycle']+data_template.data_names,
+                        dtype=float)
 
     _co2['common_key'] = common_key
     _co2['system'] = h.system[0]
@@ -365,9 +368,15 @@ def index_frame(data, verbose=False):
     return sbe16, ph
 
 
-def batch_list(data_list, verbose=False):
+def batch_aux(data_list, verbose=False):
     """Batch process and concatenate data from a DataFrame column
-    that contains list data"""
+    that contains list data
+
+    data_list :
+    verbose : bool, print debug statements
+
+    Superceeds batch_co2, same function with ph aux sbe16
+    """
 
     h, g, e, co2, aux, sbe16, phdf = frame(data_list[0], verbose=verbose)
 

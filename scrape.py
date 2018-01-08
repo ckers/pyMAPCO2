@@ -329,7 +329,7 @@ def run(units, t_start, t_end,
                         marker=marks[mc], label=u)
                 mc += 1
             ax.legend()
-            ax=plt.gca()
+            ax = plt.gca()
             xfmt = mdates.DateFormatter('%Y-%m-%d %H:%M:%S')
             ax.yaxis.set_major_formatter(xfmt)
             plt.title('Data Dates - Filtered to date range')

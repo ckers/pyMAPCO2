@@ -191,8 +191,8 @@ def timestamp_rounder(t):
 
 
 def timestamp_sec_rounder(t):
-    """Round a DatetimeIndex to a 30 minute interval"""
-    return t.replace(second=round(t.second))
+    """Round a DatetimeIndex to a 1 second interval"""
+    return t.replace(microsecond=0)
 
 
 def common_key(system, datetime64_ns):

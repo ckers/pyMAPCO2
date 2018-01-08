@@ -258,8 +258,10 @@ def load_file(f, datatype, system=None, verbose=False):
     f : str, filepath to file to parse
     datatype : str, system type... all because we duplicated serial numbers between
         mapco2, asv and waveglider... sigh.  A global reassignment might be better.
-    unit : str, unit serial number.  Primarily used for single flash imports
-        TODO: find another way?
+        For now a simple convention: 'm' = mapco2, 'a' = asv, 'w' = waveglider
+    system : str, electronics system serial number.  Primarily used for single flash
+        imports. Example: System 0176 = '0176'
+    verbose : bool, print verbose statements
 
     Returns
     -------
@@ -283,8 +285,6 @@ def load_file(f, datatype, system=None, verbose=False):
         # removed due to some files having status AND data
         # will likely break when there's a status in the MIDDLE of the file
         # Thanks firmware!
-        #if 'SYSTEM STATUS' in line:
-        #    return pd.DataFrame([])
         # no data test transmission
         if line[0:4] == 'Each':
             return pd.DataFrame([])
@@ -300,12 +300,6 @@ def load_file(f, datatype, system=None, verbose=False):
         df['system'] = datatype + '_' + df.source.str[1:5]
     else:
         df['system'] = str(system)
-    #df['common_key'] = (df.unit.astype(str) +
-    #                    '_' +
-    #                    df.datetime.str.replace(':', '_').str.replace('/', '_'))
-
-    # df['common_key'] = (df.unit.astype(str) +
-    #                     '_' + timestamp_rounder(df.datetime64_ns).astype(str))
 
     df['common_key'] = df.apply(common_key_row, axis=1)
 
@@ -635,7 +629,7 @@ def mbl_site(mbl_file):
     dfmbl['mbl_xCO2_low_uncert'] = dfmbl.mbl_xCO2 - dfmbl.mbl_xCO2_uncert
     dfmbl['mbl_xCO2_high_uncert'] = dfmbl.mbl_xCO2 + dfmbl.mbl_xCO2_uncert
     dfmbl['datetime64_ns'] = pd.to_datetime(dfmbl.datetime_mbl)
-
+    dfmbl.datetime64_ns = dfmbl.datetime64_ns.dt.round('1 min')
     return dfmbl
 
 

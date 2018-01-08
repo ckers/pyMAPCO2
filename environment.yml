@@ -1,0 +1,28 @@
+name: mapco2
+
+channels:
+  - defaults
+  - conda-forge
+  - plotly
+
+dependencies:
+  - python=3.6
+  - numpy
+  - scipy
+  - lxml
+  - pandas
+  - xlrd
+  - scikit-learn
+  - xarray
+  - geojson
+  - matplotlib
+  - seaborn
+  - plotly
+  - spyder
+  - jupyter
+  - beautifulsoup4
+  - pip
+
+  - pip:
+    - cufflinks
+    - gmplot

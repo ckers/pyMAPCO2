@@ -164,8 +164,10 @@ def float_converter(data_line):
     line = []
     for n in range(0, len(data_line)):
         x = data_line[n]
+        if pd.isnull(x):
+            return np.nan
         try:
-            y = float(x)
+            y = np.float64(x)
         except ValueError:
             try:
                 y = re.findall("\d+\.\d+", x)[0]  # find first float
