@@ -18,11 +18,18 @@ dependencies:
   - matplotlib
   - seaborn
   - plotly
+  - python-dash
   - spyder
   - jupyter
   - beautifulsoup4
+  - ipywidgets
+  - ipyleaflet
   - pip
 
   - pip:
     - cufflinks
     - gmplot
+    - dash
+    - dash_renderer
+    - dash_core_components
+    - dash_html_components
