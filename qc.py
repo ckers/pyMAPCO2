@@ -473,22 +473,25 @@ def slice_df_cal(df_xlsx, t_start, t_end):
     """
 
     df_cal = pd.DataFrame({'datetime_str': df_xlsx['Air Pump Off'].iloc[:, 2],
+                           'zpon_licor_temp': df_xlsx['Zero Pump On'].iloc[:, 3],
+                           'licor_zcof': df_xlsx['Zero Pump On'].iloc[:, 21],
+                           'licor_scof': df_xlsx['Zero Pump On'].iloc[:, 22],
                            'zpof': df_xlsx['Zero Pump Off'].iloc[:, 8],
                            'zpcal': df_xlsx['Zero Post Cal'].iloc[:, 8],
-                           'zpcal_raw1' : df_xlsx['Zero Post Cal'].iloc[:, 17],
-                           'zpcal_raw2' : df_xlsx['Zero Post Cal'].iloc[:, 19],
+                           'zpcal_raw1': df_xlsx['Zero Post Cal'].iloc[:, 17],
+                           'zpcal_raw2': df_xlsx['Zero Post Cal'].iloc[:, 19],
 
                            'spof': df_xlsx['Span Pump Off'].iloc[:, 8],
                            'spcal': df_xlsx['Span Post Cal'].iloc[:, 8],
-                           'spcal_raw1' : df_xlsx['Span Post Cal'].iloc[:, 17],
-                           'spcal_raw2' : df_xlsx['Span Post Cal'].iloc[:, 19],
+                           'spcal_raw1': df_xlsx['Span Post Cal'].iloc[:, 17],
+                           'spcal_raw2': df_xlsx['Span Post Cal'].iloc[:, 19],
 
                            'epof': df_xlsx['Equil Pump Off'].iloc[:, 8],
                            'apof': df_xlsx['Air Pump Off'].iloc[:, 8]
                            },
                           columns=['datetime_str', 'zpof', 'zpcal', 'spof', 'spcal',
                                    'zpcal_raw1', 'zpcal_raw2', 'spcal_raw1', 'spcal_raw2',
-                                   'epof', 'apof'])
+                                   'epof', 'apof', 'zpon_licor_temp', 'licor_zcof', 'licor_scof'])
     df_cal = format_xlsx_import(df_cal, t_start, t_end)
     return df_cal
 

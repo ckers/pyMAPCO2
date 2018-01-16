@@ -84,6 +84,8 @@ def collate(systems_mapco2, t_start, t_end,
 
     """
 
+    systems_mapco2 = [str(x).zfill(4) for x in systems_mapco2]
+
     dff = _collate(systems_tested=systems_mapco2, datatype='mapco2',
                    t_start=t_start, t_end=t_end,
                    update=update,
@@ -91,6 +93,7 @@ def collate(systems_mapco2, t_start, t_end,
     dff['datatype'] = 'm'
 
     if systems_waveglider is not None:
+        systems_waveglider = [str(x).zfill(4) for x in systems_waveglider]
         dff_w = _collate(systems_tested=systems_waveglider, datatype='waveglider',
                          t_start=t_start, t_end=t_end,
                          update=update,
@@ -99,6 +102,7 @@ def collate(systems_mapco2, t_start, t_end,
         dff = pd.concat([dff, dff_w], axis=0, join='outer', ignore_index=True)
 
     if systems_asv is not None:
+        systems_asv = [str(x).zfill(4) for x in systems_asv]
         dff_a = _collate(systems_tested=systems_asv, datatype='asv',
                          t_start=t_start, t_end=t_end,
                          update=update,
@@ -106,7 +110,29 @@ def collate(systems_mapco2, t_start, t_end,
         dff_a['datatype'] = 'a'
         dff = pd.concat([dff, dff_a], axis=0, join='outer', ignore_index=True)
 
-    return dff
+    dff = dff[(dff.datetime64_ns >= t_start) & (dff.datetime64_ns <= t_end)]
+
+    df_load = load_data(dffs=dff, verbose=verbose)
+
+    h, g, e, co2 = import_all(df=df_load, verbose=verbose)
+
+    df = co2.merge(right=h,
+                   how='outer', on='common_key',
+                   suffixes=['_co2', '_h'])
+
+    df = df.merge(right=g,
+                  how='outer', on='common_key',
+                  suffixes=['_co2h', '_g'])
+
+    df = df.merge(right=e,
+                  how='outer', on='common_key',
+                  suffixes=['_co2hg', '_e'])
+
+    df.reset_index(drop=True, inplace=True)
+    df.sort_values(by='datetime64_ns', inplace=True)
+    df.set_index(['cycle', 'datetime64_ns'], inplace=True)
+
+    return dff, df_load, df
 
 
 def _collate(systems_tested, datatype,
@@ -312,3 +338,4 @@ def log_entry(systems):
     t = [datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S'), datetime.utcnow().strftime('%Y/%m/%d %H:%M:%S')]
     d = t + _d
     return h, d
+
