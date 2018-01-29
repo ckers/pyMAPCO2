@@ -127,7 +127,8 @@ def decimal_degrees(c):
 
     if isinstance(c, str):
         c = float(c)
-
+    if c == 0.0:
+        return 0.0
     degree = np.int(c / 100)
     decimal = degree + ((c - (degree * 100)) / 60)
     return decimal
