@@ -1,8 +1,5 @@
 
 
-import algebra
-
-
 """This module assumes a dataframe format of:
 index             datetime64_ns
 -----
@@ -46,3 +43,72 @@ def gps_std_filter(df_gps, t_start, t_end, target_lon, target_lat, max_std):
                                  axis=1)
 
 
+def mapco2_to_ddm(x):
+    """MAPCO2 Degrees Minutes format to Degrees Decimal Minutes
+    ...because who cares about format?
+
+    Parameters
+    ----------
+    x : str
+    Returns
+    -------
+    x_int, str: Degrees
+    x_min, str: Decimal Minutes
+    """
+    a, b = x.split('.')
+    x_int = a[:-2]
+    x_min = a[-2:] + '.' + b
+    return x_int, x_min
+
+
+def dms2dd(degrees, minutes, seconds, direction):
+    """Degrees Minutes Seconds Direction to Decimal Degrees"""
+    dd = float(degrees) + float(minutes)/60 + float(seconds)/(60*60)
+    if direction == 'W' or direction == 'S':
+        dd *= -1
+    return dd
+
+
+def mapco2_to_dd(lat_raw, ns, lon_raw, ew):
+    """Convert raw MAPCO2 Latitude and Longitude to Decimal Degrees
+    Parameters
+    ----------
+    lat_raw, str : MAPCO2 latitude
+    ns, str : 'N' or 'S' direction
+    lon_raw, str : MAPCO2 longitude
+    ew, str : 'E' or 'W' direction
+
+    Returns
+    -------
+    lat, float : latitude in decimal degrees
+    lon, float : longitude in decimal degrees
+    """
+    lat_deg, lat_min = mapco2_to_ddm(lat_raw)
+    lon_deg, lon_min = mapco2_to_ddm(lon_raw)
+    lat = dms2dd(degrees=lat_deg, minutes=lat_min, seconds=0, direction=ns)
+    lon = dms2dd(degrees=lon_deg, minutes=lon_min, seconds=0, direction=ew)
+    return lat, lon
+
+
+def mapco2_to_dd_mapper(row, lat_raw='lat_raw', ns='NS', lat='lat',
+                             lon_raw='lon_raw', ew='EW', lon='lon'):
+    """Convert raw MAPCO2 Latitude and Longitude to Decimal Degrees
+
+    Parameters
+    ----------
+    row, Pandas DataFrame row
+    lat_raw, str : column name for raw MAPCO2 latitude
+    ns, str : column name for 'N' or 'S' direction
+    lon_raw, str : column name for raw MAPCO2 longitude
+    ew, str : column name for 'E' or 'W' direction
+
+    Returns
+    -------
+    lat, float : latitude
+    lon, float : longitude
+    """
+
+    _lat, _lon = mapco2_to_dd(lat_raw=row[lat_raw], ns=row[ns], lon_raw=row[lon_raw], ew=row[ew])
+    row[lat] = _lat
+    row[lon] = _lon
+    return row

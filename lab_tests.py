@@ -7,11 +7,12 @@ Created on Wed Dec  7 10:46:46 2016
 
 import glob
 from datetime import datetime
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-from . import scrape, load, iridium, config, plot_plt
+from . import scrape, load, iridium, config, plot_plt, algebra
 
 
 def t_range(t_start, t_end, days_in_past):
@@ -130,7 +131,28 @@ def collate(systems_mapco2, t_start, t_end,
 
     df.reset_index(drop=True, inplace=True)
     df.sort_values(by='datetime64_ns', inplace=True)
-    df.set_index(['cycle', 'datetime64_ns'], inplace=True)
+    df.set_index(['system_co2', 'cycle', 'datetime64_ns'], inplace=True)
+    df.sort_index(level=0, inplace=True)
+
+    df['lon'] = np.nan
+    df['lat'] = np.nan
+
+    for sn in df.index.levels[0]:
+        df.loc[(sn, 'apof'), 'lon'] = \
+            df.loc[sn, 'apof'].apply(lambda x: float(x.lon_deg) +
+                                               algebra.decimal_degrees(x.lon_min),
+                                     axis=1).values
+        df.loc[(sn, 'apof'), 'lon'] = \
+            df.loc[sn, 'apof'].apply(lambda x: x.lon * -1 if x.lon_direction == 'W' else x.lon,
+                                     axis=1).values
+    
+        df.loc[(sn, 'apof'), 'lat'] = \
+            df.loc[sn, 'apof'].apply(lambda x: float(x.lat_deg) +
+                                               algebra.decimal_degrees(x.lat_min),
+                                     axis=1).values
+        df.loc[(sn, 'apof'), 'lat'] = \
+            df.loc[sn, 'apof'].apply(lambda x: x.lat * -1 if x.lat_direction == 'S' else x.lat,
+                                      axis=1).values
 
     return dff, df_load, df
 
