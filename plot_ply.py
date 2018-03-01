@@ -209,7 +209,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
             mode='lines',
             line=dict(width=2, color=config.data_colors['general']),
             connectgaps=connect_gaps)
-            )
+        )
 
     for key, value in kwargs.items():
         # General Plotting Axis
@@ -806,9 +806,9 @@ def ms_data(df_co2):
             _d = d[2]
             _x = _d.datetime64_ns
             _y = _d.xCO2.values
-            #keep = notnull(_y)
+            # keep = notnull(_y)
             data_multi.append(go.Scatter(
-                #x=_x[keep], y=_y[keep],
+                # x=_x[keep], y=_y[keep],
                 x=_x, y=_y,
                 name=d[0] + ' ' + d[1] + ' ' + 'xCO2_wet',
                 yaxis='y',
@@ -823,9 +823,9 @@ def ms_data(df_co2):
                 _d = d[2]
                 _x = _d.datetime64_ns
                 _y = _d.xCO2_dry.values
-                #keep = notnull(_y)
+                # keep = notnull(_y)
                 data_multi.append(go.Scatter(
-                    #x=_x[keep], y=_y[keep],
+                    # x=_x[keep], y=_y[keep],
                     x=_x, y=_y,
                     name=d[0] + ' ' + d[1] + ' ' + 'xCO2_dry',
                     yaxis='y',
@@ -894,4 +894,3 @@ def ms_data(df_co2):
             )
         """
     return data_multi
-

@@ -49,6 +49,9 @@ column_names_colors = ['black', 'black', 'black',
                        'blue', 'cyan', 'grey', 'red', 'orange']
 data_colors = dict(zip(column_names, column_names_colors))
 
+lab_test_colors = ['green', 'orange', 'blue', 'cyan',
+                   'red', 'magenta', 'grey', 'yellow']
+
 # data not included in published data
 data_colors['NTU'] = 'grey'
 data_colors['O2'] = 'magenta'
@@ -120,6 +123,10 @@ time_ignore = ('0000/00/00 00:00:00', '00/00/0000_00:00:00')
 
 # the set of all 999 fill values observed from the MAPCO2 firmware
 nan_9s = ['99.999', '99.9999', '99.999999', '9999.999', '9999.99999', '99999.']
+
+# more -9x nan fill from NDBC data
+nan_9s.append(-9.999)
+nan_9s.append(-99.9)
 
 engr_header = {27: ['location_code', 'system_code',
                     'unit_time', 'unit_unix_time',
