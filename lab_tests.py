@@ -167,6 +167,8 @@ def collate(systems_mapco2, t_start, t_end,
             df.loc[sn, 'apof'].apply(lambda x: x.lat * -1 if x.lat_direction == 'S' else x.lat,
                                       axis=1).values
 
+
+
     return dff, df_load, df
 
 
@@ -374,9 +376,15 @@ def log_entry(systems):
         f.write(log_data + '\n')
 
 
-def calc_dry(df):
+def calculate(df):
     """Dry xCO2 from Iridium.  Assumes a MultiIndex Format (that should be
     better documented!)
+    Also calculates the relative pressure difference between pump ON/OFF
+    states and equilibrator and air cycles pump ON.
+
+    Parameters
+    ----------
+    df : Pandas DataFrame
     """
 
     keepers = ['licor_temp', 'licor_press', 'xCO2', 'O2', 'RH',
@@ -412,4 +420,46 @@ def calc_dry(df):
         df.loc[(s, 'apof'), 'xCO2_dry'] = df.loc[s, 'apof'].apply(dry, axis=1).values
         df.loc[(s, 'epof'), 'xCO2_dry'] = df.loc[s, 'epof'].apply(dry, axis=1).values
 
+    calc_apon_epon_relative_press(df)
+    calc_cycle_relative_press(df)
+
     return df, keepers, cycles, systems
+
+
+def calc_cycle_relative_press(df):
+    """Calculate the pressure difference between a cycle's pump ON and OFF state.
+    Applies IN PLACE to df.
+
+    Parameters
+    ----------
+    df : Pandas DataFrame
+    """
+
+    systems = df.index.levels[0].values
+    df['relative_press'] = np.nan
+    cycle_pump_deltas = [['zpon', 'zpof'], ['spon', 'spof'],
+                         ['epon', 'epof'], ['apon', 'apof']]
+
+    for s in systems:
+        for cycles in cycle_pump_deltas:
+            _rel_press = (df.loc[(s, cycles[1]), 'licor_press'] -
+                          df.loc[(s, cycles[0]), 'licor_press'])
+            df.loc[(s, cycles[0]), 'relative_press'] = _rel_press.values
+
+
+def calc_apon_epon_relative_press(df):
+    """Calculate the pressure difference between Air Pump On (apon) and
+    Equilibrator Pump On (epon) - a change in this can indicate blocke or fouled
+    equilibrator.  Applies IN PLACE to df.
+
+    Parameters
+    ----------
+    df : Pandas DataFrame
+    """
+
+    df['aedp'] = np.nan
+
+    for s in df.index.levels[0].values:
+        aedp = df.loc[(s, 'apon'), 'licor_press'] - df.loc[(s, 'epon'), 'licor_press']
+        df.loc[(s, 'apon'), 'aedp'] = aedp
+        df.loc[(s, 'epon'), 'aedp'] = aedp  # copied to both in case it's useful

@@ -166,63 +166,69 @@ def relative_press(df, verbose=False):
     ply.iplot(fig, show_link=False)
 
 
-def delta_press_filled(df, verbose=False):
+def delta_press(df):
     """Plot the absolute pressure of ON/OFF cycles and fill between them
-    TODO: create standard y axis range
-        """
+    See lab_tests.calc_cycle_relative_press() for source calculations.
+
+    Parameters
+    ----------
+    df : Pandas DataFrame with multiindex
+    """
+
     systems = df.index.levels[0].values
+    color_mapper = dict(zip(systems, config.lab_test_colors[0:len(systems)]))
 
-    fig = tools.make_subplots(rows=len(systems), cols=1,
-                              subplot_titles = systems,
-                              shared_xaxes   = True,
-                              horizontal_spacing=0.001, vertical_spacing=0.01,
-                              print_grid     = False)
+    cycle_pump_deltas = ['zpon', 'spon', 'epon', 'apon']
+    data = []
 
-    for sn, s in enumerate(systems):
+    for s in systems:
+        for cycle in cycle_pump_deltas:
+            _df = df.loc[(s, cycle), 'relative_press']
+            trace = go.Scatter(x=_df.index, y=_df.values,
+                               name=(s + ' epon'), mode='lines+markers',
+                               marker=dict(size=3, color=color_mapper[s]),
+                               )
+        data.append(trace)
 
-        _df = df.loc[(s, 'apon'), 'licor_press']
+    layout = go.Layout(
+        height=600,
+        width=600,
+        title='Delta Pressure (APON - EPON) (kPa)',
+        showlegend=False,
+        margin=go.Margin(l=60, r=10, b=30, t=60, pad=10))
 
-        trace = go.Scatter(x=_df.index, y=_df.values,
-                           name=s + ' apon', mode='lines+markers',
-                           marker = dict(size = 3,
-                                         color='cyan',
-                                         ),
-                           yaxis='y1'
-                           )
-        fig.append_trace(trace, sn + 1, 1)
-
-        _df = df.loc[(s, 'epon'), 'licor_press']
-
-        trace = go.Scatter(x=_df.index, y=_df.values,
-                           fill='tonexty',
-                           name=s + ' epon', mode='lines+markers',
-                           marker = dict(size = 3,
-                                         color='blue',
-                                         ),
-                           yaxis='y1'
-                           )
-        fig.append_trace(trace, sn + 1, 1)
-
-    fig['layout'].update(height=1000,
-                         width=600,
-                         title='APON and EPON ABS Pressure (kPa)',
-                         showlegend=False,
-                         margin=go.Margin(l=60, r=10, b=30, t=60, pad=10),
-                         #yaxis={'range':[80, 120],
-                         #       'title':'Time',
-                         #       'autorange':False}
-                         )
+    fig = go.Figure(data=data, layout=layout)
     ply.iplot(fig, show_link=False)
 
 
-def gps(df, verbose=False):
+def gps(df):
+    """Plot GPS location from the MAPCO2
+    See lab_tests.calc_cycle_relative_press() for source calculations.
 
+    Parameters
+    ----------
+    df : Pandas DataFrame with multiindex
+    """
     systems = df.index.levels[0].values
-    for sn in systems:
-        gps = df.loc[(sn, 'apof'), ('lat', 'lon', 'datetime_mapco2')]
-        gps[gps.lat != 0.0].iplot(kind='scatter', mode='markers+lines',
-                                  x='lon', y='lat',
-                                  text='datetime_mapco2',
-                                  title='GPS for ' + sn)
+    color_mapper = dict(zip(systems, config.lab_test_colors[0:len(systems)]))
 
+    data = []
+    for s in systems:
+        _df = df.loc[(s, 'apof'), ('lat', 'lon', 'datetime_mapco2')]
+        _df = _df[_df.lat != 0.0]
+        trace = go.Scatter(x=_df.lon, y=_df.lat,
+                           text=_df.datetime_mapco2,
+                           name=(s + ' epon'), mode='lines+markers',
+                           marker=dict(size=8, color=color_mapper[s]),
+                           )
+        data.append(trace)
 
+    layout = go.Layout(
+        height=600,
+        width=600,
+        title='MAPCO2 GPS Locations',
+        showlegend=False,
+        margin=go.Margin(l=100, r=10, b=30, t=60, pad=10))
+
+    fig = go.Figure(data=data, layout=layout)
+    ply.iplot(fig, show_link=False)
