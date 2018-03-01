@@ -12,7 +12,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-from . import scrape, load, iridium, config, plot_plt, algebra
+from . import scrape, load, iridium, config, plot_plt, algebra, physics
+
+
+def dry(row):
+    """Dry xCO2 data via row apply"""
+    try:
+        xco2_dry = physics.calc_co2_dry(xco2=row.xCO2,
+                                        press=row.licor_press,
+                                        vapor_press=row.vp_licor)
+        return xco2_dry
+    except ZeroDivisionError:
+        return np.nan
 
 
 def t_range(t_start, t_end, days_in_past):
@@ -321,19 +332,15 @@ def import_all(df, verbose=False):
         print('lab_tests.import_all>> Systems being parsed:')
         print(co2.system.unique())
 
-    #co2_list = []
-    #for system in co2.system.unique():
-    #    for cycle in co2.cycle.unique():
-    #        key = system + '_' + cycle
-    #        _df = co2[(co2.system == system) & (co2.cycle == cycle)].copy()
-    #        _df.sort_values(by='datetime64_ns', inplace=True)
-    #        _df.reset_index(inplace=True, drop=True)
-    #        co2_list.append((system, cycle, _df))
-
     return h, g, e, co2
 
 
 def log_entry(systems):
+    """Log systems being tested to shared spreadsheet"""
+
+    network_dir = 'Z:\\dietrich\\lab1030_status\\'
+    f_log = (network_dir + 'system_test_log.csv')
+
     mn = 300
     wn = 30
     an = 30
@@ -361,5 +368,48 @@ def log_entry(systems):
 
     t = [datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S'), datetime.utcnow().strftime('%Y/%m/%d %H:%M:%S')]
     d = t + _d
-    return h, d
+    log_header = ','.join(h)
+    log_data = ','.join(d)
+    with open(f_log, 'a') as f:
+        f.write(log_data + '\n')
 
+
+def calc_dry(df):
+    """Dry xCO2 from Iridium.  Assumes a MultiIndex Format (that should be
+    better documented!)
+    """
+
+    keepers = ['licor_temp', 'licor_press', 'xCO2', 'O2', 'RH',
+               'RH_temp', 'xCO2_raw1', 'xCO2_raw2', 'v_logic', 'v_trans',
+               'sst', 'sss']
+
+    for _x in keepers:
+        df[_x] = df[_x].astype(float)
+
+    cycles = df.index.levels[1].values
+    keepers = ['xCO2_dry'] + keepers
+    systems = df.index.levels[0].values
+
+    df['xCO2_dry'] = np.nan
+    df['vp_sat'] = np.nan
+    df['vp_licor'] = np.nan
+
+    for s in systems:
+        vp_sat = df.loc[(s, 'apof'), 'RH_temp'].apply(physics.calc_sat_vapor_press).values
+        df.loc[(s, 'apof'), 'vp_sat'] = vp_sat
+        df.loc[(s, 'epof'), 'vp_sat'] = vp_sat
+
+        vp_apof = physics.calc_vapor_pressure(rh_sample = df.loc[(s, 'apof'), 'RH'],
+                                              rh_span   = df.loc[(s, 'spcl'), 'RH'],
+                                              vp_sat    = df.loc[(s, 'apof'), 'vp_sat'])
+        vp_epof = physics.calc_vapor_pressure(rh_sample = df.loc[(s, 'epof'), 'RH'],
+                                              rh_span   = df.loc[(s, 'spcl'), 'RH'],
+                                              vp_sat    = df.loc[(s, 'epof'), 'vp_sat'])
+
+        df.loc[(s, 'apof'), 'vp_licor'] = vp_apof.values
+        df.loc[(s, 'epof'), 'vp_licor'] = vp_epof.values
+
+        df.loc[(s, 'apof'), 'xCO2_dry'] = df.loc[s, 'apof'].apply(dry, axis=1).values
+        df.loc[(s, 'epof'), 'xCO2_dry'] = df.loc[s, 'epof'].apply(dry, axis=1).values
+
+    return df, keepers, cycles, systems
