@@ -65,7 +65,8 @@ def apache_concat(url_sources):
     -------
     Pandas DataFrame, all Apache server files found
     """
-
+    
+    df_out = None
     df_list = []
     for _u in url_sources:
         df_n = apache_table_scraper(_u)
@@ -73,8 +74,6 @@ def apache_concat(url_sources):
             df_n['url_source'] = _u
             df_list.append(df_n)
             df_out = pd.concat(df_list)
-        else:
-            df_out = None
     return df_out
 
 
@@ -159,6 +158,32 @@ def rename_file(filename):
                     sn_m_d_y[1] + '_' + sn_m_d_y[2] + version +
                     '.txt')
     return new_filename
+
+
+def rudics_folders():
+    """Get all available system serial numbers in
+    http://eclipse.pmel.noaa.gov/rudics/pco2/
+    This is circular to the original use where a system number plus that url
+    was assumed to be known.  Here, we need all possible PMEL system numbers
+    to generate a selection dialog.
+
+    Returns
+    -------
+    systems : list of str, for each folder name in the directory
+    """
+
+    df_m = apache_table_scraper(config.url_mapco2)
+    df_w = apache_table_scraper(config.url_waveglider)
+    df_a = apache_table_scraper(config.url_asv)
+
+    def sys_stripper(_df):
+        return [_[:-1] for _ in _df[1] if '/' in _]
+
+    m_sys = sys_stripper(df_m)
+    w_sys = sys_stripper(df_w)
+    a_sys = sys_stripper(df_a)
+
+    return m_sys, w_sys, a_sys
 
 
 def rudics_files(url_sources, local_target):
@@ -266,7 +291,6 @@ def run(units, t_start, t_end,
     units : str or list, one or more unit serial numbers to scrape data for
     t_start : str, start of time range
     t_end : str, end of time range
-    days_in_past : int, number of days from present to create time range
     url_source : str, eclipse location to download files from
     local_target : str, location to save files downloaded
     skip : list, str file name to skip (if perhaps manually edited locally)

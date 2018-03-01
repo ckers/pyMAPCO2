@@ -81,8 +81,10 @@ def collate(systems_mapco2, t_start, t_end,
 
     Returns
     -------
-    dff :
-
+    dff : Pandas Dataframe
+    df_load : Pandas Dataframe
+    df : Pandas Dataframe
+    TODO: more
     """
 
     systems_mapco2 = [str(x).zfill(4) for x in systems_mapco2]
@@ -145,7 +147,7 @@ def collate(systems_mapco2, t_start, t_end,
         df.loc[(sn, 'apof'), 'lon'] = \
             df.loc[sn, 'apof'].apply(lambda x: x.lon * -1 if x.lon_direction == 'W' else x.lon,
                                      axis=1).values
-    
+
         df.loc[(sn, 'apof'), 'lat'] = \
             df.loc[sn, 'apof'].apply(lambda x: float(x.lat_deg) +
                                                algebra.decimal_degrees(x.lat_min),
