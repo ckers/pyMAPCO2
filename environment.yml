@@ -18,7 +18,6 @@ dependencies:
   - matplotlib
   - seaborn
   - plotly
-  - python-dash
   - spyder
   - jupyter
   - beautifulsoup4

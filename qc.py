@@ -370,9 +370,9 @@ def mapco2_xlsx_extractor(path_in):
                   'Air Pump Off']
 
     df_xlsx = pd.read_excel(io=path_in,
-                            sheetname=worksheets,
-                            header=0,
-                            skiprows=1)
+                            sheet_name=worksheets,
+                            header=None,
+                            skiprows=1)  # ignore the header and skip it
     return df_xlsx
 
 
