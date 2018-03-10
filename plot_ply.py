@@ -102,14 +102,11 @@ def default_layout(df=None,
     if atm_press_range is None:
         atm_press_range = config.k_limits['atm_press']
 
-    _title = 'MAPCO2 pCO2 pH SSTC'
     if title is None:
-        title = _title
-    else:
-        title = _title + ': ' + title
+        title = 'MAPCO2 pCO2 pH SSTC'
 
     layout = go.Layout(
-        title='MAPCO2 SSTC pH Data for ' + title,
+        title=title,
         xaxis=dict(title='Date Time', domain=[0.0, 0.86]),
         yaxis=dict(title='MAPCO2 xCO2 (umol/mol)', range=xco2_sw_range),
         legend=dict(orientation="h"),

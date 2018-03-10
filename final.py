@@ -50,16 +50,10 @@ def read_files(all_files, verbose=False, version='CRD'):
         all_files = [all_files]
     for file in all_files:
         print(file)
-        dp_n = 'dp number not in filename'
-        if 'dp' in file:
-            dpix = file.index('dp')
-            dp_n = file[dpix+2:dpix+4]
-            if verbose:
-                print('Deployment #:', dp_n)
+
         if verbose:
             print('Loading: ', str(file))
-        _df_n = read_file(file, version=version)
-        _df_n['dp_n'] = dp_n
+        _df_n = read_file(file, verbose=verbose, version=version)
         df_list.append(_df_n)
 
     _df = df_list[0]
@@ -71,7 +65,7 @@ def read_files(all_files, verbose=False, version='CRD'):
     return _df
 
 
-def read_file(file, version='CRD'):
+def read_file(file, verbose=False, version='CRD'):
     """Read one MAPCO2 file into a Pandas DataFrame
 
     Parameters
@@ -86,6 +80,13 @@ def read_file(file, version='CRD'):
     -------
     Pandas DataFrame
     """
+
+    dp_n = 'dp number not in filename'
+    if 'dp' in file:
+        dpix = file.index('dp')
+        dp_n = file[dpix + 2:dpix + 4]
+        if verbose:
+            print('Deployment #:', dp_n)
 
     # open file once to find if SOCAT header is there
     line_number_of_header = 0
@@ -124,6 +125,8 @@ def read_file(file, version='CRD'):
                 new_column_order.append(col)
 
         _df = _df[new_column_order]
+
+    _df['dp_n'] = dp_n
 
     return _df
 

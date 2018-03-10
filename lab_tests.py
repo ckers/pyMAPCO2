@@ -461,5 +461,5 @@ def calc_apon_epon_relative_press(df):
 
     for s in df.index.levels[0].values:
         aedp = df.loc[(s, 'apon'), 'licor_press'] - df.loc[(s, 'epon'), 'licor_press']
-        df.loc[(s, 'apon'), 'aedp'] = aedp
-        df.loc[(s, 'epon'), 'aedp'] = aedp  # copied to both in case it's useful
+        df.loc[(s, 'apon'), 'aedp'] = aedp.values
+        df.loc[(s, 'epon'), 'aedp'] = aedp.values  # copied to both in case it's useful
