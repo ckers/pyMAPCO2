@@ -404,8 +404,14 @@ def slice_df_co2(df_xlsx, t_start, t_end):
                            'zpcl': df_xlsx['Zero Post Cal'].iloc[:, 23],   # xCO2 dry
                            'spcl': df_xlsx['Span Post Cal'].iloc[:, 23],   # xCO2 dry
                            'epof': df_xlsx['Equil Pump Off'].iloc[:, 25],  # xCO2 dry
-                           'apof': df_xlsx['Air Pump Off'].iloc[:, 25]},   # xCO2 dry
-                          columns=['datetime_str', 'zpcl', 'spcl', 'epof', 'apof'])
+                           'apof': df_xlsx['Air Pump Off'].iloc[:, 25],    # xCO2 dry
+                           # these below might be better off in another separate DataFrame
+                           'epof_RH': df_xlsx['Equil Pump Off'].iloc[:, 13], # Relative Humidity
+                           'apof_RH': df_xlsx['Air Pump Off'].iloc[:, 13],   # Relative Humidity
+                           'v_logic': df_xlsx['Zero Pump On'].iloc[:, 28],   # xCO2 dry
+                           'v_trans': df_xlsx['Zero Pump On'].iloc[:, 29]},  # xCO2 dry
+                          columns=['datetime_str', 'zpcl', 'spcl', 'epof', 'apof',
+                                   'epof_RH', 'apof_RH', 'v_logic', 'v_trans'])
     df_co2 = format_xlsx_import(df_co2, t_start, t_end)
     return df_co2
 

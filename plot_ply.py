@@ -128,7 +128,6 @@ def default_layout(df=None,
             range=sss_range,
             position=0.89
         ),
-
         yaxis4=dict(
             title='Pressure (kPa)',
             titlefont=dict(color=config.data_colors['NTU']),
@@ -164,7 +163,6 @@ def default_layout(df=None,
             side='right',
             position=1.0,
             range=general_range
-
         )
     )
 
