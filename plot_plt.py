@@ -13,8 +13,8 @@ import mpl_toolkits.axisartist as AA
 from matplotlib.ticker import FormatStrFormatter
 import matplotlib.ticker as mtick
 
-from . import config, plot
-from .utils import utils
+from . import config, plot, utils
+#from .utils import utils
 
 
 def timeseries_multiyear(df, df_mbl=None):

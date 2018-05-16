@@ -15,8 +15,9 @@ from collections import OrderedDict
 
 from . import config
 from .config import column_names, column_names_original, column_mapper
-from . import algebra
-from utils.general import pad_date
+from . import algebra, utils
+
+#from utils.general import pad_date
 
 # names of final data .csv columns
 float_names = column_names[:]  # simple copy rather than ref
@@ -441,7 +442,7 @@ class FinalCSV(object):
 
         _df = pd.read_csv(fp, sep=',',
                           names=conf)
-        _df.Date = _df.Date.map(pad_date)
+        _df.Date = _df.Date.map(utils.pad_date)
         _df['datetime'] = _df.Date + ' ' + _df.Time
         _df['datetime'] = pd.to_datetime(_df.datetime)
 
