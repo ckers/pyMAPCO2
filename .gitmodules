@@ -1,6 +1,0 @@
-[submodule "gserial"]
-	path = gserial
-	url = https://github.com/crdietrich/gserial.git
-[submodule "utils"]
-	path = utils
-	url = https://github.com/crdietrich/utils.git
