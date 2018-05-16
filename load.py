@@ -13,9 +13,8 @@ import xarray as xr
 
 from io import StringIO
 
-from . import config
+from . import config, utils
 from .algebra import float_year_to_datetime, common_key_row, timestamp_rounder
-from utils.main import flatten
 
 
 def sniff(file):
@@ -507,7 +506,7 @@ def repeat_stripper(s, min_count=16, verbose=False, limit=100):
         else:
             ixs = [v for k, v in result.items()]
             ixs = sorted(ixs)
-            ixs = list(flatten(ixs))
+            ixs = list(utils.flatten(ixs))
             ixs = [0] + ixs + [len(ixs)+1]
             new_s = config.repeat_flag  # Repeat stripped placeholder
             for ix in range(0, len(ixs)-2, 2):
