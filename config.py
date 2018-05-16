@@ -49,7 +49,8 @@ column_names_colors = ['black', 'black', 'black',
                        'blue', 'cyan', 'grey', 'red', 'orange']
 data_colors = dict(zip(column_names, column_names_colors))
 
-lab_test_colors = ['green', 'orange', 'blue', 'cyan',
+lab_test_colors = ['gray', 'firebrick', 'chartreuse', 'seagreen', 'deepskyblue',
+                   'green', 'orange', 'blue', 'cyan',
                    'red', 'magenta', 'grey', 'yellow']
 
 # data not included in published data
