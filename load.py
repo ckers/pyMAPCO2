@@ -519,7 +519,7 @@ def repeat_stripper(s, min_count=16, verbose=False, limit=100):
     return s
 
 
-def cleaner(data_list, limit=700, line_len=10, verbose=False):
+def cleaner(data_list, limit=700, line_len=10, strip_stars=False, verbose=False):
     """
     Parameters
     ----------
@@ -552,13 +552,14 @@ def cleaner(data_list, limit=700, line_len=10, verbose=False):
     for n in range(0, a):
 
         line = data_list[n]
-
-        # remove all '*' characters
-        _y = remove_star(line)
-
+        
         # strip whitespace from start & end
-        _y = rsls_whitespace(_y)
+        _y = rsls_whitespace(line)
 
+        if strip_stars:
+            # remove all '*' characters
+            _y = remove_star(_y)
+        
         # remove repeat characters
         _y = repeat_stripper(_y)
 
