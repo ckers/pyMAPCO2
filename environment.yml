@@ -24,6 +24,8 @@ dependencies:
   - beautifulsoup4
   - ipywidgets
   - ipyleaflet
+  - pyserial
+
   - pip
 
   - pip:
