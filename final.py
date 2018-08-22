@@ -50,8 +50,6 @@ def read_files(all_files, verbose=False, version='CRD'):
     if isinstance(all_files, str):
         all_files = [all_files]
     for file in all_files:
-        print(file)
-
         if verbose:
             print('Loading: ', str(file))
         _df_n = read_file(file, verbose=verbose, version=version)
