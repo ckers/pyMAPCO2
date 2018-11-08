@@ -811,7 +811,9 @@ def ndbc_df(itter, units=None):
                 c = 'mode'
             for label in ['SSS', 'SAL', 'SST', 'TEMP']:
                 if label in c:
-                    c = c + '_' + str(depth[n])
+                    #depth_int = depth[n]
+                    
+                    c = c + '_' + str(depth[n]).zfill(4)
                     n += 1
             new_columns.append(c)
         h = new_columns
