@@ -169,7 +169,7 @@ def default_layout(df=None,
     return layout
 
 
-def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
+def default_data(df, suffix='', gl=False, df_mbl=None, connectgaps=True, **kwargs):
     """Define data dictionary to plot
 
     Note: hardcoded trace name srings must match dataframe column
@@ -179,6 +179,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
     ----------
     df : Pandas DataFrame with columns of mapco2 data
     suffix : str, value to name this series if multiple sites/units are plotted
+	gl : boolean, use WebGL - otherwise default to SVG
     df_mbl : Pandas DataFrame containing mbl air xco2 values
     connectgaps : bool, Plot.ly line parameter
 
@@ -194,15 +195,20 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
 
     connect_gaps = connectgaps
 
+    if gl:
+        _Scatter = go.Scattergl
+    else:
+        _Scatter = go.Scatter
+    
     def gen_plot(_x, _y, _name, _visible):
 
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=_x, y=_y,
             name=_name,
             yaxis='y7',
             visible=_visible,
             mode='lines',
-            line=dict(width=2, color=config.data_colors['general']),
+            line=dict(width=1, color=config.data_colors['general']),
             connectgaps=connect_gaps)
         )
 
@@ -222,28 +228,28 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
 
     # xCO2 Seawater WET
     if 'xCO2_SW_wet' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.xCO2_SW_wet,
             name='xCO2_SW_wet' + suffix,
             opacity=0.5,
             visible='legendonly',
             mode='lines',
-            line=dict(width=2, color=config.data_colors['xCO2_SW_wet'], dash='dash'))
+            line=dict(width=1, color=config.data_colors['xCO2_SW_wet'], dash='dash'))
         )
 
     # xCO2 Seawater DRY
     if 'xCO2_SW_dry' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.xCO2_SW_dry,
             name='xCO2_SW_dry' + suffix,
             mode='lines',
-            line=dict(width=2, color=config.data_colors['xCO2_SW_dry']),
+            line=dict(width=1, color=config.data_colors['xCO2_SW_dry']),
             connectgaps=connect_gaps)
         )
 
     # xCO2 Seawater DRY flagged 3
     if 'xCO2_SW_dry_flagged_3' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.xCO2_SW_dry_flagged_3,
             name='xCO2 SW Dry Flag 3' + suffix,
             mode='markers',
@@ -253,7 +259,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
 
     # xCO2 Seawater DRY flagged 4
     if 'xCO2_SW_dry_flagged_4' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.xCO2_SW_dry_flagged_4,
             name='xCO2 SW Dry Flag 4' + suffix,
             mode='markers',
@@ -263,41 +269,41 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
 
     # MBL Air data if available
     if isinstance(df_mbl, DataFrame):
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=df_mbl.datetime64_ns, y=df_mbl.mbl_xCO2,
             name='MBL xCO2',
             opacity=0.75,
             visible='legendonly',
             mode='lines',
-            line=dict(width=2, color=config.data_colors['MBL']),
+            line=dict(width=1, color=config.data_colors['MBL']),
             connectgaps=connect_gaps)
         )
 
     # xCO2 Air WET
     if 'xCO2_Air_wet' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.xCO2_Air_wet,
             name='xCO2_Air_wet' + suffix,
             opacity=0.5,
             visible='legendonly',
             mode='lines',
-            line=dict(width=2, color=config.data_colors['xCO2_Air_wet'], dash='dash'),
+            line=dict(width=1, color=config.data_colors['xCO2_Air_wet'], dash='dash'),
             connectgaps=connect_gaps)
         )
 
     # xCO2 Air DRY
     if 'xCO2_Air_dry' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.xCO2_Air_dry,
             name='xCO2_Air_dry' + suffix,
             mode='lines',
-            line=dict(width=2, color=config.data_colors['xCO2_Air_dry']),
+            line=dict(width=1, color=config.data_colors['xCO2_Air_dry']),
             connectgaps=connect_gaps)
         )
 
     # xCO2 Air DRY flagged 3
     if 'xCO2_Air_dry_flagged_3' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.xCO2_Air_dry_flagged_3,
             name='xCO2 Air Dry Flag 3' + suffix,
             mode='markers',
@@ -307,7 +313,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
 
     # xCO2 Air DRY flagged 4
     if 'xCO2_Air_dry_flagged_4' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.xCO2_Air_dry_flagged_4,
             name='xCO2 Air Dry Flag 4' + suffix,
             mode='markers',
@@ -317,95 +323,95 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
 
     # MAPCO2 sea surface temperature (from final data)
     if 'SST' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.SST,
             name='SST' + suffix,
             yaxis='y2',
             mode='lines',
-            line=dict(width=2, color=config.data_colors['SST']),
+            line=dict(width=1, color=config.data_colors['SST']),
             connectgaps=connect_gaps)
         )
 
     # Oxygen Optode internal temperature (from sbe16)
     if 'SST_sso2' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.SST_sso2,
             name='SST SSO2' + suffix,
             yaxis='y2',
             mode='lines',
-            line=dict(width=2, color=config.data_colors['O2']),
+            line=dict(width=1, color=config.data_colors['O2']),
             connectgaps=connect_gaps)
         )
 
     # MAPCO2 sea surface temperature (from sbe16)
     if 'SST_mapco2' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.SST_mapco2,
             name='SST MAPCO2' + suffix,
             yaxis='y2',
             mode='lines',
-            line=dict(width=2, color=config.data_colors['SST']),
+            line=dict(width=1, color=config.data_colors['SST']),
             connectgaps=connect_gaps)
         )
 
     # pH sea surface temperature
     if 'SST_ph' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.SST_ph,
             name='SST pH' + suffix,
             yaxis='y2',
             mode='lines',
-            line=dict(width=2, color=config.data_colors['pH']),
+            line=dict(width=1, color=config.data_colors['pH']),
             connectgaps=connect_gaps)
         )
 
     # MAPCO2 and partner sea surface temperature
     if 'SST_merged' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.SST_merged,
             name='SST MAPCO2 & Partner' + suffix,
             yaxis='y2',
             mode='lines',
-            line=dict(width=2, color=config.data_colors['SST']),
+            line=dict(width=1, color=config.data_colors['SST']),
             connectgaps=connect_gaps)
         )
 
     # sea surface pH INITIAL
     if 'pH' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.pH,
             name='pH' + suffix,
             yaxis='y6',
             mode='lines',
-            line=dict(width=2, color=config.data_colors['pH']),
+            line=dict(width=1, color=config.data_colors['pH']),
             connectgaps=connect_gaps)
         )
 
     # sea surface pH FINAL
     if 'pH_final' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.pH_final,
             name='pH Final' + suffix,
             yaxis='y6',
             mode='lines',
-            line=dict(width=2, color=config.data_colors['pH']),
+            line=dict(width=1, color=config.data_colors['pH']),
             connectgaps=connect_gaps)
         )
 
     # sea surface Total Alkalininty pH
     if 'TApH' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.TApH,
             name='TApH' + suffix,
             yaxis='y6',
             mode='lines',
-            line=dict(width=2, color=config.data_colors['pH']),
+            line=dict(width=1, color=config.data_colors['pH']),
             connectgaps=connect_gaps)
         )
 
     # sea surface pH flagged 3
     if 'pH_flagged_3' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.pH_flagged_3,
             name='pH Flag 3' + suffix,
             yaxis='y6',
@@ -415,7 +421,7 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
 
     # sea surface pH flagged 4
     if 'pH_flagged_4' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.pH_flagged_4,
             name='pH Flag 4' + suffix,
             yaxis='y6',
@@ -423,117 +429,148 @@ def default_data(df, suffix='', df_mbl=None, connectgaps=True, **kwargs):
                         color=config.data_colors['pH_flagged_4']))
         )
 
+    # sea surface pH DIC/Alkalinity Bottle Samples
+    if 'pH_bottle' in df_columns:
+        data.append(_Scatter(
+            x=x, y=df.pH_bottle,
+            name='pH Bottle TA' + suffix,
+            yaxis='y6',
+            mode='markers',
+            marker=dict(size=10, symbol='x',
+                        color='green'))
+        )
+    
+    # sea surface pH reprocessed by a second/different source
+    if 'pH_reprocessed' in df_columns:
+        data.append(_Scatter(
+            x=x, y=df.pH_reprocessed,
+            name='pH reprocessed' + suffix,
+            yaxis='y6',
+            mode='lines',
+            line=dict(width=1, color='green'))
+        )
+
+    # sea surface pH reprocessed by a third/different source
+    if 'pH_3rd' in df_columns:
+        data.append(_Scatter(
+            x=x, y=df.pH_reprocessed,
+            name='pH 3rd processing' + suffix,
+            yaxis='y6',
+            mode='lines',
+            line=dict(width=1, color='teal'))
+        )
+
     # sea surface salinity from MAPCO2 SBE16
     if 'SSS' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.SSS,
             name='SSS' + suffix,
             yaxis='y3',
-            mode='markers+lines',
-            line=dict(width=2, color=config.data_colors['SSS']),
+            mode='lines',
+            line=dict(width=1, color=config.data_colors['SSS']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
 
     # sea surface salinity from MAPCO2 SBE16
     if 'SSS_mapco2' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.SSS_mapco2,
             name='SSS MAPCO2 SBE16' + suffix,
             yaxis='y3',
-            mode='markers+lines',
-            line=dict(width=2, color=config.data_colors['SSS']),
+            mode='lines',
+            line=dict(width=1, color=config.data_colors['SSS']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
 
     # sea surface salinity from Partner
     if 'SSS_partner' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.SSS_partner,
             name='SSS Partner' + suffix,
             yaxis='y3',
-            mode='markers+lines',
-            line=dict(width=2, color=config.data_colors['SSS']),
+            mode='lines',
+            line=dict(width=1, color=config.data_colors['SSS']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
 
     # sea surface salinity from MAPCO2 and Partner merged
     if 'SSS_merged' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.SSS_merged,
             name='SSS MAPCO2 & Partner Merged' + suffix,
             yaxis='y3',
-            mode='markers+lines',
-            line=dict(width=2, color=config.data_colors['SSS']),
+            mode='lines',
+            line=dict(width=1, color=config.data_colors['SSS']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
 
     # sea surface O2 from MAPCO2 SBE16
     if 'SSO2_uM' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.SSO2_uM,
             name='SSO2 MAPCO2 SBE16' + suffix,
             yaxis='y3',
-            mode='markers+lines',
-            line=dict(width=2, color=config.data_colors['O2']),
+            mode='lines',
+            line=dict(width=1, color=config.data_colors['O2']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
 
     if 'delta_aepon_press' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.delta_aepon_press,
             name='ABS(diff) Air EQ Pump On Pressure (kPa)' + suffix,
             yaxis='y4',
             mode='lines',
-            line=dict(width=2, color=config.data_colors['general']),
+            line=dict(width=1, color=config.data_colors['general']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
 
     if 'epon_press' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.epon_press,
             name='Equilibrator Pump On Pressure (kPa)' + suffix,
             yaxis='y4',
             mode='lines',
-            line=dict(width=2, color=config.data_colors['epon_press']),
+            line=dict(width=1, color=config.data_colors['epon_press']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
 
     if 'apon_press' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.apon_press,
             name='Air Pump On Pressure (kPa)' + suffix,
             yaxis='y4',
             mode='markers+lines',
-            line=dict(width=2, color=config.data_colors['apon_press']),
+            line=dict(width=1, color=config.data_colors['apon_press']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
 
     if 'precip' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.precip,
             name='Precipitation' + suffix,
             yaxis='y7',
             mode='markers+lines',
-            line=dict(width=2, color=config.data_colors['precip']),
+            line=dict(width=1, color=config.data_colors['precip']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
 
     if 'windspeed' in df_columns:
-        data.append(go.Scatter(
+        data.append(_Scatter(
             x=x, y=df.windspeed,
             name='Wind Speed MAG (m/s)' + suffix,
             yaxis='y7',
             mode='markers+lines',
-            line=dict(width=2, color=config.data_colors['general']),
+            line=dict(width=1, color=config.data_colors['general']),
             marker=dict(size=4),
             connectgaps=connect_gaps)
         )
@@ -553,7 +590,7 @@ def ph_data(df):
             x=x, y=df.pH,
             name='pH Initial',
             yaxis='y6',
-            line=dict(width=2, color=config.data_colors['pH']))
+            line=dict(width=1, color=config.data_colors['pH']))
         )
 
     # sea surface pH INITIAL
@@ -562,7 +599,7 @@ def ph_data(df):
             x=x, y=df.ph_int,
             name='pH Internal',
             yaxis='y6',
-            line=dict(width=2, color=config.data_colors['pH_int']))
+            line=dict(width=1, color=config.data_colors['pH_int']))
         )
 
     # sea surface pH INITIAL
@@ -571,7 +608,7 @@ def ph_data(df):
             x=x, y=df.ph_ext,
             name='pH External',
             yaxis='y6',
-            line=dict(width=2, color=config.data_colors['pH_ext']))
+            line=dict(width=1, color=config.data_colors['pH_ext']))
         )
 
     # sea surface pH FINAL
@@ -580,7 +617,7 @@ def ph_data(df):
             x=x, y=df.pH_final,
             name='pH Final',
             yaxis='y6',
-            line=dict(width=2, color=config.data_colors['pH']))
+            line=dict(width=1, color=config.data_colors['pH']))
         )
 
     # sea surface pH flagged 3
