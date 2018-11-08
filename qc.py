@@ -125,8 +125,10 @@ def co2sys_xls_export(df, filepath,
     _df['tco2'] = tco2
     _df['pH'] = pH
     _df['fco2'] = fco2
-    _df['SST_out'] = sst_out
-
+    if sst_out is not '':
+        _df['SST_out'] = sst_out
+    else:
+        _df['SST_out'] = _df.SST
     _df = _df[config.co2sys_column_names_in]
 
     _df.dropna(axis=0, how='any', inplace=True)
@@ -156,7 +158,7 @@ def import_co2sysxls(f, unit):
     Pandas DataFrame
     """
 
-    _df = pd.read_excel(f, sheetname='DATA',
+    _df = pd.read_excel(f, sheet_name='DATA',
                         skiprows=[0, 1],
                         names=config.co2sysxls_column_names)
     _df['unit'] = str(unit)
