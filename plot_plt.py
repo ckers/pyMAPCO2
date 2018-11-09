@@ -716,10 +716,11 @@ def plot_dtstd(df, dt_data, cols=None):
             c += 1
 
 
-def plot_gps(df, gps_fit=None, center=None, title_str='', xlim=None, ylim=None):
+def plot_gps(df, gps_fit=None, center=None, width=7, title_str='', xlim=None, ylim=None):
     """Plot GPS data
     Note: Seaborn with reformat and break this plot
-
+    Note: Opposite of 'gps_plot' use, will plot flagged data
+    
     Parameters
     ----------
     df : Pandas Dataframe, with 'lon', 'lat' and 'flag' columns
@@ -745,7 +746,7 @@ def plot_gps(df, gps_fit=None, center=None, title_str='', xlim=None, ylim=None):
         xc, yc = center
         plt.plot(xc, yc,
                  color='green', marker='o', label='LSQ Fit Center')
-
+    
     plt.xlabel('Longitude')
     plt.ylabel('Latitude')
     plt.axis('equal')
@@ -753,9 +754,9 @@ def plot_gps(df, gps_fit=None, center=None, title_str='', xlim=None, ylim=None):
     ax = plt.gca()
     ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
     ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
-
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    
+    #box = ax.get_position()
+    #ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
 
     if xlim is not None:
         plt.xlim(xlim)
@@ -765,11 +766,27 @@ def plot_gps(df, gps_fit=None, center=None, title_str='', xlim=None, ylim=None):
     # Put a legend to the right of the current axis
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.title(title_str, loc='right')
-    plt.margins(0.05, 0.1)
+    plt.margins(0.1, 0.1)
+    fig = plt.gcf()
+    fig.set_size_inches(width, width)
 
-    plt.show()
-
-
+def gps_plot(self, title, width=7, style='k.', out=False, **kwargs):
+    """Monkey Patch for Pandas DataFrame in Jupyter.
+    Applies consistent formatting to all GPS plots"""
+    ax = self.plot(**kwargs, x='lon',
+                   figsize=(width, width),
+                   style=style,
+                   legend=False)
+    
+    ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%3.2f'))
+    box = ax.get_position()
+    plt.xlabel('Longitude')
+    plt.ylabel('Latitude')
+    plt.axis('equal')
+    plt.title(title, loc='right')
+    plt.margins(0.1, 0.1)
+    return ax
+    
 def plot_co2(df, width=12, height=6, style=None, **kwargs):
     """Plot co2 data using the .plot method
 
