@@ -167,21 +167,21 @@ def get_mbl(df, m):
 def subtropic_TA(sss, sst):
     """TA to sss and sst relationship
     TODO: citation
-    
+
     Parameters
     ----------
     sss : float
     sst : float
-    
+
     Return
     ------
     ta : float
     """
 
-    ta = (2305 + 
-          58.66 * (sss-35) + 
-          2.32 * (sss-35)**2 - 
-          1.41 * (sst-20) + 
+    ta = (2305 +
+          58.66 * (sss-35) +
+          2.32 * (sss-35)**2 -
+          1.41 * (sst-20) +
           0.04 * (sst-20)**2)
     return ta
 
@@ -220,13 +220,15 @@ def common_key_row(row):
     return ck
 
 
-def m1_algebraic(x, y):
+def m1_algebraic(x, y, x_m=None, y_m=None):
     """Find the geometric center of data
 
     Parameters
     ----------
     x : array-like, values
     y : array-like, values same length as x
+    x_m : float, center of x values, optional
+    y_m : float, center of y values, optional
 
     Returns
     -------
@@ -239,8 +241,10 @@ def m1_algebraic(x, y):
     """
 
     # coordinates of the barycenter
-    x_m = np.mean(x)
-    y_m = np.mean(y)
+    if x_m is not None:
+        x_m = np.mean(x)
+    if y_m is not None:
+        y_m = np.mean(y)
 
     # calculation of the reduced coordinates
     u = x - x_m
@@ -274,7 +278,7 @@ def m1_algebraic(x, y):
     return xc, yc, Ri, R, residu, residu2
 
 
-def lsq_circle(x, y):
+def lsq_circle(x, y, x_m=None, y_m=None):
     """Fit a circle to x,y data
     TODO: more docstring
 
@@ -282,8 +286,10 @@ def lsq_circle(x, y):
     ----------
     x : array of float
     y : array of float
+    x_m : float, center of x values, optional
+    y_m : float, center of y values, optional
     """
-    xc, yc, ri, r, residu, residu2 = m1_algebraic(x, y)
+    xc, yc, ri, r, residu, residu2 = m1_algebraic(x, y, x_m=x_m, y_m=y_m)
     theta_fit = np.linspace(-np.pi, np.pi, 180)
     x_fit = xc + r * np.cos(theta_fit)
     y_fit = yc + r * np.sin(theta_fit)
