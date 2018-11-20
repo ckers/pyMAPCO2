@@ -241,9 +241,9 @@ def m1_algebraic(x, y, x_m=None, y_m=None):
     """
 
     # coordinates of the barycenter
-    if x_m is not None:
+    if x_m is None:
         x_m = np.mean(x)
-    if y_m is not None:
+    if y_m is None:
         y_m = np.mean(y)
 
     # calculation of the reduced coordinates
