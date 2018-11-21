@@ -17,6 +17,27 @@ from . import plot_plt
 from .algebra import linear, natural_log
 
 
+def iqr_mask(series, low=0.25, high=0.75):
+    """Calculate quantiles and return a boolean mask for values 
+    outside the Interquartile Range (IQR)
+    
+    Parameters
+    ----------
+    series : array-like, data to create mask for
+    low : float, lower quantile boudnary, between 0-1
+    high : float, high quantile boudary, between 0-1
+    
+    Returns
+    -------
+    array-like, boolean true if point is OUTSIDE the IQR
+    """
+    q1 = np.percentile(series, low*100)
+    q3 = np.percentile(series, high*100)
+    iqr = q3 - q1
+    iqr_mask = (series < (q1 - 1.5 * iqr)) | (series > (q3 + 1.5 * iqr))
+    return iqr_mask
+
+    
 class CurveFit(object):
     """Linear regression calculation and application using
     least squares fit from Scipy"""
