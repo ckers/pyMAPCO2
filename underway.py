@@ -7,7 +7,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from .utils import file_ops
+from pyMAPCO2.utils import files_in_directory
 
 # TODO: add to config.py
 keepers = ['ATM', 'EQU', 'STD5z', 'STD1', 'STD2', 'STD3', 'STD4']
@@ -89,17 +89,11 @@ def concat_txt(data_path, verbose=False):
     -------
     .csv file of data
     """
-    
-    # build list of files to load
-    #abs_dir = go_data_path + sys_id + '\\'
-    #files = file_ops.files_in_directory(abs_dir, hint='dat.txt', skip=None)
-    #_f_list = [abs_dir + f for f in files]
 
     # build list of files to load
-    files = file_ops.files_in_directory(data_path, hint='dat.txt', skip=None)
+    files = files_in_directory(data_path, hint='dat.txt', skip=None)
     _f_list = [data_path + '\\' + f for f in files]
-    
-    
+
     if verbose:
         print('Working on file:', _f_list[0])
 
@@ -137,9 +131,7 @@ def load_system(data_path, verbose=False):
 
     Parameters
     ----------
-    #sys_id : list of str, id of each system to be used for abs path to data
     data_path : str, path to folder containing GO data
-    #_f_list : list of str, absolute paths to tab delimited files to load
     verbose : bool, print debug information
 
     Returns
@@ -148,10 +140,7 @@ def load_system(data_path, verbose=False):
     """
 
     # build list of files to load
-    #abs_dir = go_data_path + sys_id + '\\'
-    #files = file_ops.files_in_directory(abs_dir, hint='dat.txt', skip=None)
-    files = file_ops.files_in_directory(data_path, hint='dat.txt', skip=None)
-    #_f_list = [abs_dir + f for f in files]
+    files = files_in_directory(data_path, hint='dat.txt', skip=None)
     _f_list = [data_path + '\\' + f for f in files]
 
     if verbose:
@@ -171,7 +160,6 @@ def load_system(data_path, verbose=False):
 
     # reset the row index and add the system specific id
     _df.reset_index(drop=True, inplace=True)
-    #_df['system'] = sys_id
     return _df
 
     
@@ -184,7 +172,8 @@ def select_file():
     fp = filedialog.askopenfilename()
     root.destroy()
     return os.path.normpath(fp)
-    
+
+
 def select_folder():
     """Stand alone folder selection function"""
     
@@ -195,7 +184,8 @@ def select_folder():
     fp = filedialog.askdirectory()
     root.destroy()
     return os.path.normpath(fp)
-    
+
+
 def concat_txt_window():
     """Produces a window to ask for directory containing GO data, then calls concat_txt()
     """
