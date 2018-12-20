@@ -13,18 +13,17 @@ import xarray as xr
 
 from io import StringIO
 
-from . import config
+from . import config, utils
 from .algebra import float_year_to_datetime, common_key_row, timestamp_rounder
-from utils.main import flatten
 
 
 def sniff(file):
     """Decide if file is a MAPCO2 flash data file
-    
+
     Parameters
     ----------
     file : str, filepath to file
-    
+
     Returns
     -------
     bool, True if file contains MAPCO2 data
@@ -64,7 +63,7 @@ def index_data(data):
     Parameters
     ----------
     data : list,
-    
+
     Returns
     -------
     out : list, nested list of lines where dataframes start
@@ -194,10 +193,10 @@ def format_index_dataframe(lc):
     df = create_start_end(index_df=df)
     return df
 
-    
+
 def frames(lc, start, end, delimiters):
     """Get data of one type from data file.  Type is determined by delimiters
-    
+
     Parameters
     ----------
     lc : list, lines of cleaned data
@@ -205,13 +204,13 @@ def frames(lc, start, end, delimiters):
     end : array-like, indexes of end of data frame in lc
     delimiters : list of 2 str, characters to use as start and end of
         section of data
-    
+
     Returns
     -------
     delimiters : list of str, two item long representing the starting
         and ending delimiters of a frame of data
     """
-    
+
     delim_start = delimiters[0]
     delim_end = delimiters[1]
 
@@ -250,9 +249,9 @@ def frames(lc, start, end, delimiters):
 
 def load_file(f, datatype, system=None, verbose=False):
     """Load all available data types in a file
-    Note: data types are determined by delimiter definitions, which 
+    Note: data types are determined by delimiter definitions, which
     are hardcoded below.
-    
+
     Parameters
     ----------
     f : str, filepath to file to parse
@@ -307,12 +306,12 @@ def load_file(f, datatype, system=None, verbose=False):
                               start=df.sbe16_start,
                               end=df.sbe16_end,
                               delimiters=['SBE16 DATA', 'END SBE16'])
-    
+
     df['ph_sami_list'] = frames(lc,
                                 start=df.ph_sami_start,
                                 end=df.ph_sami_end,
                                 delimiters=['PH', 'END PH'])
-    
+
     df['ph_seafet_list'] = frames(lc,
                                   start=df.ph_seafet_start,
                                   end=df.ph_seafet_end,
@@ -333,12 +332,12 @@ def load_file(f, datatype, system=None, verbose=False):
 
 def file_batch(f_list, datatype, verbose=False):
     """Load multiple iridium files using frames_all
-    
+
     Parameters
     ----------
     f_list : list of str, filepath to file to parse
     verbose : bool, show debug statements
-    
+
     Returns
     -------
     Pandas Dataframe, data of all identified data types
@@ -350,13 +349,13 @@ def file_batch(f_list, datatype, verbose=False):
     for n in range(0, len(f_list)):
         _df = load_file(f=f_list[n], datatype=datatype[n], verbose=verbose)
         _df_list.append(_df)
-        
+
     df = pd.concat(_df_list)
     df.reset_index(inplace=True, drop=True)
 
     return df
 
-    
+
 def unicode_check(line):
     """Try to decode each line to Unicode
 
@@ -507,7 +506,7 @@ def repeat_stripper(s, min_count=16, verbose=False, limit=100):
         else:
             ixs = [v for k, v in result.items()]
             ixs = sorted(ixs)
-            ixs = list(flatten(ixs))
+            ixs = list(utils.flatten(ixs))
             ixs = [0] + ixs + [len(ixs)+1]
             new_s = config.repeat_flag  # Repeat stripped placeholder
             for ix in range(0, len(ixs)-2, 2):
@@ -519,7 +518,7 @@ def repeat_stripper(s, min_count=16, verbose=False, limit=100):
     return s
 
 
-def cleaner(data_list, limit=700, line_len=10, verbose=False):
+def cleaner(data_list, limit=700, line_len=10, strip_stars=False, verbose=False):
     """
     Parameters
     ----------
@@ -553,11 +552,12 @@ def cleaner(data_list, limit=700, line_len=10, verbose=False):
 
         line = data_list[n]
 
-        # remove all '*' characters
-        _y = remove_star(line)
-
         # strip whitespace from start & end
-        _y = rsls_whitespace(_y)
+        _y = rsls_whitespace(line)
+
+        if strip_stars:
+            # remove all '*' characters
+            _y = remove_star(_y)
 
         # remove repeat characters
         _y = repeat_stripper(_y)
@@ -809,9 +809,11 @@ def ndbc_df(itter, units=None):
                 c = 'quality'
             if 'MMMM' in c:
                 c = 'mode'
-            for label in ['SSS', 'SAL', 'SST', 'TEMP']:
+            for label in ['SSS', 'SAL', 'SST', 'TEMP', 'PRES']:
                 if label in c:
-                    c = c + '_' + str(depth[n])
+                    #depth_int = depth[n]
+
+                    c = c + '_' + str(depth[n]).zfill(4)
                     n += 1
             new_columns.append(c)
         h = new_columns
@@ -820,7 +822,7 @@ def ndbc_df(itter, units=None):
     _df = pd.DataFrame(d, columns=h)
 
     for col in _df.columns:
-        for sss in ['SSS', 'SAL', 'SST', 'TEMP']:
+        for sss in ['SSS', 'SAL', 'SST', 'TEMP', 'PRES']:
             if sss in col:
                 _df[col] = _df[col].astype(float)
 

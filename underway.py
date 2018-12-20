@@ -3,9 +3,11 @@
 Colin Dietrich 2017
 colin.dietrich@noaa.gov
 """
-from .utils import file_ops
+import os
 import numpy as np
 import pandas as pd
+
+from pyMAPCO2.utils import files_in_directory
 
 # TODO: add to config.py
 keepers = ['ATM', 'EQU', 'STD5z', 'STD1', 'STD2', 'STD3', 'STD4']
@@ -76,12 +78,21 @@ def time_reformat(line):
     return ','.join(line)
 
 
-def concat_txt(sys_id, verbose=False):
+def concat_txt(data_path, verbose=False):
+    """Concatenate all data into one .csv file to be loaded using Cathy's VBA program
+    
+    Parameters
+    ----------
+    data_path : str, path to folder containing GO data
+    
+    Returns
+    -------
+    .csv file of data
+    """
 
     # build list of files to load
-    abs_dir = go_data_path + sys_id + '\\'
-    files = file_ops.files_in_directory(abs_dir, hint='dat.txt', skip=None)
-    _f_list = [abs_dir + f for f in files]
+    files = files_in_directory(data_path, hint='dat.txt', skip=None)
+    _f_list = [data_path + '\\' + f for f in files]
 
     if verbose:
         print('Working on file:', _f_list[0])
@@ -93,8 +104,8 @@ def concat_txt(sys_id, verbose=False):
 
     if 'tank T' in h:
         h = h.replace('tank T', 'SST')
-        h = h.replace('\t', ',')
-
+    
+    h = h.replace('\t', ',')
     lines_out.append(h)
 
     for fn in _f_list:
@@ -107,18 +118,20 @@ def concat_txt(sys_id, verbose=False):
                 else:
                     lines_out.append(time_reformat(line))
 
-    with open(abs_dir + 'compiled_GO_data.csv', 'w') as f:
+    fp = data_path + '\\compiled_GO_data.csv'
+    with open(fp, 'w') as f:
         for i in lines_out:
             f.write(i)
+            
+    return os.path.normpath(fp)
+        
 
-
-def load_system(sys_id, verbose=False):
+def load_system(data_path, verbose=False):
     """Load all files for one Underway pCO2 system into a DataFrame
 
     Parameters
     ----------
-    sys_id : list of str, id of each system to be used for abs path to data
-    #_f_list : list of str, absolute paths to tab delimited files to load
+    data_path : str, path to folder containing GO data
     verbose : bool, print debug information
 
     Returns
@@ -127,9 +140,8 @@ def load_system(sys_id, verbose=False):
     """
 
     # build list of files to load
-    abs_dir = go_data_path + sys_id + '\\'
-    files = file_ops.files_in_directory(abs_dir, hint='dat.txt', skip=None)
-    _f_list = [abs_dir + f for f in files]
+    files = files_in_directory(data_path, hint='dat.txt', skip=None)
+    _f_list = [data_path + '\\' + f for f in files]
 
     if verbose:
         print('Working on file:', _f_list[0])
@@ -148,12 +160,49 @@ def load_system(sys_id, verbose=False):
 
     # reset the row index and add the system specific id
     _df.reset_index(drop=True, inplace=True)
-    _df['system'] = sys_id
     return _df
 
+    
+def select_file():
+    """Stand alone file selection function"""
+    import tkinter
+    from tkinter import filedialog
+    
+    root = tkinter.Tk()
+    fp = filedialog.askopenfilename()
+    root.destroy()
+    return os.path.normpath(fp)
 
+
+def select_folder():
+    """Stand alone folder selection function"""
+    
+    import tkinter
+    from tkinter import filedialog
+    
+    root = tkinter.Tk()
+    fp = filedialog.askdirectory()
+    root.destroy()
+    return os.path.normpath(fp)
+
+
+def concat_txt_window():
+    """Produces a window to ask for directory containing GO data, then calls concat_txt()
+    """
+
+    return concat_txt(select_folder(), verbose=False)
+    
+    
+def load_system_window():
+    """Produces a window to ask for directory containing GO data, then calls concat_txt()
+    """
+    fp = select_folder()
+    return load_system(fp, verbose=False), fp
+    
+    
 def mapco2_format(df, hours_offset=0):
     """Format GO data for MAPCO2 comparison
+    Might need to refactor or nuke...
     """
 
     dfgo = df.copy()

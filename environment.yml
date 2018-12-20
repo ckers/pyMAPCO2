@@ -14,6 +14,7 @@ dependencies:
   - xlrd
   - scikit-learn
   - xarray
+  - netcdf4
   - geojson
   - matplotlib
   - seaborn
@@ -23,6 +24,8 @@ dependencies:
   - beautifulsoup4
   - ipywidgets
   - ipyleaflet
+  - pyserial
+
   - pip
 
   - pip:

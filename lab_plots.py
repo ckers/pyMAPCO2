@@ -59,7 +59,8 @@ def one_cycle(df, keepers, cycle='apof', verbose=False):
     ply.iplot(fig, show_link=False)
 
 
-def xCO2_sw_air(df, publish=False, verbose=False):
+def xCO2_sw_air(df, publish=False, verbose=False,
+                target='Z:\\dietrich\\lab1030_status\\'):
 
     systems = df.index.levels[0].values
     color_mapper = dict(zip(systems, config.lab_test_colors[0:len(systems)]))
@@ -83,17 +84,17 @@ def xCO2_sw_air(df, publish=False, verbose=False):
 
             trace = go.Scatter(x=_df.index, y=_df.values,
                                name=s, mode='lines+markers',
-                               marker = dict(size = 3,
+                               marker = dict(size = 5,
                                              color=color_mapper[s],
                                              )
                               )
             fig.append_trace(trace, cn+1, 1)
 
-    fig['layout'].update(height=1000,
-                         width=650,
+    fig['layout'].update(#height=1000,
+                         #width=650,
                          title='APOF and EPOF xCO2 Dry',
                          showlegend=False,
-                         margin=go.Margin(l=30, r=10, b=30, t=60, pad=10)
+                         margin=go.Margin(l=60, r=10, b=30, t=60, pad=20)
                          )
 
     _f = 'lab1030_co2_data.html'
@@ -101,8 +102,7 @@ def xCO2_sw_air(df, publish=False, verbose=False):
              auto_open=True, filename=_f,  show_link=False)
     if publish:
         #TODO: add target to config.py and remove here
-        network_dir = 'Z:\\dietrich\\lab1030_status\\'
-        _f_dated = (network_dir +
+        _f_dated = (target +
                     time.strftime('%Y_%m_%d_%H_%M_%S') +
                     '_lab1030 - [' +
                     ' '.join(list(df.index.levels[0])) +

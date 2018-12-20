@@ -5,6 +5,25 @@ Package for processing MAPCO2 CO2 data
 ### Legal Disclaimer
 This repository is a software product and is not official communication of the National Oceanic and Atmospheric Administration (NOAA), or the United States Department of Commerce (DOC). All NOAA GitHub project code is provided on an 'as is' basis and the user assumes responsibility for its use. Any claims against the DOC or DOC bureaus stemming from the use of this GitHub project will be governed by all applicable Federal law. Any reference to specific commercial products, processes, or services by service mark, trademark, manufacturer, or otherwise, does not constitute or imply their endorsement, recommendation, or favoring by the DOC. The DOC seal and logo, or the seal and logo of a DOC bureau, shall not be used in any manner to imply endorsement of any commercial product or activity by the DOC or the United States Government.
 
+## Installation  
+1. Install Python using Miniconda, details are available online:  
+https://conda.io/miniconda.html  
+3. Clone or download this repository from Github to a stable local _code-directory_ location
+4. Activate the base Miniconda command line
+5. Install the conda-build package into the conda root:
+    $ conda install conda-build
+5. Change directories to the pyMAPCO2 code
+6. Create a conda environment called _mapco2_ by loading the _environment.yml_ file:
+    $ conda env create -f environment.yml
+7. Activate the _mapco2_ conda environment:
+    $ conda activate mapco2
+8. Go up one directory from _code-directory_ directory and add the package to the _code-directory_ directory to the conda environment:
+    $ conda develop _code-directory_
+9. Start Jupyter notebook
+    $ jupyter notebook
+    or run Spyder
+    $ spyder
+
 ## Data Descriptions  
 Time format in string format is ISO 8601
 in strftime format that is: `'%Y-%m-%dT%H:%M:%S%Z'`

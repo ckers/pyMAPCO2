@@ -125,8 +125,10 @@ def co2sys_xls_export(df, filepath,
     _df['tco2'] = tco2
     _df['pH'] = pH
     _df['fco2'] = fco2
-    _df['SST_out'] = sst_out
-
+    if sst_out is not '':
+        _df['SST_out'] = sst_out
+    else:
+        _df['SST_out'] = _df.SST
     _df = _df[config.co2sys_column_names_in]
 
     _df.dropna(axis=0, how='any', inplace=True)
@@ -156,7 +158,7 @@ def import_co2sysxls(f, unit):
     Pandas DataFrame
     """
 
-    _df = pd.read_excel(f, sheetname='DATA',
+    _df = pd.read_excel(f, sheet_name='DATA',
                         skiprows=[0, 1],
                         names=config.co2sysxls_column_names)
     _df['unit'] = str(unit)
@@ -404,8 +406,14 @@ def slice_df_co2(df_xlsx, t_start, t_end):
                            'zpcl': df_xlsx['Zero Post Cal'].iloc[:, 23],   # xCO2 dry
                            'spcl': df_xlsx['Span Post Cal'].iloc[:, 23],   # xCO2 dry
                            'epof': df_xlsx['Equil Pump Off'].iloc[:, 25],  # xCO2 dry
-                           'apof': df_xlsx['Air Pump Off'].iloc[:, 25]},   # xCO2 dry
-                          columns=['datetime_str', 'zpcl', 'spcl', 'epof', 'apof'])
+                           'apof': df_xlsx['Air Pump Off'].iloc[:, 25],    # xCO2 dry
+                           # these below might be better off in another separate DataFrame
+                           'epof_RH': df_xlsx['Equil Pump Off'].iloc[:, 13], # Relative Humidity
+                           'apof_RH': df_xlsx['Air Pump Off'].iloc[:, 13],   # Relative Humidity
+                           'v_logic': df_xlsx['Zero Pump On'].iloc[:, 28],   # xCO2 dry
+                           'v_trans': df_xlsx['Zero Pump On'].iloc[:, 29]},  # xCO2 dry
+                          columns=['datetime_str', 'zpcl', 'spcl', 'epof', 'apof',
+                                   'epof_RH', 'apof_RH', 'v_logic', 'v_trans'])
     df_co2 = format_xlsx_import(df_co2, t_start, t_end)
     return df_co2
 
