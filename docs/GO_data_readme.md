@@ -1,13 +1,15 @@
 # General Oceanics pCO2 data  
 
+
+
 ## Data Types and Descriptions
-| Name          | Type          | Units      | Source Name  | Description | 
+| Name          | Type          | Units      | Source Name  | Description |
 | ----          | ----          | -----      | -----------  | ----------- |
 |type           | object        |            | Type         | Type of sample for this row, i.e. equilibrator (EQU)
 |error          | int64         |            | error        | Error flag
 |pc_date        | object        | date       | PC Date      | Date in day/month/year formatted as dd/mm/yy
 |pc_time        | object        | time       | PC Time      | Time in hour:minute:second formatted as HH:MM:SS
-|equ_temp       | float64       | C          | equ temp     | Equilibrator temperature 
+|equ_temp       | float64       | C          | equ temp     | Equilibrator temperature
 |std_val        | float64       | um/m       | std val      | Value of standard if run
 |co2a_w         | float64       | counts     | CO2a W       | Raw CO2 detector counts of detector a, wet
 |co2b_w         | float64       | counts     | CO2b W       | Raw CO2 detector counts of detector b, wet
@@ -25,7 +27,7 @@
 |atm_cond       | float64       | ADC steps  | atm cond     | Atmospheric air conductivity detector in condenser
 |equ_cond       | float64       | ADC steps  | equ cond     | Equilibrator air conductivity detector in condenser
 |drip_1         | float64       | ADC steps  | drip 1       | Drip sensor at bottom of wet box
-|na             | float64       |            | na           | 
+|na             | float64       |            | na           |
 |cond_temp      | float64       | C          | cond temp    | Condenser temperature
 |dry_box_temp   | float64       | C          | dry box temp | Dry box temperature
 |deck_press     | float64       | kPa        | Deck_Press   | Deck pressure
@@ -33,12 +35,13 @@
 |SST            | float64       | C          | SST          | Temperature of inlet seawater (or test tank)
 |datetime64_str | object        |            |              | Combination of pc_date and pc_time
 |datetime64_ns  | datetime64[ns]|            |              | Datetime object created from datetime64_str
+|co2_cal        | float64       | μM/M       | CO2 um/m     | Concentration of CO2 after 4 standard calibation
 
 
 ## Extended Descriptions  
 * accepted cycle names include 'ATM', 'EQU', 'STD5z', 'STD1', 'STD2', 'STD3', 'STD4'  
 * ppm is approximately equal to mole fraction in micro-moles per mole (μM/M)
-* Hectopascal (hPa) is equal to millibar (mb) 
+* Hectopascal (hPa) is equal to millibar (mb)
 
 ## VBA Processing Code Breakdown  
 Code imbedded in 'ApplyStandardsCalculatefCO2_wDilutionCorrectionJuly12.xlsm'
